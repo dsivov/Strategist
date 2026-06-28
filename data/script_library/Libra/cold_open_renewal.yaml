@@ -1,0 +1,92 @@
+script_id: cold_open_renewal
+script_type: cold_open
+phase: greet
+priority: 60
+status: approved
+
+description: |
+  First-contact opener for a Libra insurance renewal. Establishes
+  identity (agent name + tenant), anchors on policy timing (end of month),
+  surfaces concrete renewal numbers (comprehensive + mandatory), single
+  CTA. Empirically the canonical Libra opener — 305-cluster pattern in
+  won-deal data.
+
+applies_when:
+  tenant: Libra
+  conversation:
+    commitment_level_min: 0
+    commitment_level_max: 1
+
+grounding_anchors:
+  - "Agent first name + tenant identity (Libra)"
+  - "Policy end-of-month timing"
+  - "Comprehensive + mandatory NIS broken out"
+
+arc:
+  - step_id: opener
+    turn_intent: "Greet, anchor renewal context, surface concrete numbers, single-CTA close"
+    must_say_template: |
+      Hi {opp.customer_name}, this is {agent.first_name} from Libra :)
+      Your insurance ends at the end of the month. Comprehensive is
+      {anchors.current_quoted_price_nis} NIS (incl. Librot discount) and
+      mandatory is {anchors.mandatory_nis} NIS. Renew?
+    must_not_say:
+      - "amazing deal"
+      - "limited time offer"
+      - "loyalty bonus"
+      - "special offer just for you"
+    expected_customer_response:
+      classifier_anchors:
+        - id: frustration
+          examples:
+            - "skip the intro, just give me the price"
+            - "I don't have time for this — what's the number"
+            - "stop with the spiel"
+            - "just tell me how much"
+            - "get to the point"
+        - id: has_competitor
+          examples:
+            - "I got a cheaper offer"
+            - "someone else quoted me less"
+            - "I have a better quote"
+            - "the competitor is cheaper"
+        - id: not_ready
+          examples:
+            - "I'm not interested in renewing"
+            - "I won't be renewing"
+            - "let me think about it"
+            - "I need time"
+      next_step_routing:
+        wants_quote: provide_breakdown
+        has_competitor: objection_competitor_undercut
+        not_ready: schedule_followup
+        frustration: provide_breakdown   # skip small-talk, lead with numbers
+
+  - step_id: provide_breakdown
+    turn_intent: "If customer wants more detail — surface breakdown components"
+    must_say_template: |
+      Comprehensive {anchors.current_quoted_price_nis} NIS (incl. Librot discount),
+      mandatory {anchors.mandatory_nis} NIS. With us you have deductible-waiver
+      at arrangement garage and headlights/mirrors coverage. Want me to walk
+      through what's covered?
+    must_not_say:
+      - "loyalty bonus"
+      - "as a returning customer"
+    is_terminal: true
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-10
+  version: 2.0
+  empirical_basis: |
+    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    research_message_strategy_flash, 2026-05-10).
+    The opener template above appears verbatim 305 times in won-deal
+    information-strategy turns and 176 times in won-deal direct_ask turns
+    (largest cluster in both buckets). Concrete components (comprehensive
+    + mandatory NIS broken out) is the canonical Libra cold open. The
+    "🌻 don't want it to slip" variant (n=40, won) is more re-engagement-
+    flavored — see follow_up_warm_recheck.
+    See research-notes/EMPIRICAL-MINING-FINDINGS.md.
+  caveats: |
+    Sample-level frequency, not statistical lift over a baseline.

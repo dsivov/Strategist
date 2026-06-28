@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luna Sales Strategist · POC</title>
+  <link rel="stylesheet" href="/static/style.css?v=20260513-split-header-7" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="brand-mark">L</span>
+      <div>
+        <h1>Luna Sales Strategist</h1>
+        <p class="tagline">Live A/B: Original Luna agent vs Supervisor-augmented Luna agent</p>
+      </div>
+      <!-- R24 — Toggle for the directive-diff sidebar -->
+      <button class="ds-toggle" id="dsToggleBtn" title="Show / hide the live supervisor-directive sidebar">⇨ Directive</button>
+      <!-- R20 — running lift counter across this device's session history -->
+      <div class="lift-counter" id="liftCounter" hidden title="Click to reset (clears localStorage)">
+        <div class="lift-label">Supervisor lift</div>
+        <div class="lift-stat">
+          <span class="lift-r"><b id="liftRWins">0</b><span class="lift-side">R</span></span>
+          <span class="lift-vs">·</span>
+          <span class="lift-l"><b id="liftLWins">0</b><span class="lift-side">L</span></span>
+          <span class="lift-vs">/</span>
+          <span class="lift-n"><b id="liftN">0</b> sessions</span>
+        </div>
+        <div class="lift-pp" id="liftPP">+0pp</div>
+      </div>
+    </div>
+    <!-- Panel 1: Scenario / data picker — pick what to test -->
+    <div class="hdr-panel hdr-picker">
+      <div class="hdr-label">Scenario</div>
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="curated">Curated</button>
+        <button class="mode-tab" data-mode="random">Random</button>
+      </div>
+      <div id="curatedControls" class="mode-pane">
+        <div class="tenant-filter" id="tenantFilter">
+          <span class="label">Tenant</span>
+          <button data-tenant="all" class="tenant-btn active">All</button>
+          <button data-tenant="Libra" class="tenant-btn">Libra</button>
+          <button data-tenant="Heavys" class="tenant-btn">Heavys</button>
+        </div>
+        <label class="stress-only-toggle" title="Show only the curated stress-test cohort (hardest cases for supervisor)">
+          <input type="checkbox" id="stressOnlyToggle" />
+          <span>Stress-only</span>
+        </label>
+        <select id="scenarioPicker" disabled>
+          <option>Loading scenarios…</option>
+        </select>
+      </div>
+      <div id="randomControls" class="mode-pane" hidden>
+        <button id="findMatchBtn" class="primary">Find best match</button>
+        <span id="cacheStatus" class="cache-status" title="Random-match candidate cache state">
+          <span class="cache-dot"></span>
+          <span id="cacheStatusText">checking…</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Panel 2: Runtime controls — configure + run -->
+    <div class="hdr-panel hdr-controls">
+      <div class="hdr-label">Controls</div>
+      <div class="speed-controls">
+        <span class="label">Speed</span>
+        <button data-speed="1x" class="speed-btn">1×</button>
+        <button data-speed="5x" class="speed-btn active">5×</button>
+        <button data-speed="instant" class="speed-btn">⚡</button>
+      </div>
+      <label class="hard-customer-toggle" title="Make the customer simulator more skeptical and harder to close. Use to stress-test supervisor wins.">
+        <input type="checkbox" id="hardCustomerToggle" />
+        <span>Hard customer</span>
+      </label>
+      <div class="seed-slider" title="Override seed-end turn. Defaults to the auto-detected peak-engagement turn — move ± to test the supervisor against shallower / deeper seeds.">
+        <span class="seed-slider-label">Seed turn</span>
+        <input type="range" id="seedTurnSlider" min="0" max="0" value="0" step="1" disabled />
+        <span class="seed-slider-value" id="seedTurnValue">auto</span>
+      </div>
+      <div class="engine-toggle" title="R-side engine. L-side (Original Luna) and the customer simulator are identical for both — the engine is the only variable.">
+        <span class="engine-label">R-side</span>
+        <button type="button" data-engine="strategist" class="engine-btn active">Strategist</button>
+        <button type="button" data-engine="planner" class="engine-btn">Planner</button>
+      </div>
+      <button id="runBtn" class="primary" disabled>Run scenario</button>
+      <button id="stopBtn" class="ghost" disabled>Stop</button>
+      <button id="resetBtn" class="ghost">Reset</button>
+      <a id="tracesLink" class="ghost" href="/logs" target="_blank" rel="noopener" title="Open trace logs in new tab">Logs ↗</a>
+      <span class="session-timer" id="sessionTimer" hidden>
+        <span class="dot"></span>
+        <span id="sessionTimerText">0s</span>
+      </span>
+    </div>
+  </header>
+
+  <main>
+    <section class="random-form" id="randomForm" hidden>
+      <div class="random-form-title">Pick the customer profile axes — system finds the best clean-loss match in 392 candidates</div>
+      <div class="random-form-grid">
+        <label class="random-field">
+          <span>Tenant</span>
+          <select id="rmTenant"><option value="">any</option></select>
+        </label>
+        <label class="random-field">
+          <span>Opp type</span>
+          <select id="rmOppType"><option value="">any</option></select>
+        </label>
+        <label class="random-field">
+          <span>Motivator</span>
+          <select id="rmMotivator"><option value="">any</option></select>
+        </label>
+        <label class="random-field">
+          <span>Decision logic</span>
+          <select id="rmDecisionLogic"><option value="">any</option></select>
+        </label>
+        <label class="random-field">
+          <span>Trust level</span>
+          <select id="rmTrustLevel"><option value="">any</option></select>
+        </label>
+      </div>
+      <div class="random-results" id="randomResults" hidden>
+        <div class="random-results-summary" id="randomResultsSummary"></div>
+        <div class="random-results-cards" id="randomResultsCards"></div>
+      </div>
+    </section>
+
+    <!-- R15 — Rolling stats across last N sessions. Stores in localStorage so
+         the demo accumulates session-by-session credibility. Shows total wins,
+         lift, top-5 most-used moves, and most-common ending phase. -->
+    <section class="rolling-stats" id="rollingStats" hidden>
+      <div class="rs-header">
+        <span class="rs-title">Last <b id="rsN">0</b> sessions</span>
+        <span class="rs-sub">— rolling cohort stats (this device)</span>
+        <button class="rs-clear" id="rsClearBtn" title="Reset rolling history">clear</button>
+      </div>
+      <div class="rs-grid">
+        <div class="rs-card">
+          <div class="rs-card-label">Win rate</div>
+          <div class="rs-card-value">
+            <span class="rs-r" id="rsRWinRate">—</span>
+            <span class="rs-divider">vs</span>
+            <span class="rs-l" id="rsLWinRate">—</span>
+          </div>
+        </div>
+        <div class="rs-card">
+          <div class="rs-card-label">Persuasion Δ avg</div>
+          <div class="rs-card-value">
+            <span class="rs-r" id="rsRPersAvg">—</span>
+            <span class="rs-divider">vs</span>
+            <span class="rs-l" id="rsLPersAvg">—</span>
+          </div>
+        </div>
+        <div class="rs-card">
+          <div class="rs-card-label">Top moves</div>
+          <div class="rs-card-value rs-moves" id="rsTopMoves">—</div>
+        </div>
+        <div class="rs-card">
+          <div class="rs-card-label">End-reasons (right)</div>
+          <div class="rs-card-value rs-endreasons" id="rsEndReasons">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- R21 — Move-usage live histogram (this session only). Sits below the
+         arch banner, only shows when the supervisor has picked at least one
+         Tier-2 concrete move this session. -->
+    <section class="move-histogram" id="moveHistogram" hidden>
+      <div class="mh-title">Tier-2 moves this session
+        <span class="mh-sub">— variation pressure target: avoid one-bar dominance</span>
+      </div>
+      <div class="mh-bars" id="moveHistogramBars"></div>
+    </section>
+
+    <section class="arch-banner" id="archBanner" hidden>
+      <div class="arch-title">Architecture in this session</div>
+      <div class="arch-tiers">
+        <span class="tier-chip tier-1a" id="tierChip1a" title="Pre-compiled response from offline-trained playbook; no LLM call. Used on low-stakes plan-aligned turns."><span class="dot"></span> Playbook Mode · <b id="tierCount1a">0</b></span>
+        <span class="tier-chip tier-1b" id="tierChip1b" title="Real-time supervisor decision with single-hop knowledge-graph retrieval + Sonnet directive. The default path."><span class="dot"></span> Live Retrieval · <b id="tierCount1b">0</b></span>
+        <span class="tier-chip tier-2" id="tierChip2" title="Multi-hop graph reasoning for high-stakes turns: closing moments, sharp engagement drops, contradictions."><span class="dot"></span> Deep Reasoning · <b id="tierCount2">0</b></span>
+        <span class="tier-chip tier-trace" id="tierTrace" title="Closed-loop write — every directive logged as a knowledge-graph edge for downstream reuse. Each tile = one edge written this session."><span class="dot"></span> Decision audit trail · <b id="traceStatus">—</b><span class="emit-counter" id="emitCounter" hidden> · <b id="emitCount">0</b> emits<span class="emit-trail" id="emitTrail"></span></span></span>
+        <span class="tier-chip tier-precedents has-hovercard" id="tierPrecedents" title="Past directives retrieved from the knowledge graph for similar customer segments. Hover for details."><span class="dot"></span> Precedents in graph · <b id="precedentCount">—</b><span class="hover-hint">▾</span></span>
+        <span class="tier-chip tier-cache" id="tierCache" title="Knowledge-graph response cache hit rate."><span class="dot"></span> KG cache · <b id="cacheRate">—</b></span>
+        <span class="tier-chip tier-cgcalls" id="tierCgCalls" hidden title="Breakdown of knowledge-graph calls by endpoint type."><span class="dot"></span> KG calls · <b id="cgCallsBreakdown">—</b></span>
+      </div>
+    </section>
+
+    <section class="guide-banner" id="guideBanner" hidden>
+      <div class="guide-title">
+        Integration scenarios demonstrated this session
+        <span class="guide-sub">↳ from <code>LUNA_INTEGRATION_GUIDE.md §4</code> · 8 scenarios · live A/B exercises 7 of them</span>
+        <span class="opp-type-tag" id="oppTypeTag" hidden>opp_type: <b id="oppTypeValue">—</b></span>
+      </div>
+      <div class="guide-grid" id="guideGrid"></div>
+    </section>
+
+    <section class="scenario-meta" id="scenarioMeta" hidden>
+      <div class="meta-item">
+        <span class="meta-label">Opp ID</span>
+        <span class="meta-value" id="metaOppId" style="font-family:'SF Mono',Monaco,Consolas,monospace;font-size:11px;color:var(--accent-2)">—</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Tenant</span>
+        <span class="meta-value" id="metaTenant">—</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Cluster</span>
+        <span class="meta-value" id="metaCluster">—</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Customer profile</span>
+        <span class="meta-value" id="metaProfile">—</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Historical outcome</span>
+        <span class="meta-value tag-lost" id="metaOutcome">—</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Messages</span>
+        <span class="meta-value" id="metaMsgs">—</span>
+      </div>
+    </section>
+
+    <section class="graphs">
+      <div class="graph-wrap full">
+        <h3>Persuasion score over time
+          <span class="legend">
+            <span class="legend-dot" style="background:#4A90E2"></span>Original
+            <span class="legend-dot" style="background:#F5A623"></span>Supervised
+          </span>
+        </h3>
+        <canvas id="combinedGraph"></canvas>
+      </div>
+    </section>
+
+    <div class="panels">
+      <section class="panel" id="leftPanel">
+        <div class="panel-header">
+          <h2>Original Luna</h2>
+          <span class="panel-sub">Live actor · No supervisor</span>
+          <span class="phase-tag" id="leftPhaseTag">—</span>
+          <span class="panel-turn" id="leftTurn"></span>
+          <span class="panel-status" id="leftStatus">Idle</span>
+          <span class="end-reason-badge" id="leftEndReason" hidden></span>
+          <span class="phase-sparkline" id="leftPhaseSpark" title="Conversation arc (this panel)"></span>
+        </div>
+        <div class="chat" id="leftChat"></div>
+      </section>
+
+      <section class="panel" id="rightPanel">
+        <div class="panel-header">
+          <h2>With Strategic Supervisor</h2>
+          <span class="panel-sub">Live actor · Supervisor directive injected</span>
+          <span class="phase-tag" id="rightPhaseTag">—</span>
+          <span class="panel-turn" id="rightTurn"></span>
+          <span class="panel-status" id="rightStatus">Idle</span>
+          <span class="end-reason-badge" id="rightEndReason" hidden></span>
+          <span class="phase-sparkline" id="rightPhaseSpark" title="Conversation arc (this panel)"></span>
+        </div>
+        <div class="plan-progress" id="planProgress" hidden>
+          <div class="plan-header">
+            <span class="plan-label">Cluster Plan</span>
+            <span class="plan-id" id="planId">—</span>
+            <span class="plan-goal" id="planGoal"></span>
+          </div>
+          <div class="plan-phases" id="planPhases"></div>
+        </div>
+        <div class="chat" id="rightChat"></div>
+        <div class="won-badge" id="wonBadge" hidden>
+          <span>WON</span>
+          <small>commitment 5/5</small>
+        </div>
+      </section>
+    </div>
+
+    <!-- Win-proximity score panel (T-77) -->
+    <section class="win-proximity" id="winProximity" hidden>
+      <div class="prox-header">
+        <h3>Proximity to win</h3>
+        <span class="prox-sub">Continuous 0–1 lift signal · WIN = 1.00 · components: trajectory + semantic + payment</span>
+      </div>
+      <div class="prox-grid">
+        <div class="prox-card" id="proximityLeft">
+          <div class="prox-side-label">Original Luna</div>
+        </div>
+        <div class="prox-delta" id="proximityDelta"></div>
+        <div class="prox-card" id="proximityRight">
+          <div class="prox-side-label">Supervised</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>POC v0 · Visioner research · 2026-04-30 · Read-only on production data</p>
+  </footer>
+
+  <!-- R24 — Directive-diff sidebar. Direct child of body (not nested inside
+       main) so position:fixed + JS-driven layout shift work cleanly. -->
+  <aside class="directive-sidebar" id="directiveSidebar" hidden>
+    <div class="ds-header">
+      <span class="ds-title">Latest supervisor directive</span>
+      <button class="ds-close" id="dsCloseBtn" title="Close" onclick="document.body.classList.remove('ds-open');document.getElementById('directiveSidebar').hidden=true;try{localStorage.setItem('luna_directive_sidebar_visible_v1','0');}catch(e){}var sidebarOpen=false;Array.from(document.body.children).forEach(function(c){if(c.id==='directiveSidebar'||c.tagName==='SCRIPT')return;c.style.maxWidth='';c.style.marginRight='';c.style.marginLeft='';});">×</button>
+    </div>
+    <div class="ds-body" id="directiveSidebarBody">
+      <div class="ds-empty">No directive yet — start a session.</div>
+    </div>
+  </aside>
+
+  <script src="/static/chart.umd.min.js"></script>
+  <script src="/static/app.js?v=20260513-split-header"></script>
+</body>
+</html>

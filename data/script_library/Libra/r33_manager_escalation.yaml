@@ -1,0 +1,202 @@
+script_id: r33_manager_escalation
+script_type: closing
+phase: negotiate
+priority: 65
+status: approved
+
+description: |
+  Manager-escalation framing for the "match-or-walk" point in negotiation.
+  Reached when objection_competitor_undercut's probe arc indicates the
+  customer won't disclose details / refuses value framing / hits frustration.
+  Empirically the canonical Libra escalation move is conditional commitment:
+  "If they approve me to match the price — will we close?"
+
+applies_when:
+  tenant: Libra
+  profile:
+    decision_logic: [Analytical, Mixed]
+    trust_level: [Skeptical, Neutral]
+    primary_motivator: [Price/savings]
+
+grounding_anchors:
+  - "Manager-escalation framing ('I'm checking with my retention manager')"
+  - "Conditional commitment ('if approval comes, will we close?')"
+  - "Walk-away path if escalation fails (graceful_close_no_match)"
+
+arc:
+  - step_id: escalate_for_match
+    turn_intent: "Manager-escalation with conditional commitment close"
+    must_say_template: |
+      I hear you — let me check with my retention manager. If they approve me
+      to match {customer_disclosed_competitor_price}, will we close?
+    must_not_say:
+      - "loyalty bonus"
+      - "as a returning customer"
+      - "let me see what I can do"
+      - "I'll get back to you"
+      - "special offer"
+    expected_customer_response:
+      classifier_anchors:
+        - id: conditional_yes
+          examples:
+            - "yes if you can match I'll renew"
+            - "if you hit my number I'm in"
+            - "match it and we have a deal"
+        - id: conditional_no
+          examples:
+            - "even if you match I want to think about it"
+            - "I need to check other options either way"
+            - "I'm still not sure"
+            - "I'm not committing before I see the price"
+            - "let me know once you hear back"
+        - id: customer_refuses
+          examples:
+            - "stop stalling"
+            - "no more delays"
+            - "you said this before"
+      # 2026-05-10 — `conditional_no` now stays on escalate_for_match instead of
+      # routing to graceful_close. Empirically: customers who say "I'm not
+      # committing yet" usually close once they actually SEE the matched price.
+      # Premature graceful_close created a doom loop: escalate → conditional_no
+      # → graceful_close (terminal) → re-select r33 → escalate → ... repeat.
+      next_step_routing:
+        conditional_yes: deliver_match_offer
+        conditional_no: deliver_match_offer
+        customer_refuses: graceful_close_no_match
+
+  - step_id: deliver_match_offer
+    turn_intent: "Deliver the confirmed match price + payment-collection pivot"
+    must_say_template: |
+      Talked with the manager — comprehensive at {customer_disclosed_competitor_price}
+      NIS after the discount. How many installments? Up to 10, no interest.
+      And the last 4 digits of your card for verification?
+    must_not_say:
+      - "discount"
+      - "special"
+      - "one-time exception"
+      - "what's the deductible on the other offer"
+      - "let's go back to comparing apples to apples"
+    expected_customer_response:
+      classifier_anchors:
+        - id: close_intent
+          examples:
+            - "ok let's do it"
+            - "yes proceed"
+            - "send me the policy"
+            - "10 installments"
+            - "ok let's close"
+            - "great, let's go"
+        - id: logistics_question
+          examples:
+            - "what about mandatory insurance"
+            - "what's the price for mandatory"
+            - "is mandatory included"
+            - "what coverage exactly"
+            - "send me the breakdown"
+            - "when does it start"
+            - "how do I pay"
+        - id: fair_question
+          examples:
+            - "why didn't you offer this from the start"
+            - "wait seriously you can do that"
+            - "what changed"
+            - "what's the catch"
+            - "if you could do this now why not before"
+            - "why is it possible now"
+        - id: customer_refuses
+          examples:
+            - "no I'm not signing"
+            - "I changed my mind, not today"
+            - "stop pushing, I won't proceed"
+            - "I'm walking away from this deal"
+      next_step_routing:
+        close_intent: send_signature_after_match
+        logistics_question: send_signature_after_match
+        fair_question: acknowledge_and_close
+        customer_refuses: graceful_close_no_match
+
+  - step_id: acknowledge_and_close
+    turn_intent: "Answer 'why-didn't-you-start' DIRECTLY + close. The customer is asking a specific question; if you skip the answer they will push back at you for evading."
+    # 2026-05-10 — Template MUST start with the causal explanation, not the close.
+    # When the supervisor LLM truncates the template (partial-following bug), the
+    # close-pivot half on its own is evasive ("we can lock it in...") and the
+    # customer pushes back with "you didn't answer the question." Keeping the
+    # explanation FIRST and tightly causal makes truncation produce broken text
+    # that fails downstream gates rather than evasive-but-grammatical text.
+    must_say_template: |
+      Fair question — the {anchors.current_quoted_price_nis} NIS is our standard
+      renewal rate, and bringing the competing offer is exactly what unlocked the
+      {customer_disclosed_competitor_price} NIS manager-approved match. That's
+      why the price moved now and not before. Same coverage, same benefits —
+      shall we lock it in? How many installments?
+    must_not_say:
+      - "discount"
+      - "special offer"
+      - "let me check with my manager"
+      - "I'll get back to you"
+      - "the coverage and benefits remain the same"   # evasive close-only bypass
+      - "we can lock in the X NIS price"              # evasive close-only bypass
+    required_phrases:
+      # The template's truncation-failure-mode is dropping the explanation half
+      # and emitting only the close-pivot. These required phrases force the
+      # supervisor to include the causal explanation, not just the pivot.
+      - "standard renewal rate"
+      - "competing offer"
+    expected_customer_response:
+      classifier_anchors:
+        - id: close_intent
+          examples:
+            - "ok let's do it"
+            - "yes 10 installments"
+            - "send me the policy"
+            - "let's close"
+            - "ok proceed"
+        - id: customer_refuses
+          examples:
+            - "no I'm not buying today"
+            - "still doesn't sit right"
+            - "I'll think about it longer"
+      next_step_routing:
+        close_intent: send_signature_after_match
+        customer_refuses: graceful_close_no_match
+
+  - step_id: send_signature_after_match
+    turn_intent: "Final close after match — answer last logistics + initiate signature"
+    must_say_template: |
+      Right — comprehensive {customer_disclosed_competitor_price} NIS, mandatory
+      {anchors.mandatory_nis} NIS. The policy will arrive by email shortly,
+      password to open is your mobile number :)
+    must_not_say:
+      - "discount"
+      - "let me lower further"
+      - "what's the deductible on the other offer"
+      - "let me check with my manager"
+    is_terminal: true
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-10
+  version: 2.0
+  empirical_basis: |
+    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    research_message_strategy_flash, 2026-05-10). authority strategy
+    shows +23% won/lost lift — the strongest positive lift across all
+    strategies. Manager-escalation framing is the highest-value move
+    in the Libra renewal arc.
+
+    escalate_for_match (conditional commitment):
+      - "אם יאשרו לי להשוות את המחיר נסגור?" (n=7, won-side commitment cluster)
+      - "אם אצליח להוזיל לך את המקיף ל-X, יהיה רלוונטי לחידוש?" (n=10 won)
+      - Lost-side equivalent: "במידה ונצליח להוזיל נוכל להתקדם?" (n=9) —
+        slightly weaker because it omits the manager-approval framing.
+
+    deliver_match_offer (payment-collection pivot):
+      - "שוחחנו - X סה"כ אחרי הנחה" (n=4 won, "talked [with manager], X total
+        after discount" — terse, authoritative confirmation)
+      - Followed by installments + last-4-digits prompt (universal close)
+
+    See research-notes/EMPIRICAL-MINING-FINDINGS.md.
+  caveats: |
+    n=7 cluster size is small — phrase shape is well-established but
+    sample frequency low. Larger sample needed for statistical confidence.
+    Lift comes from authority STRATEGY (+23%), not specifically this phrase.

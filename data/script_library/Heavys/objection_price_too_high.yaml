@@ -1,0 +1,166 @@
+script_id: objection_price_too_high
+script_type: objection_handling
+phase: negotiate
+priority: 72
+status: approved
+
+description: |
+  Price-conscious customer says the price is too high or asks for a deeper
+  discount than the standard offer. Empirical Heavys c5 (Price/savings +
+  Analytical) data shows winners HOLD THE LINE with a counter-offer that
+  includes a specific dollar amount + code + time limit, not vague "let me
+  see what I can do."
+
+  Anti-pattern (empirical Δcommit=-3.0 — worst pattern in our c5 mining):
+  generic chit-chat like "How are you? Anything I can help with?" on a
+  price-conscious customer.
+
+applies_when:
+  tenant: Heavys
+  profile:
+    primary_motivator: [Price/savings]
+    # 2026-05-11 — Relaxed from [Analytical, Mixed] to include [Emotional].
+    # CROSS-COHORT TRANSFER: this script's hold-the-line content was mined from
+    # c5 (Price+Analytical, 32 won-deals). The Emotional cohort
+    # (heavys_price_emotional, 20 won-deals) is too thin to have its own
+    # empirical pattern for "customer rejected bundle, demands direct
+    # discount", but bundles ARE empirically validated in this cohort (Δ=+1.0,
+    # n=22 reciprocity). Pattern: bundle works at offer-time; when customer
+    # explicitly rejects bundle, fall back to the Analytical hold-the-line
+    # with specific counter-offer. No empirical guarantee for cross-cohort
+    # transfer — flagged in `cross_cohort_transfer` metadata for audit.
+    decision_logic: [Analytical, Mixed, Emotional]
+  conversation:
+    customer_signals: [price_pushback, target_price_stated, discount_request]
+
+grounding_anchors:
+  - "Hold-the-line with a specific counter-offer (not vague)"
+  - "Concrete code + dollar amount + time limit"
+  - "Acknowledge the gap honestly, don't keep retreating"
+
+arc:
+  - step_id: hold_line_counter_offer
+    turn_intent: "Acknowledge target price gap + counter with a SPECIFIC code/$amount/window"
+    # Empirical: Δcommit=+0.25 (n=5 cluster, all wins) — empirically the
+    # strongest c5 objection-handling pattern. Has explicit refusal +
+    # explicit counter, no vague hedging.
+    must_say_template: |
+      I hear you — I can't get to ${customer_target_price_usd}, but I can
+      do this: use code {discount_code} for ${discount_value_usd} off your
+      order. That makes it ${final_price_usd}, and it's valid for
+      {validity_window}. Free shipping included.
+    must_not_say:
+      # Vague hedging — empirically catastrophic on price-conscious customers
+      - "Let me see what I can do"
+      - "I'll check with my manager"
+      - "Maybe I can find something"
+      - "Hey [name]! How are you? Anything I can help with?"   # Δcommit=-3.0, worst pattern
+      # Generic discount-without-context
+      - "I'm working on getting you a better discount, interested?"   # Δcommit=-1.0
+    expected_customer_response:
+      classifier_anchors:
+        - id: accepts_counter
+          examples:
+            - "OK that works"
+            - "Fine, I'll take it"
+            - "Sure, send the link"
+            - "Done, placing the order"
+        - id: rejects_bundle_wants_flat
+          # 2026-05-11 — Added per discipline: c5 mining has both flat-discount
+          # cluster (Δ=+0.25, n=5, "I can't get to $X, but I can do code Y for $Z
+          # off") AND stacked-offer cluster (Δ=+1.0, n=3). When customer
+          # EXPLICITLY rejects stacking ("not a bundle", "headphones alone",
+          # "straight $X off"), route stays in hold_line (which uses the
+          # flat-pattern template) instead of escalating to stacked_offer.
+          examples:
+            - "I want a straight discount on the headphones alone"
+            - "I'm not interested in a bundled deal with shells I didn't ask for"
+            - "Just $80 off the headphones, not a bundle"
+            - "Don't move the goalposts with a bundle"
+            - "Not the shells, just the headphones at the lower price"
+            - "If you can't do flat $X off, I'll keep waiting"
+        - id: still_negotiating
+          examples:
+            - "Can you go any lower"
+            - "What about a bigger discount"
+            - "Is there a coupon stack"
+        - id: walking
+          examples:
+            - "Forget it, I'm out"
+            - "Too expensive still"
+            - "Not buying"
+      next_step_routing:
+        accepts_counter: closing_coupon_with_urgency
+        rejects_bundle_wants_flat: hold_line_counter_offer   # re-anchor on flat pattern; don't escalate to stack
+        still_negotiating: stacked_offer
+        walking: graceful_walk_price
+
+  - step_id: stacked_offer
+    turn_intent: "Final counter — top-of-stack discount with urgency framing"
+    # Empirical: Δcommit=+1.0 (n=3, all wins) — "double-discount" framing
+    must_say_template: |
+      Best I can do: {top_discount_code} takes ${top_discount_value_usd}
+      off on top of {sitewide_discount_pct}% sitewide. 🔥 Only a few spots
+      left. {checkout_url}
+    must_not_say:
+      - "I'll throw in"
+      - "as a one-time exception"
+    expected_customer_response:
+      classifier_anchors:
+        - id: ready_to_close
+          examples:
+            - "OK send it"
+            - "I'll take it"
+            - "Done"
+        - id: still_walking
+          examples:
+            - "Still too much"
+            - "No thanks"
+            - "Pass"
+      next_step_routing:
+        ready_to_close: closing_coupon_with_urgency
+        still_walking: graceful_walk_price
+
+  - step_id: graceful_walk_price
+    turn_intent: "Customer's target price is below what we can deliver — walk with door open"
+    must_say_template: |
+      Totally understood. The {discount_code} code stays good through
+      {discount_validity_window} if you change your mind. Otherwise no
+      pressure — thanks for considering us 🤘.
+    is_terminal: true
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-11
+  version: 1.1
+  empirical_basis: |
+    Mined from 32 Heavys c5 (Price/savings + Analytical) won + 8 lost.
+    Small cohort but clean signals.
+
+    hold_line_counter_offer: Δcommit=+0.25 (n=5 won-only cluster). Pattern
+    is explicit-refusal + specific-counter. Vague hedging clusters had
+    much lower lift.
+
+    stacked_offer: Δcommit=+1.0 (n=3 cluster) — "double-discount" framing
+    with urgency.
+
+    Anti-pattern: generic chit-chat opener on price-conscious customer
+    scored Δcommit=-3.0 (n=4, all losses). Worst pattern in entire Heavys
+    mining.
+
+    See research-notes/mined_corpus/heavys_c5_price_analytical_full_cohort_lift.json
+  cross_cohort_transfer:
+    target_cohorts:
+      - heavys_price_emotional   # 20 won, 0 lost; no clear lift signal in
+                                  # objection_handling bucket; reciprocity
+                                  # shows bundles win Δ=+1.0 but no
+                                  # bundle-rejection-fallback pattern.
+                                  # Borrowing c5 (Analytical) hold-the-line
+                                  # pattern as best-available transfer.
+    source_cohort: heavys_c5_price_analytical
+    rationale: |
+      heavys_price_emotional cohort lacks empirical objection-handling
+      cluster sufficient for hold-the-line-after-bundle-rejection scenario.
+      Cross-cohort transfer from c5 (same primary motivator, different
+      decision logic) is a best-available substitute. Re-validate when
+      heavys_price_emotional has sufficient deal volume.

@@ -1,0 +1,161 @@
+script_id: objection_durability_data_redirect
+script_type: objection_handling
+phase: negotiate
+priority: 75
+status: approved
+
+description: |
+  Customer asks about durability, build quality, materials, or failure rate.
+  Empirical finding from opp e4bbc864 (2026-05-11 v1 failure): retreating to
+  "I don't have that data" capitulates and loses the customer. The 2026-05-11
+  v2 lesson (your-correct-instinct): vanilla LEFT "won" the same objection by
+  FABRICATING ("we improved durability based on early feedback"). We refuse
+  to fabricate — but we must SURFACE what we actually DO have in CG first,
+  then redirect to warranty/trial as a last resort. The architecture's
+  promise is "better product knowledge than vanilla" — this script enforces
+  that promise.
+
+  Arc: surface_known_specs → acknowledge_remaining_gap_and_redirect →
+  graceful_walk_data_gap.
+
+applies_when:
+  tenant: Heavys
+  conversation:
+    customer_signals: [data_request, durability_concern, return_rate_request, failure_rate_request, material_question, build_question]
+  exclude_when:
+    consecutive_data_evasion: 1
+
+grounding_anchors:
+  - "Lead with CG-retrieved product facts (driver count, patented arrangement, HellBlocker, ergonomic design)"
+  - "Surface what we DO know before admitting any gap"
+  - "Redirect to warranty + trial only AFTER specific-facts surfaced"
+
+arc:
+  - step_id: surface_known_specs
+    turn_intent: "Lead with the specific product knowledge we DO have from CG before acknowledging any gap"
+    must_say_template: |
+      Let me give you what I have on the build: the H1H uses an 8-driver
+      patented speaker arrangement, HellBlocker active noise isolation, and
+      an ergonomic headband design optimized for long sessions. For the
+      exact frame and hinge material composition, I'd rather not invent a
+      spec — but the 12-month warranty covers exactly those failure modes,
+      and the 14-day trial means you test the actual build in your own
+      hands before you're locked in. Want me to send the trial-friendly
+      checkout link?
+    # 2026-05-11 — required_phrases force the leading-specs sentence to appear.
+    # Without this the supervisor LLM partial-follows (drops the specs) and
+    # the customer perceives the response as warranty-only deflection.
+    required_phrases:
+      - "8-driver"
+      - "HellBlocker"
+      - "ergonomic"
+    must_not_say:
+      # These cause immediate trust collapse — empirically observed in opp e4bbc864
+      - "I don't have access to that data"
+      - "I don't have specific data"
+      - "I don't have a specific failure rate"
+      - "I unfortunately don't have"
+      - "You're right to call that out"          # empathy without redirect
+      - "I understand your concern"               # same
+      - "I get why that's a deal-breaker"        # premature capitulation
+      # These are fabrications vanilla LEFT made in the same scenario — DO NOT
+      - "we improved the durability"
+      - "based on early feedback"                # invented backstory
+      - "the updated version"                    # implies version history we don't track
+      - "all units shipping now"                 # makes shipping claim we don't verify
+    expected_customer_response:
+      classifier_anchors:
+        - id: accepts_proxy
+          examples:
+            - "Ok the trial is enough"
+            - "That works, send the link"
+            - "Fair enough, let's try it"
+            - "Yeah 14 days is enough to know"
+        - id: still_pushing
+          examples:
+            - "I still need the data"
+            - "That's not enough, give me the failure rate"
+            - "What's the actual material though"
+            - "Is the frame metal or plastic"
+        - id: new_objection
+          examples:
+            - "What about price"
+            - "How does it compare to brand X"
+            - "What about shipping time"
+      next_step_routing:
+        accepts_proxy: closing_coupon_with_urgency
+        still_pushing: acknowledge_remaining_gap
+        new_objection: closing_coupon_with_urgency   # if they've moved past durability, route to close pivot
+
+  - step_id: acknowledge_remaining_gap
+    turn_intent: "Honest one-line gap acknowledgment + redirect to trial or walk"
+    # Fired only after surface_known_specs has already cited what we DO have.
+    # 2026-05-11 v2.1 — was terminal=true; that caused fresh-reselect into
+    # cold_open_quality_compare mid-conversation (commit was already 3+).
+    # Now non-terminal; either close or graceful-walk explicitly.
+    must_say_template: |
+      Honest answer: the specific composition (steel vs aluminum vs
+      reinforced polymer) isn't something we publish — I won't invent it.
+      What I can offer is the 14-day trial as your hands-on verification.
+      If the build feels off in that window, full refund, no questions.
+    must_not_say:
+      - "we improved"               # no fabrication
+      - "based on feedback"
+      - "updated version"
+    expected_customer_response:
+      classifier_anchors:
+        - id: accepts_trial
+          examples:
+            - "Ok the trial is fair"
+            - "That works, let's try it"
+            - "Send the link"
+        - id: still_walking
+          examples:
+            - "Not enough"
+            - "I need more proof"
+            - "I'll pass"
+            - "still doesn't sit right"
+      next_step_routing:
+        accepts_trial: closing_coupon_with_urgency
+        still_walking: graceful_walk_data_gap
+
+  - step_id: graceful_walk_data_gap
+    turn_intent: "Customer's information requirement is unmet — preserve door for re-engagement"
+    must_say_template: |
+      Totally understand. The {discount_code} stays open through
+      {discount_validity_window} if anything changes — independent reviews
+      land, or you decide the trial is enough proof. No follow-up pressure
+      from my side.
+    must_not_say:
+      - "let me throw in"
+      - "one more thing"
+      - "as a one-time exception"
+    is_terminal: true
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-11
+  version: 2.0
+  empirical_basis: |
+    v1 failure mode (opp e4bbc864, supervised t18-t24, 2026-05-11): the
+    agent retreated to "I unfortunately don't have specific material details"
+    THREE turns in a row, capitulated, customer walked.
+
+    v2 fix: lead with the specific product knowledge we DO have from CG
+    (driver count, patented arrangement, HellBlocker, ergonomic design),
+    then redirect to warranty/trial only AFTER those facts are on the
+    table. Empirically, real winning Heavys agents (per 233-deal c3 mining)
+    cite specific tech first; the warranty/trial redirect is a CLOSE move,
+    not an opening move.
+
+    Critical anti-fabrication: vanilla LEFT on the same opp won the
+    same objection by making up "we improved the durability based on
+    early feedback" — claims that are NOT in CG. The supervised
+    discipline layer's job is to win HONESTLY by surfacing what we have,
+    not to invent missing data.
+  caveats: |
+    Real CG-content fix: ingest engineering specs (frame material,
+    headband construction, hinge type) into the Heavys workspace.
+    Until that lands, this script is the best we can do without
+    fabrication. Tracked in TENANT-ONBOARDING-RUNBOOK.md §0b depth-of-
+    content audit.

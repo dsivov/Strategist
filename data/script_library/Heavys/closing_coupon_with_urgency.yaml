@@ -1,0 +1,117 @@
+script_id: closing_coupon_with_urgency
+script_type: closing
+phase: close_attempt
+priority: 80
+status: approved
+
+description: |
+  Customer has signaled readiness (committed to a use case, said "yes send it",
+  acknowledged the engineering claim). Time to deliver the discount code WITH
+  context, urgency, and a direct link.
+
+  Empirical Heavys c3 winning patterns at this stage are short, energetic,
+  with a specific code + dollar amount + tight time window + direct link.
+
+  Anti-pattern (empirically -0.75 lift, n=7): delivering a discount code with
+  NO context — "Rock On! Use code vip27sln for 27% off the next 24 hours" —
+  the customer perceives this as boilerplate and disengages.
+
+applies_when:
+  tenant: Heavys
+  conversation:
+    commitment_level_min: 3
+    customer_signals: [stated_use_case, accepts_proxy, ready_for_coupon]
+
+grounding_anchors:
+  - "Deliver code WITH explicit use-case anchor"
+  - "Time-limited urgency, specific dollar amount"
+  - "Direct purchase link"
+
+arc:
+  - step_id: deliver_coupon
+    turn_intent: "Discount code + dollar amount + urgency + link + acknowledge use case"
+    # Empirical: this is the Δ=+1.0 pattern (n=4, won 4/4) — discount delivery
+    # WITH context. Compare to the Δ=-0.75 anti-pattern (no context) below.
+    must_say_template: |
+      Awesome! Use code {discount_code} for ${discount_value_usd} off
+      ({discount_validity_window}). Shop here: {checkout_url}
+      Built for {customer_use_case} — what do you say? 🤘
+    must_not_say:
+      - "27% off the next 24 hours"   # placeholder-style code delivery without context
+      - "Here's a discount"
+      - "Use this discount code at checkout"
+      # Empirically these were in the -0.75 cluster (n=7 won, but lost on per-turn lift)
+    expected_customer_response:
+      classifier_anchors:
+        - id: purchase_intent
+          examples:
+            - "Ok placing the order"
+            - "Buying now"
+            - "Just used the code, thanks"
+            - "On it"
+        - id: needs_one_more_thing
+          examples:
+            - "Wait, one more question"
+            - "Can you confirm X"
+            - "Quick clarification"
+        - id: stalling
+          examples:
+            - "Let me think about it"
+            - "I'll come back tomorrow"
+            - "Not today"
+      next_step_routing:
+        purchase_intent: confirm_close
+        needs_one_more_thing: answer_and_re_offer
+        stalling: soft_re_engage
+
+  - step_id: confirm_close
+    turn_intent: "Confirm + transition to post-purchase support tone"
+    must_say_template: |
+      Rock on, {opp.customer_name}! 🤘 You'll get the order confirmation by
+      email shortly. If anything feels off in the 14-day window, just reply
+      here and we'll take care of it. Enjoy the music.
+    is_terminal: true
+
+  - step_id: answer_and_re_offer
+    turn_intent: "One concise answer + immediate re-offer of the code"
+    must_say_template: |
+      Sure — {brief_answer_one_line}. The code {discount_code} is still good
+      ({discount_validity_window}). {checkout_url}
+    expected_customer_response:
+      classifier_anchors:
+        - id: ready_now
+          examples:
+            - "Ok let's do it"
+            - "Done thanks"
+            - "Placing the order"
+        - id: more_questions
+          examples:
+            - "Actually one more thing"
+            - "Can you also tell me"
+      next_step_routing:
+        ready_now: confirm_close
+        more_questions: answer_and_re_offer
+
+  - step_id: soft_re_engage
+    turn_intent: "Customer stalling — preserve the door without pressure"
+    must_say_template: |
+      No worries — the {discount_code} code is good for {discount_validity_window}.
+      If you decide to grab them within that window, here's the link:
+      {checkout_url}. Otherwise, no pressure from my side.
+    is_terminal: true
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-11
+  version: 1.0
+  empirical_basis: |
+    Mined from 233 Heavys c3 won-deal conversations. Winning patterns:
+      - Reciprocity "code + $X off + valid for {N hours} + link + 'what do you say?'"
+        (n=4, Δcommit=+1.00)
+      - Reciprocity "code + $X off + use-case anchor + link"
+        (n=12, Δcommit=+0.71)
+    Anti-pattern (in `must_not_say`):
+      - "Rock On! 27% off code, valid 24 hours, link" — discount delivery
+        without context (n=7, Δcommit=-0.75). The bare code-delivery without
+        connecting to the customer's stated need is the empirically worst
+        reciprocity move.

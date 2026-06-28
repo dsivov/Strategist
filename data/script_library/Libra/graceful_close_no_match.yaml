@@ -1,0 +1,59 @@
+script_id: graceful_close_no_match
+script_type: closing
+phase: graceful_close
+priority: 55
+status: approved
+
+description: |
+  When even the manager-match path doesn't unlock a close — customer
+  refuses, signals frustration, or won't commit conditionally — the
+  agent walks gracefully without further price moves. Empirically, the
+  winning Libra walk-away phrase is short and re-engagement-preserving:
+  "That's totally fine. Just come back to me before you close elsewhere,
+  so we ensure you get the best value."
+
+applies_when:
+  tenant: Libra
+
+arc:
+  - step_id: walk_with_door_open
+    turn_intent: "Graceful walk; preserve future re-engagement window"
+    must_say_template: |
+      That's totally fine. Just come back to me before you close elsewhere,
+      so we make sure you get the best value. The renewal stays open at
+      {anchors.current_quoted_price_nis} NIS until {policy_end_date} —
+      no follow-up calls from my side.
+    must_not_say:
+      - "discount"
+      - "let me try once more"
+      - "special offer just for today"
+      - "I might be able to do better"
+    is_terminal: true
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-10
+  version: 2.0
+  empirical_basis: |
+    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    research_message_strategy_flash, 2026-05-10).
+
+    walk_with_door_open template:
+      - "זה לגמרי בסדר. רק תחזור אליי לפני שאתה סוגר במקום אחר, כדי שנוודא
+        שאתה מקבל את התמורה הטובה ביותר." (n=4, won-side commitment cluster)
+      - Companion variant: "אין בעיה, קח את הזמן שלך. תודיע לי כשתהיה מוכן
+        להמשיך או אם יש לך שאלות" (n=14, won-side re_engagement)
+
+    Lost-side equivalent: agents who continued pushing past this point
+    (further price drops, renewed urgency framing) showed lower win rate
+    in subsequent re-engagement turns. Walk-away preserves authority and
+    re-engagement potential.
+
+    See research-notes/EMPIRICAL-MINING-FINDINGS.md.
+  caveats: |
+    Cluster size n=4 is small — phrase shape is winner-coded but sample
+    frequency low. The companion variant (n=14) is more robust and could
+    be merged in for larger empirical footprint.
+    Re-engagement-rate impact (the actual mechanism this phrase is
+    supposed to drive) not yet measured — would need 30-90 day follow-up
+    cohort tracking.

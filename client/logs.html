@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trace Logs · Luna Sales Strategist POC</title>
+  <link rel="stylesheet" href="/static/style.css?v=20260506-1" />
+</head>
+<body class="logs-page">
+  <header>
+    <div class="brand">
+      <span class="brand-mark">L</span>
+      <div>
+        <h1>Trace Logs</h1>
+        <p class="tagline">End-to-end LLM, Context Graph and gate events per session — newest first</p>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="tracesRefreshBtn" class="ghost">Refresh</button>
+      <a class="ghost" href="/" title="Back to test runner">← Back to runner</a>
+    </div>
+  </header>
+
+  <main class="logs-main">
+    <!-- LEFT PANE: traces list -->
+    <section class="logs-list-pane">
+      <div class="traces-list-toolbar">
+        <span id="tracesListMeta" class="muted-sm"></span>
+      </div>
+      <div id="tracesList" class="traces-list">Loading…</div>
+    </section>
+
+    <!-- CENTER COLUMN: top chart + bottom detail -->
+    <section class="logs-center">
+      <!-- TOP CENTER: history chart -->
+      <div class="logs-chart-pane">
+        <div class="chart-toolbar">
+          <span class="chart-title">Historical metric trends across all sessions</span>
+          <div class="chart-controls">
+            <label><input type="checkbox" id="chartShowLPeak" checked /> L peak</label>
+            <label><input type="checkbox" id="chartShowRPeak" checked /> R peak</label>
+            <label><input type="checkbox" id="chartShowDelta" checked /> Δ (R−L)</label>
+            <label><input type="checkbox" id="chartShowLength" /> R msg median (÷50)</label>
+            <label><input type="checkbox" id="chartShowMilestones" checked /> Milestones</label>
+          </div>
+        </div>
+        <div class="chart-body">
+          <canvas id="historyChart"></canvas>
+        </div>
+        <div class="chart-legend muted-sm" id="chartLegend"></div>
+      </div>
+
+      <!-- BOTTOM CENTER: trace detail -->
+      <section class="logs-detail-pane">
+        <div id="tracesDetail" class="traces-detail">
+          <div class="traces-empty">Pick a session on the left to view its full trace.</div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/static/chart.umd.min.js"></script>
+  <script src="/static/logs.js?v=20260506-1"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+script_id: cart_abandon_recovery
+script_type: follow_up
+phase: re_engage
+priority: 70
+status: approved
+
+description: |
+  Re-engage a customer who added to cart and walked away. Empirical Heavys c0
+  data (n=1,325 won-side, the largest Heavys cohort) shows substantive
+  re-engagement patterns work; generic "just checking in" patterns LOSE.
+
+  Top winning pattern: short check-in + EXPIRED-CODE-REPLACEMENT framing
+  (a specific reason the customer should re-engage NOW). Empirical
+  Δcommit=+1.50 — the strongest single-cluster lift in our entire Heavys
+  mining.
+
+applies_when:
+  tenant: Heavys
+  conversation:
+    customer_signals: [cart_abandoned, re_engagement, pace_request]
+  exclude_when:
+    customer_already_committed: true
+
+grounding_anchors:
+  - "Substantive new info (expired code, new bundle, better offer)"
+  - "Specific code + dollar amount, not vague 'I might be able to'"
+  - "Question that re-opens the conversation"
+
+arc:
+  - step_id: substantive_recheck
+    turn_intent: "Re-engage with a specific reason — expired-code-replacement or new bundle"
+    # Empirical: Δcommit=+1.50 (n=5 cluster, all wins) — the strongest
+    # single-cluster lift signal across the Heavys mining
+    must_say_template: |
+      Hey {opp.customer_name} 🤘 Quick check-in — your old code expired,
+      but {new_discount_code} takes ${new_discount_value_usd} off the
+      {product_name}. (U.S. pricing shown; other regions updated at
+      checkout.)
+    must_not_say:
+      # The empirically WORST re-engagement openers
+      - "Just checking in"                                          # Δcommit=-0.24
+      - "If you haven't placed your order yet, I'm working on getting you a better discount, interested?"   # Δcommit=-0.33 to -1.0
+      - "Hey [name], (Sarah from Heavys) Noticed you were looking at our headphones! I might be able to get you an exclusive discount"   # generic cold opener
+      - "Hey [name]! How are you? Anything I can help with?"        # Δcommit=-3.0 (worst pattern in c5)
+    expected_customer_response:
+      classifier_anchors:
+        - id: ready_to_close
+          examples:
+            - "Ok placing the order"
+            - "Sure send the link"
+            - "Buying now"
+        - id: needs_info
+          examples:
+            - "What's actually in the bundle"
+            - "Tell me about that product"
+            - "How does it compare to X"
+        - id: still_hesitant
+          examples:
+            - "Let me think about it"
+            - "I'll come back later"
+            - "Not sure yet"
+        - id: not_interested
+          examples:
+            - "I bought elsewhere"
+            - "Not buying"
+            - "Stop messaging me"
+      next_step_routing:
+        ready_to_close: closing_coupon_with_urgency
+        needs_info: surface_value_anchor
+        still_hesitant: short_graceful_close
+        not_interested: short_graceful_close
+
+  - step_id: surface_value_anchor
+    turn_intent: "Anchor on the customer's likely use case + engineering claim"
+    # Empirical: the n=125 authority cluster at Δcommit=+0.74 — "Heavys are
+    # engineered for metal, 8 drivers, complex tracks stay clean"
+    must_say_template: |
+      You heard right — Heavys are engineered for {customer_use_case}.
+      With 8 drivers, complex tracks stay crystal clear and don't get
+      muddy. Should I generate that coupon for you?
+    must_not_say:
+      - "premium quality materials"
+      - "long-lasting durability"
+    expected_customer_response:
+      classifier_anchors:
+        - id: ready_for_coupon
+          examples:
+            - "Yes send it"
+            - "Sure"
+            - "Generate it please"
+        - id: still_evaluating
+          examples:
+            - "Hmm"
+            - "Tell me more"
+      next_step_routing:
+        ready_for_coupon: closing_coupon_with_urgency
+        still_evaluating: short_graceful_close
+
+  - step_id: short_graceful_close
+    turn_intent: "Customer not ready; preserve door without pressure"
+    must_say_template: |
+      No worries — the {discount_code} code stays good through
+      {discount_validity_window}. If anything changes, here's the link:
+      {checkout_url}. No follow-up pressure from my side.
+    is_terminal: true
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-11
+  version: 1.0
+  empirical_basis: |
+    Mined from 1,325 Heavys c0 (Quality/features + Neutral) won-deal
+    re-engagement turns. Top cluster (n=5, Δcommit=+1.50): "expired-code
+    replacement" pattern. Anti-patterns (n=29 Δ=-0.44, n=12 Δ=-0.33):
+    generic "just checking in" or vague "I'm working on a better discount"
+    openers. Empirical lift gap between substantive and generic
+    re-engagement: ~+1.9 commitment levels per turn.
+    See research-notes/mined_corpus/heavys_c0_quality_neutral_full_cohort_lift.json

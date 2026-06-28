@@ -1,0 +1,357 @@
+{
+  "tenant": "Heavys",
+  "opp_type": "abandoned_cart",
+  "agent_actions": [
+    "information",
+    "direct_ask",
+    "re_engagement",
+    "reciprocity",
+    "objection_handling",
+    "scarcity",
+    "logistics",
+    "authority",
+    "commitment",
+    "empathy",
+    "social_proof",
+    "finalize_close",
+    "farewell"
+  ],
+  "user_states": [
+    "engaged",
+    "price_objection",
+    "timing_objection",
+    "trust_objection",
+    "competitor_objection",
+    "need_objection",
+    "authority_objection",
+    "near_close",
+    "closed_won",
+    "disengaging",
+    "lost"
+  ],
+  "edges": [
+    {
+      "src": "reciprocity",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "information",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "empathy",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "authority",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "commitment",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "re_engagement",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "scarcity",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "social_proof",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "objection_handling",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "direct_ask",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "logistics",
+      "dst": "engaged",
+      "dir": "bi"
+    },
+    {
+      "src": "engaged",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "reciprocity",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "logistics",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "commitment",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "scarcity",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "direct_ask",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "objection_handling",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "near_close",
+      "dst": "finalize_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "near_close",
+      "dst": "engaged",
+      "dir": "back"
+    },
+    {
+      "src": "finalize_close",
+      "dst": "closed_won",
+      "dir": "fwd"
+    },
+    {
+      "src": "closed_won",
+      "dst": "farewell",
+      "dir": "fwd"
+    },
+    {
+      "src": "reciprocity",
+      "dst": "price_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "empathy",
+      "dst": "price_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "price_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "reciprocity",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "empathy",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "authority",
+      "dir": "fwd"
+    },
+    {
+      "src": "objection_handling",
+      "dst": "price_objection",
+      "dir": "back"
+    },
+    {
+      "src": "empathy",
+      "dst": "timing_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "reciprocity",
+      "dst": "timing_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "timing_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "timing_objection",
+      "dst": "logistics",
+      "dir": "fwd"
+    },
+    {
+      "src": "timing_objection",
+      "dst": "reciprocity",
+      "dir": "fwd"
+    },
+    {
+      "src": "timing_objection",
+      "dst": "empathy",
+      "dir": "fwd"
+    },
+    {
+      "src": "objection_handling",
+      "dst": "trust_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "trust_objection",
+      "dst": "authority",
+      "dir": "fwd"
+    },
+    {
+      "src": "trust_objection",
+      "dst": "social_proof",
+      "dir": "fwd"
+    },
+    {
+      "src": "trust_objection",
+      "dst": "reciprocity",
+      "dir": "fwd"
+    },
+    {
+      "src": "authority",
+      "dst": "competitor_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "competitor_objection",
+      "dst": "social_proof",
+      "dir": "fwd"
+    },
+    {
+      "src": "competitor_objection",
+      "dst": "reciprocity",
+      "dir": "fwd"
+    },
+    {
+      "src": "competitor_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "empathy",
+      "dst": "need_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "need_objection",
+      "dst": "empathy",
+      "dir": "fwd"
+    },
+    {
+      "src": "need_objection",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "need_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "authority_objection",
+      "dst": "commitment",
+      "dir": "fwd"
+    },
+    {
+      "src": "authority_objection",
+      "dst": "re_engagement",
+      "dir": "fwd"
+    },
+    {
+      "src": "authority_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "disengaging",
+      "dir": "fwd"
+    },
+    {
+      "src": "commitment",
+      "dst": "disengaging",
+      "dir": "fwd"
+    },
+    {
+      "src": "reciprocity",
+      "dst": "disengaging",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "re_engagement",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "empathy",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "scarcity",
+      "dir": "fwd"
+    },
+    {
+      "src": "re_engagement",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "lost",
+      "dir": "fwd"
+    },
+    {
+      "src": "lost",
+      "dst": "farewell",
+      "dir": "fwd"
+    }
+  ],
+  "meta": {
+    "builder": "tcot",
+    "model": "claude-sonnet-4-6",
+    "built_at": "2026-05-18T11:47:09Z",
+    "n_won_opps_evidence": 250,
+    "raw_edges_proposed": 63,
+    "saved_at": "2026-05-18T11:47:09Z"
+  }
+}

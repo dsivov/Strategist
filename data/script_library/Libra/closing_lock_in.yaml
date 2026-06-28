@@ -1,0 +1,104 @@
+script_id: closing_lock_in
+script_type: closing
+phase: close_attempt
+priority: 80
+status: approved
+
+description: |
+  Customer is at high commitment (4-5). Confirm agreed numbers and move
+  to payment-collection in one turn. Empirically, winning Libra closes
+  pivot directly to payment terms (installments + last-4-digits of card)
+  rather than asking for a separate "shall I send for signature" step.
+
+applies_when:
+  tenant: Libra
+  conversation:
+    commitment_level_min: 4
+    commitment_level_max: 5
+
+arc:
+  - step_id: confirm_terms
+    turn_intent: "Confirm agreed price + initiate payment collection"
+    must_say_template: |
+      Great, agreed on comprehensive at {anchors.current_quoted_price_nis} NIS.
+      How many installments would you like? Up to 10 with no interest.
+      And the last 4 digits of your credit card for verification?
+    must_not_say:
+      - "or we could lower further"
+      - "I might be able to do better"
+      - "discount"
+    expected_customer_response:
+      classifier_anchors:
+        - id: agreed
+          examples:
+            - "yes send it"
+            - "let's do it"
+            - "ok proceed"
+            - "10 installments, last 4 are 1234"
+            - "sounds good let's close"
+        - id: frustration
+          examples:
+            - "stop pushing me to sign"
+            - "I'm not ready, leave me alone"
+            - "you keep pressuring me"
+            - "I said I need to think"
+            - "back off"
+        - id: last_objection
+          examples:
+            - "wait, can we revisit the price"
+            - "actually I'm not sure"
+            - "one more question first"
+      next_step_routing:
+        agreed: send_signature
+        last_objection: handle_final_objection
+        frustration: graceful_close_no_match
+
+  - step_id: send_signature
+    turn_intent: "Confirm payment terms received; deliver policy"
+    must_say_template: |
+      Continuing with the renewal split into the installments you requested,
+      no interest. The policy will arrive by email shortly. Password to open
+      the files is your mobile number :)
+    must_not_say:
+      - "discount"
+      - "let me lower further"
+    is_terminal: true
+
+  - step_id: handle_final_objection
+    turn_intent: "Brief acknowledgment + soft close (don't re-open negotiation)"
+    must_say_template: |
+      Of course — what's the question? (We've already landed on
+      {anchors.current_quoted_price_nis} NIS comprehensive, that's our
+      best for renewal.)
+    must_not_say:
+      - "or we could lower further"
+      - "let me check with my manager"   # already past escalation stage
+      - "discount"
+    is_terminal: true
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-10
+  version: 2.0
+  empirical_basis: |
+    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    research_message_strategy_flash, 2026-05-10). direct_ask strategy.
+
+    confirm_terms (payment-collection pivot):
+      - "מעולה, לכמה תשלומים לחלק? אפשר עד 10 ללא ריבית. ומה ה-4 ספרות
+        האחרונות של כרטיס האשראי?" (n=126 won, n=168 lost)
+      - Same pattern in both buckets — appears at the close stage when
+        customer signals agreement. Lost-side has slightly higher count
+        which suggests the close-line itself isn't the win/lose factor;
+        prior negotiation arc is.
+
+    send_signature (policy delivery):
+      - "נמשיך עם החידוש ונפצל אותו למספר התשלומים שביקשת ללא ריבית.
+        הפוליסה תגיע במייל. הסיסמא לפתוח את הקבצים זה הטלפון הנייד שלך :)"
+        (n=48 won, n=47 lost — universal post-close confirmation)
+
+    See research-notes/EMPIRICAL-MINING-FINDINGS.md.
+  caveats: |
+    The close-stage phrases appear in both won AND lost deals — lift comes
+    from upstream negotiation arc, not from this script's templates. Treat
+    these as the universal Libra close pattern, not a winning differentiator.

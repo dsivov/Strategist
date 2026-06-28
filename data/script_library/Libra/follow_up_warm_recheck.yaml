@@ -1,0 +1,84 @@
+script_id: follow_up_warm_recheck
+script_type: follow_up
+phase: re_engage
+priority: 50
+status: approved
+
+description: |
+  Customer was warm in prior interaction, now returning. Empirically the
+  dominant winning re-engagement turn is a single-line check-in: "What's
+  up {name}, any news? How can we move forward and close this?" — short,
+  forward-leaning, single CTA.
+
+applies_when:
+  tenant: Libra
+  conversation:
+    commitment_level_min: 1
+    commitment_level_max: 3
+    customer_signals: [pace_request, re_engagement, reconsidering]
+
+arc:
+  - step_id: warm_recheck
+    turn_intent: "Short re-engagement: name + status + forward-lean CTA"
+    must_say_template: |
+      What's up {opp.customer_name}, any news about the insurance?
+      How can we move forward and close this?
+    must_not_say:
+      - "let me lower the price"
+      - "special deal just for you"
+      - "I might be able to do better"
+    expected_customer_response:
+      classifier_anchors:
+        - id: frustration
+          examples:
+            - "we already went through this"
+            - "you said the same thing last time"
+            - "I'm not having this conversation again"
+            - "stop circling, give me your best price"
+        - id: ready_to_close
+          examples:
+            - "ok let's renew"
+            - "send me the policy"
+            - "I'm ready to proceed"
+            - "let's do it"
+        - id: new_objection
+          examples:
+            - "I have a competing offer now"
+            - "I checked elsewhere"
+            - "the price is too high"
+        - id: still_thinking
+          examples:
+            - "give me a few more days"
+            - "I haven't decided"
+            - "still considering"
+      next_step_routing:
+        ready_to_close: closing_lock_in
+        new_objection: objection_competitor_undercut
+        still_thinking: schedule_specific_followup
+        frustration: r33_manager_escalation
+
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-10
+  version: 2.0
+  empirical_basis: |
+    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    research_message_strategy_flash, 2026-05-10).
+    re_engagement strategy shows +14% won/lost lift.
+
+    warm_recheck template:
+      - "מה קורה {name}, יש חדש עם הביטוח? איך אנחנו יכולים להתקדם ולסגור את זה?"
+        (n=121 won-side cluster — largest in re_engagement bucket)
+      - Note: equivalent lost-side cluster also large (n=123). Lift in
+        re_engagement strategy is in the *frequency of attempting it*,
+        not in the phrase variant. Persistent follow-up wins; the phrase
+        is the universal Libra re-engagement turn.
+
+    Variant for shorter taps (not currently in arc):
+      - "Hi {name} 🌻 don't want it to slip — should I renew for you?"
+        (n=40 won, 46 lost — also dominant)
+
+    See research-notes/EMPIRICAL-MINING-FINDINGS.md.
+  caveats: |
+    Sample-level frequency.
+    Lift attributable to re_engagement strategy persistence, not phrase variant.

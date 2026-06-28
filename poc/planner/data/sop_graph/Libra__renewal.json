@@ -1,0 +1,437 @@
+{
+  "tenant": "Libra",
+  "opp_type": "renewal",
+  "agent_actions": [
+    "information",
+    "direct_ask",
+    "re_engagement",
+    "reciprocity",
+    "objection_handling",
+    "scarcity",
+    "logistics",
+    "authority",
+    "commitment",
+    "empathy",
+    "social_proof",
+    "finalize_close",
+    "farewell"
+  ],
+  "user_states": [
+    "engaged",
+    "price_objection",
+    "timing_objection",
+    "trust_objection",
+    "competitor_objection",
+    "need_objection",
+    "authority_objection",
+    "near_close",
+    "closed_won",
+    "disengaging",
+    "lost"
+  ],
+  "edges": [
+    {
+      "src": "engaged",
+      "dst": "information",
+      "dir": "bi"
+    },
+    {
+      "src": "engaged",
+      "dst": "direct_ask",
+      "dir": "fwd"
+    },
+    {
+      "src": "engaged",
+      "dst": "re_engagement",
+      "dir": "bi"
+    },
+    {
+      "src": "engaged",
+      "dst": "reciprocity",
+      "dir": "bi"
+    },
+    {
+      "src": "engaged",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "engaged",
+      "dst": "empathy",
+      "dir": "fwd"
+    },
+    {
+      "src": "engaged",
+      "dst": "scarcity",
+      "dir": "fwd"
+    },
+    {
+      "src": "engaged",
+      "dst": "authority",
+      "dir": "fwd"
+    },
+    {
+      "src": "engaged",
+      "dst": "commitment",
+      "dir": "fwd"
+    },
+    {
+      "src": "engaged",
+      "dst": "logistics",
+      "dir": "fwd"
+    },
+    {
+      "src": "engaged",
+      "dst": "social_proof",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "price_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "competitor_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "timing_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "trust_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "information",
+      "dst": "disengaging",
+      "dir": "fwd"
+    },
+    {
+      "src": "direct_ask",
+      "dst": "closed_won",
+      "dir": "fwd"
+    },
+    {
+      "src": "direct_ask",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "direct_ask",
+      "dst": "price_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "direct_ask",
+      "dst": "engaged",
+      "dir": "back"
+    },
+    {
+      "src": "reciprocity",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "reciprocity",
+      "dst": "price_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "reciprocity",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "re_engagement",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "re_engagement",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "re_engagement",
+      "dst": "disengaging",
+      "dir": "fwd"
+    },
+    {
+      "src": "objection_handling",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "objection_handling",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "objection_handling",
+      "dst": "disengaging",
+      "dir": "fwd"
+    },
+    {
+      "src": "empathy",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "empathy",
+      "dst": "price_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "empathy",
+      "dst": "trust_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "authority",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "scarcity",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "commitment",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "logistics",
+      "dst": "closed_won",
+      "dir": "fwd"
+    },
+    {
+      "src": "logistics",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "social_proof",
+      "dst": "engaged",
+      "dir": "fwd"
+    },
+    {
+      "src": "social_proof",
+      "dst": "near_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "reciprocity",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "re_engagement",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "empathy",
+      "dir": "fwd"
+    },
+    {
+      "src": "price_objection",
+      "dst": "authority",
+      "dir": "fwd"
+    },
+    {
+      "src": "timing_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "timing_objection",
+      "dst": "re_engagement",
+      "dir": "fwd"
+    },
+    {
+      "src": "timing_objection",
+      "dst": "scarcity",
+      "dir": "fwd"
+    },
+    {
+      "src": "trust_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "trust_objection",
+      "dst": "authority",
+      "dir": "fwd"
+    },
+    {
+      "src": "trust_objection",
+      "dst": "social_proof",
+      "dir": "fwd"
+    },
+    {
+      "src": "trust_objection",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "competitor_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "competitor_objection",
+      "dst": "reciprocity",
+      "dir": "fwd"
+    },
+    {
+      "src": "competitor_objection",
+      "dst": "re_engagement",
+      "dir": "fwd"
+    },
+    {
+      "src": "competitor_objection",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "need_objection",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "need_objection",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "need_objection",
+      "dst": "empathy",
+      "dir": "fwd"
+    },
+    {
+      "src": "authority_objection",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "authority_objection",
+      "dst": "empathy",
+      "dir": "fwd"
+    },
+    {
+      "src": "authority_objection",
+      "dst": "re_engagement",
+      "dir": "fwd"
+    },
+    {
+      "src": "near_close",
+      "dst": "finalize_close",
+      "dir": "fwd"
+    },
+    {
+      "src": "near_close",
+      "dst": "direct_ask",
+      "dir": "fwd"
+    },
+    {
+      "src": "near_close",
+      "dst": "logistics",
+      "dir": "fwd"
+    },
+    {
+      "src": "near_close",
+      "dst": "objection_handling",
+      "dir": "fwd"
+    },
+    {
+      "src": "near_close",
+      "dst": "re_engagement",
+      "dir": "back"
+    },
+    {
+      "src": "near_close",
+      "dst": "price_objection",
+      "dir": "fwd"
+    },
+    {
+      "src": "finalize_close",
+      "dst": "closed_won",
+      "dir": "fwd"
+    },
+    {
+      "src": "finalize_close",
+      "dst": "near_close",
+      "dir": "back"
+    },
+    {
+      "src": "closed_won",
+      "dst": "logistics",
+      "dir": "fwd"
+    },
+    {
+      "src": "closed_won",
+      "dst": "farewell",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "re_engagement",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "information",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "reciprocity",
+      "dir": "fwd"
+    },
+    {
+      "src": "disengaging",
+      "dst": "lost",
+      "dir": "fwd"
+    },
+    {
+      "src": "lost",
+      "dst": "farewell",
+      "dir": "fwd"
+    }
+  ],
+  "meta": {
+    "builder": "tcot",
+    "model": "claude-sonnet-4-6",
+    "built_at": "2026-05-18T07:43:42Z",
+    "n_won_opps_evidence": 250,
+    "raw_edges_proposed": 79,
+    "saved_at": "2026-05-18T07:43:42Z"
+  }
+}

@@ -1,0 +1,184 @@
+script_id: cold_open_quality_compare
+script_type: cold_open
+phase: greet
+priority: 60
+status: approved
+description: 'Quality/features cohort opener — when a customer first engages, the
+  winning
+
+  Heavys c3 pattern is to OPEN WITH DISCOVERY before product claims or discounts.
+
+  Empirical finding: real winning agents NEVER drop the discount code in the
+
+  first agent turn. They first ask what the customer is using now + what''s missing.
+
+  '
+applies_when:
+  tenant: Heavys
+  profile:
+    primary_motivator:
+    - Quality/features
+    decision_logic:
+    - Analytical
+    - Mixed
+    - '-'
+  conversation:
+    commitment_level_min: 0
+    commitment_level_max: 2
+grounding_anchors:
+- Withhold discount until needs discovery
+- Acknowledge + ask what they're currently using
+- Probe missing-need before product claim
+arc:
+- step_id: discovery_opener
+  turn_intent: Engage on customer's current setup + missing-need BEFORE any discount
+    or product claim
+  must_say_template: 'Hey {opp.customer_name}! Before I send over any discount code,
+    what
+
+    headphones are you currently using, and what do you feel is missing
+
+    in the sound? 🎧
+
+    '
+  must_not_say:
+  - Use code
+  - Here's a discount
+  - I might be able to get you an exclusive discount
+  - interested?
+  expected_customer_response:
+    classifier_anchors:
+    - id: shared_current_setup
+      examples:
+      - I have Sony WH-1000XM5
+      - I'm using AirPods Pro right now
+      - I have Bose QC, the sound isn't punchy enough
+      - Beats Studio but the bass is muddy
+    - id: asked_about_product
+      examples:
+      - Tell me about your headphones
+      - What's special about Heavys
+      - What model is best for me
+    - id: price_first
+      examples:
+      - Just give me your best price
+      - What's the cheapest option
+      - I just want a discount code
+    next_step_routing:
+      shared_current_setup: contrast_and_engineering_claim
+      asked_about_product: use_case_anchor
+      price_first: needs_discovery_before_discount
+  derived_from:
+    strategy: information
+    rank_by: delta_commit
+    min_cluster_size: 5
+- step_id: contrast_and_engineering_claim
+  turn_intent: Acknowledge competitor + contrast on engineering + probe sound preference
+  must_say_template: 'Got it, {customer_disclosed_competitor} are known for {competitor_strength}.
+
+    Heavys are engineered with 8 drivers for {heavys_differentiation}. What
+
+    kind of sound are you truly hoping for? 🎧
+
+    '
+  must_not_say:
+  - Heavys are built with premium materials
+  - memory foam ear cups, 50 hours of battery life, rocking through
+  expected_customer_response:
+    classifier_anchors:
+    - id: stated_sound_preference
+      examples:
+      - I want more bass
+      - I want clarity on layered music
+      - Better noise isolation
+      - Cleaner highs and mids
+    - id: still_skeptical
+      examples:
+      - How do I know your drivers are better
+      - Specs alone don't sell me
+    next_step_routing:
+      stated_sound_preference: use_case_anchor
+      still_skeptical: surface_engineering_proof
+  derived_from:
+    strategy: authority
+    rank_by: delta_commit
+    min_cluster_size: 5
+- step_id: use_case_anchor
+  turn_intent: Anchor on customer's stated use case + engineering claim + CTA
+  must_say_template: 'For {customer_use_case}, you need to hear every layer clearly.
+    🤘
+
+    Our H1H headphones are engineered with 8 drivers for that powerful bass
+
+    and crisp clarity. Should I generate a coupon for it?
+
+    '
+  must_not_say:
+  - premium quality materials
+  - long-lasting durability
+  expected_customer_response:
+    classifier_anchors:
+    - id: ready_for_coupon
+      examples:
+      - Yes send it
+      - Sure
+      - Please
+    - id: still_evaluating
+      examples:
+      - Tell me more first
+      - What's the actual price
+      - How does it compare to X
+    next_step_routing:
+      ready_for_coupon: closing_coupon_with_urgency
+      still_evaluating: surface_engineering_proof
+  derived_from:
+    strategy: authority
+    rank_by: delta_commit
+    min_cluster_size: 5
+- step_id: surface_engineering_proof
+  turn_intent: Concrete spec anchor for analytical customer still in evaluation mode
+  must_say_template: 'Fair question. Our 8-driver system is built for the specific
+    use case
+
+    — 4 dedicated mids, 2 highs, 2 subs — that''s why metal and EDM stay
+
+    clean while most competitors collapse into mud at high volume. 14-day
+
+    trial means you can verify at home with your actual music.
+
+    '
+  must_not_say:
+  - trust us
+  - you'll love it
+  expected_customer_response:
+    classifier_anchors:
+    - id: ready_for_coupon
+      examples:
+      - ok send the code
+      - let's try it
+      - 'yes'
+    - id: data_request
+      examples:
+      - What's the failure rate
+      - How long do they actually last
+      - Show me independent reviews
+    next_step_routing:
+      ready_for_coupon: closing_coupon_with_urgency
+      data_request: objection_durability_data_redirect
+  derived_from:
+    strategy: authority
+    rank_by: delta_commit
+    min_cluster_size: 5
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-11
+  version: 1.0
+  empirical_basis: "Mined from 233 Heavys c3 (Quality/features + Analytical) won-deal\
+    \ conversations,\n2026-05-11. Top empirical patterns:\n  - Authority \"contrast\
+    \ + question\" (n=15, Δcommit=+0.60)\n  - Authority \"use-case anchor + CTA\"\
+    \ (n=12, Δcommit=+0.67)\n  - Information \"withhold discount, ask what's missing\"\
+    \ (n=21, Δcommit=+0.62)\n  - Anti-pattern: feature-dump \"Heavys are built with\
+    \ premium materials...\" (-0.33)\n  - Anti-pattern: cold discount lead (-0.33\
+    \ to -0.75)\nSee research-notes/EMPIRICAL-MINING-HEAVYS-heavys_c3_quality_analytical-FINDINGS.md\n"
+derived_from:
+  cohort: heavys_c3_quality_analytical

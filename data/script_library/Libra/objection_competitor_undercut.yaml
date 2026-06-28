@@ -1,0 +1,168 @@
+script_id: objection_competitor_undercut
+script_type: objection_handling
+phase: negotiate
+priority: 70
+status: approved
+description: 'Customer disclosed a competitor offer below our quote. Probe the offer
+
+  details (apples-to-apples) BEFORE conceding price. Surface non-price
+
+  value (deductible-waiver, headlights/mirrors, Librot). Manager-escalation
+
+  framing only on confirmed value gap.
+
+  '
+applies_when:
+  tenant: Libra
+  profile:
+    decision_logic:
+    - Analytical
+    - Mixed
+    trust_level:
+    - Skeptical
+    - Neutral
+    primary_motivator:
+    - Price/savings
+  conversation:
+    commitment_level_min: 2
+    commitment_level_max: 4
+    customer_signals:
+    - competitor_offer
+    - price_pushback
+    - competitor
+  exclude_when:
+    customer_already_committed: true
+grounding_anchors:
+- 'Probe-before-concede: question the comparison frame first'
+- 'Apples-to-apples: ask for full offer details, not just deductible'
+- Coverage list as concrete value (deductible-waiver, hit-and-run, etc.)
+arc:
+- step_id: probe_competitor_specifics
+  turn_intent: 'Probe-before-concede: question the comparison, request offer details'
+  must_say_template: 'Expensive compared to what? Could you share the details of the
+    offer
+
+    you got? Let''s see what can be done. (With us you have deductible-waiver
+
+    at arrangement garage and headlights/mirrors coverage included.)
+
+    '
+  must_not_say:
+  - competitor's price is good
+  - honestly that's hard to beat
+  - let me see what I can do
+  - loyalty bonus
+  - special discount
+  - as a returning customer
+  - Can I ask why not?
+  - tariff update across all insurance companies
+  expected_customer_response:
+    classifier_anchors:
+    - id: frustration
+      examples:
+      - are you going to make a real offer or just keep listing extras
+      - stop with the extras, give me a real number
+      - you keep avoiding the price
+      - I'm tired of this back-and-forth
+      - you said this before
+      - just match the competitor or we're done
+    next_step_routing:
+      offer_details_disclosed: surface_value_gap
+      offer_details_refused: r33_manager_escalation
+      customer_refuses: r33_manager_escalation
+      frustration: r33_manager_escalation
+  derived_from:
+    strategy: objection_handling
+    rank_by: delta_commit
+    min_cluster_size: 5
+- step_id: surface_value_gap
+  turn_intent: List concrete coverage features as the value differentiator
+  must_say_template: 'Check the coverage too, not just the price. With us you have:
+
+    deductible-waiver at arrangement garage (above 2,000 NIS damage),
+
+    hit-and-run that doesn''t raise your rate for 3 years, towing,
+
+    glass, headlights/mirrors, legal protection, replacement car.
+
+    '
+  must_not_say:
+  - let me explain what a deductible is
+  - you should understand that
+  - discount
+  - amazing value
+  expected_customer_response:
+    classifier_anchors:
+    - id: frustration
+      examples:
+      - I don't care about coverage, just the price
+      - stop deflecting, just match it
+      - this is taking forever
+      - you keep dodging
+    - id: still_pushing
+      examples:
+      - I still want a better price
+      - the coverage doesn't matter to me
+      - match the price or I'm out
+    - id: conceded_value
+      examples:
+      - ok the coverage is better
+      - I see the value
+      - fair point
+    next_step_routing:
+      conceded_value: hold_with_conditional_close
+      still_pushing: r33_manager_escalation
+      frustration: r33_manager_escalation
+  derived_from:
+    strategy: authority
+    rank_by: delta_commit
+    min_cluster_size: 5
+- step_id: hold_with_conditional_close
+  turn_intent: 'Conditional commitment: if I can lower to X, would that be relevant
+    for renewal?'
+  must_say_template: 'If I can lower the comprehensive to {anchors.target_price_nis}
+    NIS
+
+    (incl. Librot discount) and mandatory to {anchors.mandatory_target_nis} NIS,
+
+    would that be relevant for renewal?
+
+    '
+  must_not_say:
+  - discount
+  - loyalty bonus
+  - special offer
+  - I can lock this for you today
+  is_terminal: true
+  derived_from:
+    strategy: commitment
+    rank_by: delta_commit
+    min_cluster_size: 5
+metadata:
+  authored_by: visioner@team
+  last_modified: 2026-05-10
+  version: 2.0
+  empirical_basis: "Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message\
+    \ ×\nresearch_message_strategy_flash, 2026-05-10). objection_handling\nstrategy\
+    \ shows +15% won/lost lift.\n\nprobe_competitor_specifics:\n  - \"Expensive compared\
+    \ to what?\" (n=43, won-side cluster)\n  - \"Could you share offer details?\"\
+    \ (n=40, won-side cluster)\n  - Lost-side antipattern: \"Can I ask why not?\"\
+    \ (n=77) — defensive\n  - Lost-side antipattern: \"tariff update across all companies\"\
+    \ (n=80) —\n    over-explaining\n\nsurface_value_gap:\n  - Coverage-list framing\
+    \ (deductible-waiver, hit-and-run, etc.)\n    appears in 12+8+5 won-side authority\
+    \ clusters\n\nhold_with_conditional_close:\n  - \"אם אצליח להוזיל ל-X, יהיה רלוונטי\
+    \ לחידוש?\" (n=10+109 across\n    commitment + reciprocity strategies, won-side\
+    \ dominant pattern)\n\nSee research-notes/EMPIRICAL-MINING-FINDINGS.md for full\
+    \ data.\n"
+  caveats: 'Sample-level frequency, not statistical significance.
+
+    Strategy labels are LLM-inferred (Gemini Flash v1.1-research).
+
+    Per-turn outcome attribution not yet computed (lift is per-deal).
+
+    '
+  related_scripts:
+  - r33_manager_escalation
+  - graceful_close_no_match
+derived_from:
+  cohort: libra_c0
