@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sales Strategist Benchmark — Docs</title>
+<style>
+:root{--bg:#0f1117;--panel:#1b1f2a;--line:#2c3346;--ink:#e7ebf3;--ink-soft:#aab3c5;--ink-faint:#7b8499;--a:#5b8def;--ctrl:#a974f0;}
+*{box-sizing:border-box}
+body{margin:0;background:
+   radial-gradient(1000px 560px at 80% -10%,rgba(169,116,240,.10),transparent 60%),
+   radial-gradient(800px 480px at -10% 8%,rgba(91,141,239,.08),transparent 55%),var(--bg);
+  color:var(--ink);font:17px/1.6 "Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:64px 22px 80px}
+.eyebrow{letter-spacing:.22em;text-transform:uppercase;font-size:12px;color:var(--ink-faint);font-weight:700}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.05;margin:.3em 0 .2em;
+  background:linear-gradient(92deg,#cfe0ff,#c6a8f5 55%,#ffd79a);-webkit-background-clip:text;background-clip:text;color:transparent}
+p.lede{color:var(--ink-soft);font-size:19px;margin:0 0 28px}
+a.card{display:block;text-decoration:none;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:20px 22px;margin:14px 0;transition:border-color .15s,transform .15s}
+a.card:hover{border-color:var(--ctrl);transform:translateY(-2px)}
+a.card h2{margin:0 0 6px;font-size:20px;color:var(--ink)}
+a.card p{margin:0;color:var(--ink-soft);font-size:15px}
+.tag{display:inline-block;font-size:11px;color:var(--ctrl);border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin-bottom:8px;letter-spacing:.04em;text-transform:uppercase}
+.more{margin-top:30px;color:var(--ink-faint);font-size:14px}
+.more a{color:var(--a)}
+footer{margin-top:40px;color:var(--ink-faint);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Documentation</div>
+  <h1>Sales Strategist Benchmark</h1>
+  <p class="lede">A pluggable harness for A/B-testing goal-oriented conversation agents against a diversity-stratified
+  benchmark and a calibrated customer simulator.</p>
+
+  <a class="card" href="BLOG_PLAY_THE_MATCH.html">
+    <span class="tag">Blog</span>
+    <h2>Play the Match, Not the Exam →</h2>
+    <p>Why you can't grade a conversation with an answer key — and how we evaluate persuasion agents as A/B
+    "matches," framed through Cialdini's <i>Influence</i>. Accents on the dataset, metrics, and methodology.</p>
+  </a>
+
+  <a class="card" href="STRATEGIST_OVERVIEW.html">
+    <span class="tag">Field guide</span>
+    <h2>Architecture Overview →</h2>
+    <p>The illustrated, end-to-end field guide: the pluggable engine registry, the customer simulator, domain packs,
+    the dataset, and how the pieces fit together.</p>
+  </a>
+
+  <p class="more">Reference docs (Markdown): <a href="ARCHITECTURE.md">Architecture</a> ·
+    <a href="PLUGIN_GUIDE.md">Plugin guide</a> · <a href="API.md">API</a></p>
+
+  <footer>Open-source benchmark for evaluating goal-oriented conversation agents.</footer>
+</div>
+</body>
+</html>
