@@ -14,6 +14,12 @@ reference arms on a 112-scenario diversity-stratified benchmark.
 
 ## Documentation
 
+**▶ Read it online (rendered):** [Play the Match, Not the Exam (blog)](https://dsivov.github.io/Strategist/BLOG_PLAY_THE_MATCH.html)
+· [Architecture Overview](https://dsivov.github.io/Strategist/STRATEGIST_OVERVIEW.html)
+· [docs home](https://dsivov.github.io/Strategist/) — served via GitHub Pages.
+
+The table below links to the source files in this repo (GitHub shows raw HTML there; use the rendered links above to view them).
+
 | Doc | What it covers |
 |-----|----------------|
 | **[docs/STRATEGIST_OVERVIEW.html](docs/STRATEGIST_OVERVIEW.html)** | Illustrated, self-contained field guide (open in any browser) — the architecture at a glance. |
