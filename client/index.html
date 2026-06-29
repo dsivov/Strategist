@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Luna Sales Strategist · POC</title>
+  <title>Sales Strategist Benchmark · POC</title>
   <link rel="stylesheet" href="/static/style.css?v=20260513-split-header-7" />
 </head>
 <body>
@@ -11,8 +11,8 @@
     <div class="brand">
       <span class="brand-mark">L</span>
       <div>
-        <h1>Luna Sales Strategist</h1>
-        <p class="tagline">Live A/B: Original Luna agent vs Supervisor-augmented Luna agent</p>
+        <h1>Sales Strategist Benchmark</h1>
+        <p class="tagline">Live A/B: Original agent agent vs Supervisor-augmented sales agent</p>
       </div>
       <!-- R24 — Toggle for the directive-diff sidebar -->
       <button class="ds-toggle" id="dsToggleBtn" title="Show / hide the live supervisor-directive sidebar">⇨ Directive</button>
@@ -40,8 +40,8 @@
         <div class="tenant-filter" id="tenantFilter">
           <span class="label">Tenant</span>
           <button data-tenant="all" class="tenant-btn active">All</button>
-          <button data-tenant="Libra" class="tenant-btn">Libra</button>
-          <button data-tenant="Heavys" class="tenant-btn">Heavys</button>
+          <button data-tenant="Insurance" class="tenant-btn">Insurance</button>
+          <button data-tenant="Ecommerce" class="tenant-btn">Ecommerce</button>
         </div>
         <label class="stress-only-toggle" title="Show only the curated stress-test cohort (hardest cases for supervisor)">
           <input type="checkbox" id="stressOnlyToggle" />
@@ -78,10 +78,14 @@
         <input type="range" id="seedTurnSlider" min="0" max="0" value="0" step="1" disabled />
         <span class="seed-slider-value" id="seedTurnValue">auto</span>
       </div>
-      <div class="engine-toggle" title="R-side engine. L-side (Original Luna) and the customer simulator are identical for both — the engine is the only variable.">
-        <span class="engine-label">R-side</span>
-        <button type="button" data-engine="strategist" class="engine-btn active">Strategist</button>
-        <button type="button" data-engine="planner" class="engine-btn">Planner</button>
+      <div class="engine-toggle" id="engineToggle" title="Pick an engine for each panel. Both run against the same customer simulator — the engine is the only variable. Engines are loaded dynamically from the pluggable registry (/api/engines).">
+        <span class="engine-label">L</span>
+        <select id="engineSelectLeft" class="engine-select" title="Left-panel engine"></select>
+        <span id="engineParamsLeft" class="engine-params"></span>
+        <span class="engine-vs">vs</span>
+        <span class="engine-label">R</span>
+        <select id="engineSelectRight" class="engine-select" title="Right-panel engine"></select>
+        <span id="engineParamsRight" class="engine-params"></span>
       </div>
       <button id="runBtn" class="primary" disabled>Run scenario</button>
       <button id="stopBtn" class="ghost" disabled>Stop</button>
@@ -188,7 +192,7 @@
     <section class="guide-banner" id="guideBanner" hidden>
       <div class="guide-title">
         Integration scenarios demonstrated this session
-        <span class="guide-sub">↳ from <code>LUNA_INTEGRATION_GUIDE.md §4</code> · 8 scenarios · live A/B exercises 7 of them</span>
+        <span class="guide-sub">↳ from <code>INTEGRATION.md §4</code> · 8 scenarios · live A/B exercises 7 of them</span>
         <span class="opp-type-tag" id="oppTypeTag" hidden>opp_type: <b id="oppTypeValue">—</b></span>
       </div>
       <div class="guide-grid" id="guideGrid"></div>
@@ -236,8 +240,8 @@
     <div class="panels">
       <section class="panel" id="leftPanel">
         <div class="panel-header">
-          <h2>Original Luna</h2>
-          <span class="panel-sub">Live actor · No supervisor</span>
+          <h2 id="leftPanelTitle">Original agent</h2>
+          <span class="panel-sub" id="leftPanelSub">Live actor · No supervisor</span>
           <span class="phase-tag" id="leftPhaseTag">—</span>
           <span class="panel-turn" id="leftTurn"></span>
           <span class="panel-status" id="leftStatus">Idle</span>
@@ -249,8 +253,8 @@
 
       <section class="panel" id="rightPanel">
         <div class="panel-header">
-          <h2>With Strategic Supervisor</h2>
-          <span class="panel-sub">Live actor · Supervisor directive injected</span>
+          <h2 id="rightPanelTitle">With Strategic Supervisor</h2>
+          <span class="panel-sub" id="rightPanelSub">Live actor · Supervisor directive injected</span>
           <span class="phase-tag" id="rightPhaseTag">—</span>
           <span class="panel-turn" id="rightTurn"></span>
           <span class="panel-status" id="rightStatus">Idle</span>
@@ -281,7 +285,7 @@
       </div>
       <div class="prox-grid">
         <div class="prox-card" id="proximityLeft">
-          <div class="prox-side-label">Original Luna</div>
+          <div class="prox-side-label">Original agent</div>
         </div>
         <div class="prox-delta" id="proximityDelta"></div>
         <div class="prox-card" id="proximityRight">
@@ -300,7 +304,7 @@
   <aside class="directive-sidebar" id="directiveSidebar" hidden>
     <div class="ds-header">
       <span class="ds-title">Latest supervisor directive</span>
-      <button class="ds-close" id="dsCloseBtn" title="Close" onclick="document.body.classList.remove('ds-open');document.getElementById('directiveSidebar').hidden=true;try{localStorage.setItem('luna_directive_sidebar_visible_v1','0');}catch(e){}var sidebarOpen=false;Array.from(document.body.children).forEach(function(c){if(c.id==='directiveSidebar'||c.tagName==='SCRIPT')return;c.style.maxWidth='';c.style.marginRight='';c.style.marginLeft='';});">×</button>
+      <button class="ds-close" id="dsCloseBtn" title="Close" onclick="document.body.classList.remove('ds-open');document.getElementById('directiveSidebar').hidden=true;try{localStorage.setItem('directive_sidebar_visible_v1','0');}catch(e){}var sidebarOpen=false;Array.from(document.body.children).forEach(function(c){if(c.id==='directiveSidebar'||c.tagName==='SCRIPT')return;c.style.maxWidth='';c.style.marginRight='';c.style.marginLeft='';});">×</button>
     </div>
     <div class="ds-body" id="directiveSidebarBody">
       <div class="ds-empty">No directive yet — start a session.</div>

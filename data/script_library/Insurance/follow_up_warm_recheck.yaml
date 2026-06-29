@@ -11,7 +11,7 @@ description: |
   forward-leaning, single CTA.
 
 applies_when:
-  tenant: Libra
+  tenant: Insurance
   conversation:
     commitment_level_min: 1
     commitment_level_max: 3
@@ -62,7 +62,7 @@ metadata:
   last_modified: 2026-05-10
   version: 2.0
   empirical_basis: |
-    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    Mined from 500 insurance_c0 ClosedWon + 500 ClosedLost (message ×
     research_message_strategy_flash, 2026-05-10).
     re_engagement strategy shows +14% won/lost lift.
 
@@ -72,7 +72,7 @@ metadata:
       - Note: equivalent lost-side cluster also large (n=123). Lift in
         re_engagement strategy is in the *frequency of attempting it*,
         not in the phrase variant. Persistent follow-up wins; the phrase
-        is the universal Libra re-engagement turn.
+        is the universal Insurance re-engagement turn.
 
     Variant for shorter taps (not currently in arc):
       - "Hi {name} 🌻 don't want it to slip — should I renew for you?"

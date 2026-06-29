@@ -70,13 +70,13 @@ def _anchor_brief(opp_meta: dict) -> str:
          or (opp_meta or {}).get("_anchors") or {})
     if not a:
         return "(no economic anchors)"
-    keys = ("last_year_price_nis", "current_quoted_price_nis",
-            "market_avg_for_segment_nis", "profile_appropriate_opening_nis",
+    keys = ("last_year_price_usd", "current_quoted_price_usd",
+            "market_avg_for_segment_usd", "profile_appropriate_opening_usd",
             "max_discount_pct_internal")
     return "; ".join(f"{k}={a[k]}" for k in keys if a.get(k) is not None) or "(sparse)"
 
 
-_PRICE_RE = re.compile(r"(\d[\d,]{2,})\s*NIS", re.IGNORECASE)
+_PRICE_RE = re.compile(r"(\d[\d,]{2,})\s*USD", re.IGNORECASE)
 _EARNED_RE = re.compile(
     r"competitor|another (company|quote|offer)|cheaper|got a quote|"
     r"\b\d[\d,]{2,}\b.*?(elsewhere|other)", re.IGNORECASE)
@@ -128,7 +128,7 @@ def _negotiation_envelope(state: dict, opp: dict) -> dict | None:
     earned-signal expressed as planning constraints; the Planner reasons
     within them instead of being corrected after."""
     a = (opp or {}).get("anchors") or (opp or {}).get("_anchors") or {}
-    cur = a.get("current_quoted_price_nis")
+    cur = a.get("current_quoted_price_usd")
     maxd = a.get("max_discount_pct_internal")
     if not cur or maxd is None:
         return None
@@ -144,18 +144,18 @@ def _negotiation_envelope(state: dict, opp: dict) -> dict | None:
     latest = agent_prices[-1] if agent_prices else int(cur)
     drop_pct = round(100.0 * (first_offer - latest) / first_offer, 1) if first_offer else 0.0
     return {
-        "active": True, "floor_nis": floor, "max_discount_pct": float(maxd),
-        "first_offer_nis": first_offer, "latest_offer_nis": latest,
+        "active": True, "floor_usd": floor, "max_discount_pct": float(maxd),
+        "first_offer_usd": first_offer, "latest_offer_usd": latest,
         "cum_drop_pct": drop_pct, "earned_signal": cust_signal,
     }
 
 
 def _envelope_block(env: dict) -> str:
     return f"""NEGOTIATION ENVELOPE (hard economic constraints — obey):
-- FLOOR: never offer below {env['floor_nis']} NIS (max authorized discount \
-{env['max_discount_pct']}% off {env['first_offer_nis']}). Below-floor = invalid.
-- ANTI-STAIRCASE: you have already moved {env['first_offer_nis']}→\
-{env['latest_offer_nis']} ({env['cum_drop_pct']}% total drop). Do NOT make \
+- FLOOR: never offer below {env['floor_usd']} USD (max authorized discount \
+{env['max_discount_pct']}% off {env['first_offer_usd']}). Below-floor = invalid.
+- ANTI-STAIRCASE: you have already moved {env['first_offer_usd']}→\
+{env['latest_offer_usd']} ({env['cum_drop_pct']}% total drop). Do NOT make \
 repeated small concessions; if you concede it must be one meaningful move.
 - ANTI-CAPITULATION: earned_signal={env['earned_signal']}. If false, do NOT \
 concede toward the floor — hold the price and probe for a competitor number \
@@ -213,15 +213,15 @@ def plan(state: dict, model: str = "claude-sonnet-4-6") -> dict:
     """Return a directive dict (no agent_text — the shared actor renders)."""
     _load_env()
     opp = state.get("opp_meta") or {}
-    tenant = opp.get("company") or "Libra"
+    tenant = opp.get("company") or "Insurance"
     opp_type = opp.get("opp_type") or "renewal"
     # Resolve to a SOP artifact: exact (tenant, opp_type) → tenant canonical
-    # flow → Libra/renewal global fallback. Heavys cart variants ("Abandoned
+    # flow → Insurance/renewal global fallback. Ecommerce cart variants ("Abandoned
     # Cart", "Abandoned Cart US No Consent", …) all share one recovery SOP.
     g = sop.load(tenant, opp_type)
     if g is None:
-        _default = {"Heavys": "abandoned_cart"}.get(tenant, "renewal")
-        g = sop.load(tenant, _default) or sop.load("Libra", "renewal")
+        _default = {"Ecommerce": "abandoned_cart"}.get(tenant, "renewal")
+        g = sop.load(tenant, _default) or sop.load("Insurance", "renewal")
     if g is None:
         raise RuntimeError(f"no SOP graph for {tenant}/{opp_type}")
 

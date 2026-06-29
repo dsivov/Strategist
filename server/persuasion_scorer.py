@@ -1,20 +1,20 @@
-"""Live persuasion scorer — matches Luna prod model + prompt exactly.
+"""Live persuasion scorer — matches the production system model + prompt exactly.
 
-Luna prod (as of 2026-04-30) uses **Gemini 2.5 Pro** in
-`luna/ai_tools/persuasive_score/persuasive_score_generator.py` to score
+the production system (as of 2026-04-30) uses **Gemini 2.5 Pro** in
+`agent/ai_tools/persuasive_score/persuasive_score_generator.py` to score
 customer messages 0.0-1.0. We use the same model + same prompt template +
 extend it to also output commitment_level (0-5 scale) for the Won-detection
 trigger.
 
 Apples-to-apples comparison guarantee: this scorer's outputs are directly
-comparable with Luna's stored `persuasive_score` values.
+comparable with the system's stored `persuasive_score` values.
 
 Public API:
   await score_turn(chat_history) -> {score: float, reason: str, commitment_level: int}
     - chat_history: list of {"role": "user"|"assistant", "text": str,
                               "persusive_score": float|None, "sequence_number": int}
     - Returns score for the LATEST user message that has persusive_score=None
-    - "user" = customer; "assistant" = agent (matches Luna's chat-history shape)
+    - "user" = customer; "assistant" = agent (matches the system's chat-history shape)
 """
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ from google.genai import types as genai_types
 
 log = logging.getLogger(__name__)
 
-# Same model Luna prod uses — apples-to-apples comparison
+# Same model the production system uses — apples-to-apples comparison
 SCORER_MODEL = "gemini-2.5-pro"
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY_1") or os.environ.get("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
@@ -39,8 +39,8 @@ if not GEMINI_API_KEY:
 _client = genai.Client(api_key=GEMINI_API_KEY)
 
 
-# Extended from luna/ai_tools/persuasive_score/persuasive_score_generator.py
-# (verbatim Luna section + a `commitment_level` output addition).
+# Extended from agent/ai_tools/persuasive_score/persuasive_score_generator.py
+# (verbatim Agent section + a `commitment_level` output addition).
 PROMPT_TEMPLATE = """
 # Role
 You are an expert Sales Psychologist. Your task is to analyze a JSON chat history,
@@ -193,10 +193,10 @@ if __name__ == "__main__":
     async def smoke():
         chat = [
             {"sequence_number": 0, "role": "assistant", "text":
-             "Hi! Your auto insurance is up for renewal. Mandatory + comprehensive: 4,238 NIS for the year.",
+             "Hi! Your auto insurance is up for renewal. Mandatory + comprehensive: 4,238 USD for the year.",
              "persusive_score": None},
             {"sequence_number": 1, "role": "user", "text":
-             "That seems high. Other insurers offered me 3,800 NIS.",
+             "That seems high. Other insurers offered me 3,800 USD.",
              "persusive_score": None},
             {"sequence_number": 2, "role": "assistant", "text":
              "Thanks for sharing the comparison. Could you share the breakdown of their offer (mandatory vs comprehensive) so I can structure something competitive?",

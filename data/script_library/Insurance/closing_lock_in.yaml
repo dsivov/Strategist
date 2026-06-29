@@ -6,12 +6,12 @@ status: approved
 
 description: |
   Customer is at high commitment (4-5). Confirm agreed numbers and move
-  to payment-collection in one turn. Empirically, winning Libra closes
+  to payment-collection in one turn. Empirically, winning Insurance closes
   pivot directly to payment terms (installments + last-4-digits of card)
   rather than asking for a separate "shall I send for signature" step.
 
 applies_when:
-  tenant: Libra
+  tenant: Insurance
   conversation:
     commitment_level_min: 4
     commitment_level_max: 5
@@ -20,7 +20,7 @@ arc:
   - step_id: confirm_terms
     turn_intent: "Confirm agreed price + initiate payment collection"
     must_say_template: |
-      Great, agreed on comprehensive at {anchors.current_quoted_price_nis} NIS.
+      Great, agreed on comprehensive at {anchors.current_quoted_price_usd} USD.
       How many installments would you like? Up to 10 with no interest.
       And the last 4 digits of your credit card for verification?
     must_not_say:
@@ -68,7 +68,7 @@ arc:
     turn_intent: "Brief acknowledgment + soft close (don't re-open negotiation)"
     must_say_template: |
       Of course — what's the question? (We've already landed on
-      {anchors.current_quoted_price_nis} NIS comprehensive, that's our
+      {anchors.current_quoted_price_usd} USD comprehensive, that's our
       best for renewal.)
     must_not_say:
       - "or we could lower further"
@@ -81,7 +81,7 @@ metadata:
   last_modified: 2026-05-10
   version: 2.0
   empirical_basis: |
-    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    Mined from 500 insurance_c0 ClosedWon + 500 ClosedLost (message ×
     research_message_strategy_flash, 2026-05-10). direct_ask strategy.
 
     confirm_terms (payment-collection pivot):
@@ -101,4 +101,4 @@ metadata:
   caveats: |
     The close-stage phrases appear in both won AND lost deals — lift comes
     from upstream negotiation arc, not from this script's templates. Treat
-    these as the universal Libra close pattern, not a winning differentiator.
+    these as the universal Insurance close pattern, not a winning differentiator.

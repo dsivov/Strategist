@@ -8,12 +8,12 @@ description: |
   When even the manager-match path doesn't unlock a close — customer
   refuses, signals frustration, or won't commit conditionally — the
   agent walks gracefully without further price moves. Empirically, the
-  winning Libra walk-away phrase is short and re-engagement-preserving:
+  winning Insurance walk-away phrase is short and re-engagement-preserving:
   "That's totally fine. Just come back to me before you close elsewhere,
   so we ensure you get the best value."
 
 applies_when:
-  tenant: Libra
+  tenant: Insurance
 
 arc:
   - step_id: walk_with_door_open
@@ -21,7 +21,7 @@ arc:
     must_say_template: |
       That's totally fine. Just come back to me before you close elsewhere,
       so we make sure you get the best value. The renewal stays open at
-      {anchors.current_quoted_price_nis} NIS until {policy_end_date} —
+      {anchors.current_quoted_price_usd} USD until {policy_end_date} —
       no follow-up calls from my side.
     must_not_say:
       - "discount"
@@ -35,7 +35,7 @@ metadata:
   last_modified: 2026-05-10
   version: 2.0
   empirical_basis: |
-    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    Mined from 500 insurance_c0 ClosedWon + 500 ClosedLost (message ×
     research_message_strategy_flash, 2026-05-10).
 
     walk_with_door_open template:

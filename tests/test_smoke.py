@@ -39,7 +39,7 @@ def test_playbooks_load():
     """Mined playbooks are bundled and reachable via env-pinned path."""
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "poc"))
     from planner.playbook_reader import load_tenant_playbooks
-    for tenant in ("Libra", "Heavys"):
+    for tenant in ("Insurance", "Ecommerce"):
         pbs = load_tenant_playbooks(tenant)
         assert len(pbs) > 0, f"no playbooks loaded for {tenant}"
 

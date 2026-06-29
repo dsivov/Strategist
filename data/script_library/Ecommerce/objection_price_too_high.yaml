@@ -6,7 +6,7 @@ status: approved
 
 description: |
   Price-conscious customer says the price is too high or asks for a deeper
-  discount than the standard offer. Empirical Heavys c5 (Price/savings +
+  discount than the standard offer. Empirical Ecommerce c5 (Price/savings +
   Analytical) data shows winners HOLD THE LINE with a counter-offer that
   includes a specific dollar amount + code + time limit, not vague "let me
   see what I can do."
@@ -16,13 +16,13 @@ description: |
   price-conscious customer.
 
 applies_when:
-  tenant: Heavys
+  tenant: Ecommerce
   profile:
     primary_motivator: [Price/savings]
     # 2026-05-11 — Relaxed from [Analytical, Mixed] to include [Emotional].
     # CROSS-COHORT TRANSFER: this script's hold-the-line content was mined from
     # c5 (Price+Analytical, 32 won-deals). The Emotional cohort
-    # (heavys_price_emotional, 20 won-deals) is too thin to have its own
+    # (ecommerce_price_emotional, 20 won-deals) is too thin to have its own
     # empirical pattern for "customer rejected bundle, demands direct
     # discount", but bundles ARE empirically validated in this cohort (Δ=+1.0,
     # n=22 reciprocity). Pattern: bundle works at offer-time; when customer
@@ -134,7 +134,7 @@ metadata:
   last_modified: 2026-05-11
   version: 1.1
   empirical_basis: |
-    Mined from 32 Heavys c5 (Price/savings + Analytical) won + 8 lost.
+    Mined from 32 Ecommerce c5 (Price/savings + Analytical) won + 8 lost.
     Small cohort but clean signals.
 
     hold_line_counter_offer: Δcommit=+0.25 (n=5 won-only cluster). Pattern
@@ -145,22 +145,22 @@ metadata:
     with urgency.
 
     Anti-pattern: generic chit-chat opener on price-conscious customer
-    scored Δcommit=-3.0 (n=4, all losses). Worst pattern in entire Heavys
+    scored Δcommit=-3.0 (n=4, all losses). Worst pattern in entire Ecommerce
     mining.
 
-    See research-notes/mined_corpus/heavys_c5_price_analytical_full_cohort_lift.json
+    See research-notes/mined_corpus/ecommerce_c5_price_analytical_full_cohort_lift.json
   cross_cohort_transfer:
     target_cohorts:
-      - heavys_price_emotional   # 20 won, 0 lost; no clear lift signal in
+      - ecommerce_price_emotional   # 20 won, 0 lost; no clear lift signal in
                                   # objection_handling bucket; reciprocity
                                   # shows bundles win Δ=+1.0 but no
                                   # bundle-rejection-fallback pattern.
                                   # Borrowing c5 (Analytical) hold-the-line
                                   # pattern as best-available transfer.
-    source_cohort: heavys_c5_price_analytical
+    source_cohort: ecommerce_c5_price_analytical
     rationale: |
-      heavys_price_emotional cohort lacks empirical objection-handling
+      ecommerce_price_emotional cohort lacks empirical objection-handling
       cluster sufficient for hold-the-line-after-bundle-rejection scenario.
       Cross-cohort transfer from c5 (same primary motivator, different
       decision logic) is a best-available substitute. Re-validate when
-      heavys_price_emotional has sufficient deal volume.
+      ecommerce_price_emotional has sufficient deal volume.

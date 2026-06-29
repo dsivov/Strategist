@@ -11,7 +11,7 @@ their own telemetry. The benchmark records it verbatim but doesn't interpret it.
 Provided implementations:
   - BaselineEngine    — single-call Gemini 2.5 Pro production agent (no extras)
   - PlannerEngine     — PCA-derived planner + post-render gates (self-contained)
-  - StrategistEngine  — mining/retrieval/supervisor (REQUIRES Luna prod DB + KG)
+  - StrategistEngine  — mining/retrieval/supervisor (REQUIRES the production system DB + KG)
 """
 from __future__ import annotations
 import logging
@@ -23,7 +23,7 @@ from typing import Any, Protocol, runtime_checkable
 log = logging.getLogger(__name__)
 
 # Ensure the package directory is importable so the in-package modules
-# (luna_actor, post_render_gates, planner, strategist) can find each other
+# (actor, post_render_gates, planner, strategist) can find each other
 # with their original flat imports.
 _PKG = Path(__file__).resolve().parent
 if str(_PKG) not in sys.path:
@@ -72,8 +72,8 @@ class BaselineEngine:
     """
 
     async def produce(self, opp_meta, dialog_history, business_rules=""):
-        import luna_actor
-        text, meta = await luna_actor.generate(
+        import actor
+        text, meta = await actor.generate(
             opp_meta, dialog_history, business_rules, directive=None
         )
         return text, {"arm": "baseline", **(meta or {})}
@@ -105,7 +105,7 @@ class PlannerEngine:
     async def produce(self, opp_meta, dialog_history, business_rules=""):
         # planner_produce() in the engines factory drives this — re-implementing
         # inline so the package has no cross-engine imports.
-        import luna_actor
+        import actor
         import post_render_gates
 
         # Anchors live on opp_meta under either key for legacy reasons
@@ -123,7 +123,7 @@ class PlannerEngine:
         meta      = dict(out.get("directive_meta", {}) or {})
 
         try:
-            text, _ = await luna_actor.generate(
+            text, _ = await actor.generate(
                 opp_meta, dialog_history, business_rules or "", directive=directive
             )
         except Exception as e:
@@ -133,7 +133,7 @@ class PlannerEngine:
 
         # Post-render gate chain (engine-agnostic; reads POC_PLANNER_GATES env)
         async def _regen(corrective: str) -> str:
-            t, _ = await luna_actor.generate(
+            t, _ = await actor.generate(
                 opp_meta, dialog_history, business_rules or "",
                 directive=directive, system_suffix=corrective,
             )
@@ -159,8 +159,8 @@ class StrategistEngine:
 
     **NOT self-contained.** The Strategist runs through a stage-driven prompt
     chain (`poc/strategist/chain_runner.py`) that requires:
-      - Luna production MySQL access (cohort + business-rules retrieval)
-      - Luna Knowledge Graph endpoint (LIGHTRAG_API_URL / _API_KEY)
+      - the production system MySQL access (cohort + business-rules retrieval)
+      - Agent Knowledge Graph endpoint (LIGHTRAG_API_URL / _API_KEY)
       - Cohort precedent edges (~4,300 on the insurance tenant)
 
     The source is included verbatim for review and integration work, but the
@@ -174,13 +174,13 @@ class StrategistEngine:
 
     Treat this class as a placeholder. Instantiating it raises with a pointer
     to the README's "Running the Strategist arm" section, which documents the
-    Luna-side setup if a full three-arm comparison is needed.
+    Agent-side setup if a full three-arm comparison is needed.
     """
 
     def __init__(self):
         raise RuntimeError(
             "StrategistEngine is included for source review only. Running it "
-            "requires Luna production prod-DB + Knowledge Graph credentials and "
+            "requires the production system prod-DB + Knowledge Graph credentials and "
             "the websocket replayer scaffolding (see README §'Running the "
             "Strategist arm'). For benchmarks without prod access, use "
             "BaselineEngine + PlannerEngine + your own engine via the Engine "

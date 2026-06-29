@@ -12,6 +12,24 @@ reference arms on a 112-scenario diversity-stratified benchmark.
 
 ---
 
+## Documentation
+
+| Doc | What it covers |
+|-----|----------------|
+| **[docs/STRATEGIST_OVERVIEW.html](docs/STRATEGIST_OVERVIEW.html)** | Illustrated, self-contained field guide (open in any browser) — the architecture at a glance. |
+| **[docs/BLOG_PLAY_THE_MATCH.html](docs/BLOG_PLAY_THE_MATCH.html)** | "Play the Match, Not the Exam" — human-friendly blog on why/how we A/B-test goal-oriented persuasion agents, framed through Cialdini's *Influence*. |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The pluggable architecture in depth: the three seams, request flow, and the live-replayer engine routing. |
+| [docs/PLUGIN_GUIDE.md](docs/PLUGIN_GUIDE.md) | How to author & register an **engine** (in-tree + out-of-tree entry point), a **domain pack**, and a **scenario source**. |
+| [docs/API.md](docs/API.md) | Reference for the public Python API (registry / domain / source) and the server's REST + WebSocket endpoints. |
+| [INTEGRATION.md](INTEGRATION.md) | Step-by-step guide to writing your engine adapter. |
+
+> This package began as a two-engine POC and was refactored into a **pluggable
+> benchmark platform**: register a Strategy/Supervisor algorithm once and it
+> appears in the headless runner, the REST API, and the live dual-panel UI.
+> See [§ Pluggable engines, domains & data sources](#pluggable-engines-domains--data-sources).
+
+---
+
 ## Quickstart
 
 ```bash
@@ -77,9 +95,12 @@ POC/
 ├── poc/                           ← the Python library (public API)
 │   ├── __init__.py
 │   ├── engine.py                  ← Engine protocol + 3 reference engines
-│   ├── benchmark.py               ← headless benchmark runner
+│   ├── registry.py                ← pluggable engine registry (+ entry-point discovery)
+│   ├── domain.py                  ← pluggable domain packs (SalesDomainPack default)
+│   ├── scenario_source.py         ← pluggable scenario/data sources (JSON default)
+│   ├── benchmark.py               ← headless benchmark runner (run_engine by id)
 │   ├── customer_simulator.py      ← v2 reference-aware simulator
-│   ├── luna_actor.py              ← shared customer-facing LLM renderer
+│   ├── actor.py              ← shared customer-facing LLM renderer
 │   ├── post_render_gates.py       ← anti-staircase + premature-close
 │   ├── voice_profile.py
 │   ├── intent_classifier.py
@@ -108,15 +129,22 @@ POC/
 │   ├── scenarios.json             ← UI-friendly index (derived)
 │   ├── precedents-sample.db       ← 1,200-row SQLite sample (Strategist arm)
 │   └── script_library/            ← 11 mined playbook YAMLs
-│       ├── Libra/                 (6 playbooks)
-│       └── Heavys/                (5 playbooks)
+│       ├── Insurance/                 (6 playbooks)
+│       └── Ecommerce/                (5 playbooks)
 │
 ├── examples/
 │   ├── pi_engine_template.py      ← starter shim for the PI adapter
-│   └── run_benchmark.py           ← full 2-arm paired driver
+│   ├── run_benchmark.py           ← full 2-arm paired driver
+│   ├── run_pluggable_benchmark.py ← registry-driven A/B (run engines by id)
+│   ├── custom_domain_pack.py      ← add a new domain without core edits
+│   └── external_engine_plugin/    ← installable out-of-tree engine (entry point)
 │
 └── tests/
-    └── test_smoke.py              ← imports + bundled-data sanity (no LLM calls)
+    ├── test_smoke.py              ← imports + bundled-data sanity (no LLM calls)
+    ├── test_characterization.py   ← golden tests pinning domain behavior
+    ├── test_registry.py           ← engine registry
+    ├── test_domain.py             ← domain-pack pluggability
+    └── test_scenario_source.py    ← pluggable data sources
 ```
 
 ## The dual-panel benchmark server
@@ -132,7 +160,7 @@ The same FastAPI server we use internally for inspection runs is bundled at
 
 Launch with `./bin/run-server.sh`, open `http://localhost:8443/`.
 
-### Why this server runs without Luna prod MySQL
+### Why this server runs without the production system MySQL
 
 The upstream server reads opportunity rows, message histories, turn-state
 labels, and persuasion scores out of our production MySQL. For the handoff,
@@ -143,7 +171,7 @@ attributes block replaces `fetch_opp_meta`. Turn-state and persuasion-score
 sources are stubbed (return empty) — the engines work fine without them;
 they're prod-only signal channels.
 
-If you do have Luna prod credentials, set `POC_USE_MYSQL=1` in your
+If you do have the production system credentials, set `POC_USE_MYSQL=1` in your
 environment and `server/db.py` will proxy through to the real
 MySQL-backed `poc/db.py`. Same calling code; live data.
 
@@ -152,11 +180,11 @@ MySQL-backed `poc/db.py`. Same calling code; live data.
 | Database                       | Bundled?  | Size  | Used by              | Notes |
 |--------------------------------|-----------|-------|----------------------|-------|
 | `v1_scenarios.json`            | ✅ yes    | 856 KB | Simulator + db shim | The 112-scenario benchmark, byte-identical to upstream. |
-| Mined playbook YAMLs           | ✅ yes    | 56 KB  | Planner + Strategist | All 11 playbooks (6 Libra + 5 Heavys). |
+| Mined playbook YAMLs           | ✅ yes    | 56 KB  | Planner + Strategist | All 11 playbooks (6 Insurance + 5 Ecommerce). |
 | SOP graphs (JSON)              | ✅ yes    | 14 KB  | Planner              | Both tenants, ~142 edges total. |
 | `precedents-sample.db`         | ✅ yes    | 1.5 MB | Strategist           | **Subsample.** 1,200 rows balanced across tenant × outcome. The full database has 872k rows (~1 GB) — too large to bundle. The sample lets the Strategist's retrieval code exercise its query path; for production-grade precedent breadth you'd need to mount the full DB. |
-| Luna production MySQL          | ❌ no     | —      | Strategist           | Source of cohort + business-rules + turn-state data. Requires VPN + credentials. JSON-backed shim is the standalone substitute. |
-| Luna Knowledge Graph (LightRAG)| ❌ no     | —      | Strategist           | Provides decision-trace precedents and KG entity lookups. Set `LIGHTRAG_API_URL` + `LIGHTRAG_API_KEY` to enable. |
+| the production system MySQL          | ❌ no     | —      | Strategist           | Source of cohort + business-rules + turn-state data. Requires VPN + credentials. JSON-backed shim is the standalone substitute. |
+| Agent Knowledge Graph (LightRAG)| ❌ no     | —      | Strategist           | Provides decision-trace precedents and KG entity lookups. Set `LIGHTRAG_API_URL` + `LIGHTRAG_API_KEY` to enable. |
 
 The runnable arms (Baseline + Planner+Gates) need only the bundled data.
 The Strategist arm gracefully degrades without LightRAG (logs warnings)
@@ -234,9 +262,75 @@ playbook library is wired into the planner's prompt via `playbook_reader`.
 ### 3. `StrategistEngine` (source included, **not runnable in this package**)
 
 The mining/cohort-retrieval/supervisor stack is included verbatim under
-`poc/strategist/` for source review. It requires Luna production database
-access and the Luna Knowledge Graph endpoint to run. Instantiating it raises
+`poc/strategist/` for source review. It requires the production system database
+access and the Agent Knowledge Graph endpoint to run. Instantiating it raises
 with a pointer to this README. See **"Running the Strategist arm"** below.
+
+---
+
+## Pluggable engines, domains & data sources
+
+The benchmark is a **platform**: bring your own Strategy/Supervisor algorithm,
+register it, and A/B it against the reference arms — headless or in the live
+dual-panel UI. Three seams make this work, all surfaced from `poc`:
+
+### 1. The engine registry (`poc.registry`)
+
+Every engine is declared once as an `EngineSpec` (id, display name, description,
+capability requirements, tunable params, and a `factory`). The registry is the
+single source of truth read by **both** the headless `Benchmark` and the live
+server's `GET /api/engines` (which the UI uses to render its selectors — engines
+are no longer hardcoded in the client).
+
+```python
+from poc import all_engine_specs, create_engine, Benchmark, load_scenarios
+
+for spec in all_engine_specs():        # baseline, planner, strategist, + plugins
+    print(spec.id, spec.name, spec.runnable, [p.name for p in spec.params])
+
+bench = Benchmark(load_scenarios())
+results = await bench.run_engine("planner", planner_envelope="auto")   # run by id
+```
+
+**In-tree** engines call `poc.register_engine(EngineSpec(...))`. **Out-of-tree**
+engines (no core edits) ship a package with a `strategist.engines` entry point;
+they're discovered automatically and appear in `all_engine_specs()`, the API,
+and the UI. A complete worked example is in
+[`examples/external_engine_plugin/`](examples/external_engine_plugin) — install
+it with `pip install -e examples/external_engine_plugin` and the `echo` engine
+shows up everywhere.
+
+Your engine implements the same one-method `Engine` protocol the PI adapter uses
+(`async produce(opp_meta, dialog_history, business_rules) -> (text, meta)`), so
+the integration contract is unchanged — see [INTEGRATION.md](INTEGRATION.md).
+
+### 2. Any-vs-any A/B in the live UI
+
+The dual-panel server now selects each panel's engine independently from the
+registry (LEFT and RIGHT are both dropdowns populated from `/api/engines`, with
+per-engine parameter controls). The default pairing — LEFT = baseline, RIGHT =
+strategist — reproduces the classic comparison exactly; any other registered
+engine can be slotted into either panel.
+
+### 3. Domain packs (`poc.domain`) and scenario sources (`poc.scenario_source`)
+
+The bundled data **stays** a sales/insurance corpus. What's now pluggable is the
+*code's* coupling to that domain: the agent's tenant/opp-type framing, the
+economic-anchor rendering, and the won/lost outcome signals come from the
+**active domain pack** (`SalesDomainPack` is the default and is byte-for-byte
+identical to the original behavior — pinned by `tests/test_characterization.py`).
+Likewise, scenario/opportunity/transcript loading goes through a `ScenarioSource`
+(default `JsonScenarioSource` over the bundled JSON; MySQL via `poc/db.py`).
+
+```python
+from poc import set_active_domain, set_scenario_source, JsonScenarioSource
+set_active_domain("sales")                              # or a custom DomainPack
+set_scenario_source(JsonScenarioSource("my.json"))     # or your own source
+```
+
+See [`examples/custom_domain_pack.py`](examples/custom_domain_pack.py) for adding
+a new domain, and [`examples/run_pluggable_benchmark.py`](examples/run_pluggable_benchmark.py)
+for a registry-driven A/B run.
 
 ---
 
@@ -253,7 +347,7 @@ cells. About 20% are real-wins (catches regression on easy cases).
 {
   "scenario_id":          "L_Pr_An_Sk_04",
   "opp_id":               "00733e8d-...",
-  "tenant":               "Libra",
+  "tenant":               "Insurance",
   "diversity_bucket":     "Price/savings × Analytical × Skeptical",
   "real_outcome":         "won",
   "is_sentinel":          false,
@@ -273,9 +367,9 @@ cells. About 20% are real-wins (catches regression on easy cases).
     ...                                      // 23 dims total
   },
   "anchors": {                                // per-opp pricing reference
-    "last_year_price_nis":         4238,
-    "current_quoted_price_nis":    4581,
-    "market_avg_for_segment_nis":  4400,
+    "last_year_price_usd":         4238,
+    "current_quoted_price_usd":    4581,
+    "market_avg_for_segment_usd":  4400,
     "max_discount_pct_internal":   15
   },
   "anchor_real": true,                        // false = cohort fallback
@@ -284,7 +378,7 @@ cells. About 20% are real-wins (catches regression on easy cases).
       "message_id": "...",
       "direction":  "outbound",
       "timestamp":  "2024-12-01 10:16:39",
-      "text":       "Hey there Lior, this is Sapir from Libra...",
+      "text":       "Hey there Lior, this is Sapir from Insurance...",
       "is_reminder":1,
       "is_followup":0
     },
@@ -334,16 +428,16 @@ Two design choices matter:
 The Strategist's `chain_runner.py` is built around our websocket replayer
 (see source comments) and depends on:
 
-- **Luna production MySQL** — for `fetch_business_rules`, cohort precedent
+- **the production system MySQL** — for `fetch_business_rules`, cohort precedent
   retrieval, classifier metadata
-- **Luna Knowledge Graph endpoint** (`LIGHTRAG_API_URL`, `LIGHTRAG_API_KEY`)
+- **Agent Knowledge Graph endpoint** (`LIGHTRAG_API_URL`, `LIGHTRAG_API_KEY`)
   — for decision-trace precedents, mined entity lookups
 - **Concrete-moves catalogs** under `data/concrete_moves/` (not bundled —
   these are tenant-specific and live in our research notebook)
 
 To run a true three-arm comparison including the Strategist:
 
-1. Mount the Luna prod DB credentials in `db.py` (or set `MYSQL_*` env vars
+1. Mount the the production system DB credentials in `db.py` (or set `MYSQL_*` env vars
    per `db.py:open_conn()`).
 2. Set `LIGHTRAG_API_URL` + `LIGHTRAG_API_KEY` env vars.
 3. Copy `data/concrete_moves/` from the upstream POC into this package.
@@ -367,7 +461,7 @@ Per scenario per arm, a JSON written to `{results_dir}/{arm_name}/{scenario_id}.
   "arm":          "pi",
   "scenario_id":  "L_Pr_An_Sk_04",
   "opp_id":       "00733e8d-...",
-  "tenant":       "Libra",
+  "tenant":       "Insurance",
   "real_outcome": "won",
   "outcome":      "won",                  // or "lost"
   "end_reason":   "customer_won",         // or "agent_graceful_close", "max_turns_no_close", ...
@@ -429,7 +523,7 @@ summary = paired_summary({
 | `POC_PLANNER_GATES`           | `on`    | Anti-staircase + premature-close post-render gates. |
 | `POC_DATA_ROOT`               | `<pkg>/data` | Where scenarios + mined library live. |
 | `POC_SCRIPT_LIBRARY_DIR`      | `<pkg>/data/script_library` | Override mined-playbook location. |
-| `LIGHTRAG_API_URL` / `_KEY`   | —       | Strategist only; Luna Knowledge Graph endpoint. |
+| `LIGHTRAG_API_URL` / `_KEY`   | —       | Strategist only; Agent Knowledge Graph endpoint. |
 
 ---
 
@@ -461,7 +555,7 @@ extend as needed.
 
 ## What we deliberately didn't bundle
 
-- **Luna production database credentials.** The `db.py` module is the same
+- **the production system database credentials.** The `db.py` module is the same
   one we use, but `open_conn()` needs MySQL creds. Required only for the
   Strategist arm.
 - **Concrete-moves catalogs.** The Strategist's per-tenant move catalogs

@@ -11,8 +11,8 @@ Per `research-notes/2026-05-03-PROPOSAL-strategy-enum-extension.md`:
     when_NOT_to_use, execution_template). Selected by Mode 1b when there's
     a concrete decision to make; OPTIONAL on simple turns.
 
-Phase 1 ships the 10-move cross-tenant base set. Per-tenant catalogs (Libra
-extras, Heavys extras, HoneyBook extras) are Phase 2-3.
+Phase 1 ships the 10-move cross-tenant base set. Per-tenant catalogs (Insurance
+extras, Ecommerce extras, SaaS extras) are Phase 2-3.
 
 Design note: each move's `execution_template` is a string fragment injected
 into prompt_build_answer's user context (via chain_executor.build_context_blocks).

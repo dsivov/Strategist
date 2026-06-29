@@ -179,7 +179,7 @@ async def mode1a_directive_v1(opp: dict, state: dict, turn_idx: int, features: d
 
 
 if __name__ == "__main__":
-    for tenant in ("Libra", "Heavys"):
+    for tenant in ("Insurance", "Ecommerce"):
         try:
             c = load_classifier_v1(tenant)
             print(f"\n{tenant}: {len(c.centroids)} centroids, "

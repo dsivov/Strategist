@@ -7,6 +7,10 @@ google-genai>=0.1.0
 # HTTP for the simulator's embedding fallback + the strategist KG client
 httpx>=0.25.0
 
+# Dual-panel UI server (server/main.py)
+fastapi>=0.110.0
+uvicorn>=0.27.0
+
 # Data
 pyyaml>=6.0
 numpy>=1.24

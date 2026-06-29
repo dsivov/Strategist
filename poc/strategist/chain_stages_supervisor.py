@@ -8,7 +8,7 @@ dict to merge into ctx.previous_responses. Side effects on ctx (anchor
 attachment, agent_concessions tracking) happen in-place.
 
 Registered stages:
-  prompt_anchor_load               — fetch_libra_anchors → ctx.anchors
+  prompt_anchor_load               — fetch_insurance_anchors → ctx.anchors
   prompt_signal_analysis_combined  — supervisor_full mode1b w/ signal-retry
   prompt_retreat_passthrough_gate  — suppress directive on retreat signals
   prompt_anti_staircase_gate       — staircase_gate over the candidate text
@@ -27,60 +27,60 @@ import os
 from typing import Any
 
 from chain_runner import ChainContext, register_programmatic_stage
-from db import open_conn, fetch_libra_anchors
+from db import open_conn, fetch_insurance_anchors
 
 log = logging.getLogger(__name__)
 
 
 @register_programmatic_stage("prompt_anchor_load")
 async def stage_anchor_load(ctx: ChainContext) -> dict:
-    """T-81 (Libra) + T-86 (Heavys) — fetch tenant-appropriate anchor pack.
+    """T-81 (Insurance) + T-86 (Ecommerce) — fetch tenant-appropriate anchor pack.
 
-    Libra: per-opp economic reference frame (last-year price, market avg,
-      claimed_increase_pct, etc.) from luna.libra_stage_data.
-    Heavys: tenant-wide product anchor pack (bundle, features, warranty,
+    Insurance: per-opp economic reference frame (last-year price, market avg,
+      claimed_increase_pct, etc.) from insurance_stage_data.
+    Ecommerce: tenant-wide product anchor pack (bundle, features, warranty,
       payments, social proof, promotions, internal policy) from CG
-      workspace 'Heavys'. Cached process-wide for the day.
+      workspace 'Ecommerce'. Cached process-wide for the day.
     """
     company = (ctx.opp_meta.get("company") or "").lower()
-    if company == "libra":
+    if company == "insurance":
         conn = open_conn()
         try:
-            anchors = fetch_libra_anchors(conn, ctx.opp_id, ctx.opp_meta)
+            anchors = fetch_insurance_anchors(conn, ctx.opp_id, ctx.opp_meta)
         except Exception as e:
-            log.warning("anchor_load (Libra) failed: %s", e)
+            log.warning("anchor_load (Insurance) failed: %s", e)
             return {"_error": str(e)}
         finally:
             conn.close()
         if not anchors:
             return {"_no_anchors_available": True}
         ctx.anchors = anchors
-        log.info("chain.anchor_load: Libra %d fields, synthetic=%s",
+        log.info("chain.anchor_load: Insurance %d fields, synthetic=%s",
                  len(anchors), anchors.get("synthetic"))
         return {
             "anchors_loaded": True,
-            "tenant": "libra",
+            "tenant": "insurance",
             "synthetic": anchors.get("synthetic"),
-            "ly_price": anchors.get("last_year_price_nis"),
-            "market_avg": anchors.get("market_avg_for_segment_nis"),
+            "ly_price": anchors.get("last_year_price_usd"),
+            "market_avg": anchors.get("market_avg_for_segment_usd"),
         }
-    elif company == "heavys":
-        from heavys_anchors import fetch_heavys_anchors
+    elif company == "ecommerce":
+        from ecommerce_anchors import fetch_ecommerce_anchors
         try:
-            anchors = await fetch_heavys_anchors()
+            anchors = await fetch_ecommerce_anchors()
         except Exception as e:
-            log.warning("anchor_load (Heavys) failed: %s", e)
+            log.warning("anchor_load (Ecommerce) failed: %s", e)
             return {"_error": str(e)}
         if not anchors or anchors.get("_cg_queries_returned_content", 0) == 0:
-            return {"_no_anchors_available": True, "tenant": "heavys"}
+            return {"_no_anchors_available": True, "tenant": "ecommerce"}
         ctx.anchors = anchors
-        log.info("chain.anchor_load: Heavys %d/%d CG fields populated, fetch_ms=%s",
+        log.info("chain.anchor_load: Ecommerce %d/%d CG fields populated, fetch_ms=%s",
                  anchors.get("_cg_queries_returned_content"),
                  anchors.get("_cg_queries_total"),
                  anchors.get("_fetch_ms"))
         return {
             "anchors_loaded": True,
-            "tenant": "heavys",
+            "tenant": "ecommerce",
             "cg_queries_returned": anchors.get("_cg_queries_returned_content"),
             "cg_queries_total": anchors.get("_cg_queries_total"),
             "max_discount_pct": anchors.get("max_authorized_discount_pct_internal"),
@@ -693,7 +693,7 @@ def _is_followup_commit_pace(sa_stage: dict, dialog: list[dict]) -> str | None:
 async def stage_retreat_passthrough(ctx: ChainContext) -> dict:
     """T-80 productionization: suppress the directive when customer signals
     pace_request or disengagement, so downstream prompt_build_answer falls
-    back to natural-Luna soft-retention behavior.
+    back to natural-Agent soft-retention behavior.
 
     Q13 (2026-05-04): pace_request in commit_pending / high-buy-intent is
     NOT a retreat — it's a payment-mechanics pause. Discriminator flips the
@@ -902,7 +902,7 @@ async def stage_anti_capitulation(ctx: ChainContext) -> dict:
     Runs after prompt_build_answer (and after prompt_anti_staircase_gate,
     so staircase fires first if both apply). Triggers regenerate-loop with
     a corrective system_suffix that pulls concrete value from the loaded
-    anchor pack (T-86 Heavys / T-81 Libra)."""
+    anchor pack (T-86 Ecommerce / T-81 Insurance)."""
     from capitulation_gate import check_capitulation
     candidate = ctx.previous_responses.get("prompt_build_answer")
     if not candidate or not isinstance(candidate, str):
@@ -943,7 +943,7 @@ async def stage_premature_close_gate(ctx: ChainContext) -> dict:
     a corrective system_suffix that pushes the actor to propose a concrete
     alternative instead of a soft handoff.
 
-    Triggered by session bca61ad8 / opp 28d73ce4 (Heavys, budget-objection
+    Triggered by session bca61ad8 / opp 28d73ce4 (Ecommerce, budget-objection
     customer that supervised side abandoned at turn 8).
     """
     from premature_close_gate import check_premature_close
@@ -1337,7 +1337,7 @@ async def stage_exemplar_retrieval(ctx: ChainContext) -> dict:
 async def stage_escalation_router(ctx: ChainContext) -> dict:
     """Honor production's prompt_co_pilot_escalation rule.
 
-    Production Luna already has security/escalation rules encoded in the prod
+    Production Agent already has security/escalation rules encoded in the prod
     chain's prompt_co_pilot_escalation stage. The stage runs (postprocessing,
     order 5) and returns:
         {"is_escalation_needed": bool, "reason": str}
@@ -1355,7 +1355,7 @@ async def stage_escalation_router(ctx: ChainContext) -> dict:
     Architectural rationale: prod escalation rules are security-vetted and
     cover cases sales scripts cannot handle (refund disputes, fraud signals,
     bot-confusion legal requirements). Ignoring them in the supervised
-    pipeline regresses safety below vanilla Luna. This stage reuses prod's
+    pipeline regresses safety below vanilla Agent. This stage reuses prod's
     rule rather than reimplementing it.
 
     Failure mode: never blocks the chain. If escalation output is missing
@@ -1414,7 +1414,7 @@ async def stage_escalation_router(ctx: ChainContext) -> dict:
     # "previous assistant has already initiated an escalation". Suppress.
     SELF_REFERENCE_PHRASES = (
         "i'm flagging this to a human",
-        "support@heavys.com",
+        "support@ecommerce.com",
         "support@",
         "priority-flagged",
         "previous assistant has already initiated",
@@ -1471,9 +1471,9 @@ async def stage_escalation_router(ctx: ChainContext) -> dict:
         # Cheap heuristic — tenant-known channels (would be loaded from CG in
         # production via the 0d depth-of-content audit step's escalation
         # content requirement)
-        if tenant == "Heavys":
-            support_channel = "support@heavys.com (priority-flagged for human callback)"
-        elif tenant == "Libra":
+        if tenant == "Ecommerce":
+            support_channel = "support@ecommerce.com (priority-flagged for human callback)"
+        elif tenant == "Insurance":
             support_channel = "*5556 / human agent (priority-flagged)"
         else:
             support_channel = "human support team (priority-flagged)"

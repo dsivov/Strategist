@@ -6,7 +6,7 @@ status: approved
 description: 'Quality/features cohort opener — when a customer first engages, the
   winning
 
-  Heavys c3 pattern is to OPEN WITH DISCOVERY before product claims or discounts.
+  Ecommerce c3 pattern is to OPEN WITH DISCOVERY before product claims or discounts.
 
   Empirical finding: real winning agents NEVER drop the discount code in the
 
@@ -14,7 +14,7 @@ description: 'Quality/features cohort opener — when a customer first engages, 
 
   '
 applies_when:
-  tenant: Heavys
+  tenant: Ecommerce
   profile:
     primary_motivator:
     - Quality/features
@@ -57,7 +57,7 @@ arc:
     - id: asked_about_product
       examples:
       - Tell me about your headphones
-      - What's special about Heavys
+      - What's special about Ecommerce
       - What model is best for me
     - id: price_first
       examples:
@@ -76,13 +76,13 @@ arc:
   turn_intent: Acknowledge competitor + contrast on engineering + probe sound preference
   must_say_template: 'Got it, {customer_disclosed_competitor} are known for {competitor_strength}.
 
-    Heavys are engineered with 8 drivers for {heavys_differentiation}. What
+    Ecommerce are engineered with 8 drivers for {ecommerce_differentiation}. What
 
     kind of sound are you truly hoping for? 🎧
 
     '
   must_not_say:
-  - Heavys are built with premium materials
+  - Ecommerce are built with premium materials
   - memory foam ear cups, 50 hours of battery life, rocking through
   expected_customer_response:
     classifier_anchors:
@@ -173,12 +173,12 @@ metadata:
   authored_by: visioner@team
   last_modified: 2026-05-11
   version: 1.0
-  empirical_basis: "Mined from 233 Heavys c3 (Quality/features + Analytical) won-deal\
+  empirical_basis: "Mined from 233 Ecommerce c3 (Quality/features + Analytical) won-deal\
     \ conversations,\n2026-05-11. Top empirical patterns:\n  - Authority \"contrast\
     \ + question\" (n=15, Δcommit=+0.60)\n  - Authority \"use-case anchor + CTA\"\
     \ (n=12, Δcommit=+0.67)\n  - Information \"withhold discount, ask what's missing\"\
-    \ (n=21, Δcommit=+0.62)\n  - Anti-pattern: feature-dump \"Heavys are built with\
+    \ (n=21, Δcommit=+0.62)\n  - Anti-pattern: feature-dump \"Ecommerce are built with\
     \ premium materials...\" (-0.33)\n  - Anti-pattern: cold discount lead (-0.33\
-    \ to -0.75)\nSee research-notes/EMPIRICAL-MINING-HEAVYS-heavys_c3_quality_analytical-FINDINGS.md\n"
+    \ to -0.75)\nSee research-notes/EMPIRICAL-MINING-ECOMMERCE-ecommerce_c3_quality_analytical-FINDINGS.md\n"
 derived_from:
-  cohort: heavys_c3_quality_analytical
+  cohort: ecommerce_c3_quality_analytical

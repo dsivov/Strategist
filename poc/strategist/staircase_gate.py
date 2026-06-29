@@ -1,7 +1,7 @@
 """T-83 anti-staircase mechanical gate (2026-05-02).
 
 Empirical motivation: in 2026-05-02 sessions on opp a3f517d7, the supervised
-agent staircase-priced (2,685 → 2,470 → 2,300 NIS) DESPITE the explicit
+agent staircase-priced (2,685 → 2,470 → 2,300 USD) DESPITE the explicit
 ANCHOR-AWARE PRICING RULE in the supervisor's system prompt. Prompt-text
 rules don't bind; only mechanical/programmatic gates do. Customer's
 empirically-validated reaction: "Wait, you started at 2,685 and now 2,300?
@@ -13,11 +13,11 @@ its prior best offer. Caller (replayer._live_turn) uses the verdict to
 reject + regenerate the agent message.
 
 Tenant-aware:
-  Libra (NIS, full-price quoting):
+  Insurance (USD, full-price quoting):
     - Failure: agent lowers quoted full premium repeatedly
-    - Detect via NIS regex + agent-vs-reference context classifier
+    - Detect via USD regex + agent-vs-reference context classifier
     - Reject if new agent-offered price < min(prior agent offers)
-  Heavys (USD, discount-code offering):
+  Ecommerce (USD, discount-code offering):
     - Failure: agent escalates discount magnitude
     - Detect via $X off regex + distinct VIP code count
     - Reject if new offered discount > max(prior offered discounts)
@@ -35,20 +35,20 @@ from typing import Any
 log = logging.getLogger(__name__)
 
 
-# ── Libra (NIS) extraction ──────────────────────────────────────────────────
+# ── Insurance (USD) extraction ──────────────────────────────────────────────────
 
-LIBRA_NIS_PATTERN = re.compile(
+INSURANCE_NIS_PATTERN = re.compile(
     # Match either comma-grouped (1,272 / 1,887) or plain (2685 / 1100) numbers.
     # The (?<!\d) lookbehind prevents matching the tail of a longer number.
-    r'(?<!\d)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*NIS',
+    r'(?<!\d)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*USD',
     re.IGNORECASE)
-LIBRA_HEBREW_NIS_PATTERN = re.compile(
-    r'(?<!\d)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(?:₪|ש"ח|שח)')
+INSURANCE_HEBREW_NIS_PATTERN = re.compile(
+    r'(?<!\d)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(?:$|ש"ח|שח)')
 
 # Markers indicating the price refers to someone OTHER than us (competitor,
 # customer's prior policy, market reference). When present in the ±60 char
 # context window around a price, classify as 'reference' not 'agent_offer'.
-LIBRA_COMPARISON_MARKERS = re.compile(
+INSURANCE_COMPARISON_MARKERS = re.compile(
     r'\b(they|their|another|other|elsewhere|competitor|you got|'
     r'you were quoted|I got|I was quoted|got an offer|received an offer|'
     r'the other|other company|comparing|compare|against|versus|vs\b|'
@@ -56,26 +56,26 @@ LIBRA_COMPARISON_MARKERS = re.compile(
     re.IGNORECASE)
 
 
-def extract_libra_offered_prices(text: str) -> list[float]:
-    """Return list of agent-offered NIS prices found in `text`.
+def extract_insurance_offered_prices(text: str) -> list[float]:
+    """Return list of agent-offered USD prices found in `text`.
     Filters out competitor/reference/market prices via context classifier."""
     if not text:
         return []
     offers = []
-    # English NIS
-    for m in LIBRA_NIS_PATTERN.finditer(text):
+    # English USD
+    for m in INSURANCE_NIS_PATTERN.finditer(text):
         amount = _parse_amount(m.group(1))
         if amount is None or amount < 100 or amount > 100000:
             continue  # plausibility filter
         ctx_start = max(0, m.start() - 60)
         ctx_end = min(len(text), m.end() + 30)
         ctx = text[ctx_start:ctx_end]
-        if not LIBRA_COMPARISON_MARKERS.search(ctx):
+        if not INSURANCE_COMPARISON_MARKERS.search(ctx):
             offers.append(amount)
-    # Hebrew NIS (same context filter applies; Hebrew comparison markers
+    # Hebrew USD (same context filter applies; Hebrew comparison markers
     # would need their own dictionary — for now just trust agent's bilingual
     # text won't mix reference + offer in same Hebrew clause)
-    for m in LIBRA_HEBREW_NIS_PATTERN.finditer(text):
+    for m in INSURANCE_HEBREW_NIS_PATTERN.finditer(text):
         amount = _parse_amount(m.group(1))
         if amount is None or amount < 100 or amount > 100000:
             continue
@@ -83,13 +83,13 @@ def extract_libra_offered_prices(text: str) -> list[float]:
     return offers
 
 
-# ── Heavys (USD) extraction ─────────────────────────────────────────────────
+# ── Ecommerce (USD) extraction ─────────────────────────────────────────────────
 
-HEAVYS_DISCOUNT_PATTERN = re.compile(r'\$(\d+(?:\.\d+)?)\s*off', re.IGNORECASE)
-HEAVYS_VIP_CODE_PATTERN = re.compile(r'\bVIP(\d+)[A-Z]+\b', re.IGNORECASE)
+ECOMMERCE_DISCOUNT_PATTERN = re.compile(r'\$(\d+(?:\.\d+)?)\s*off', re.IGNORECASE)
+ECOMMERCE_VIP_CODE_PATTERN = re.compile(r'\bVIP(\d+)[A-Z]+\b', re.IGNORECASE)
 
 
-def extract_heavys_offered_discounts(text: str) -> dict[str, Any]:
+def extract_ecommerce_offered_discounts(text: str) -> dict[str, Any]:
     """Return dict with keys:
       'discount_amounts': list of $X off amounts
       'codes': list of unique VIP{N}{SUFFIX} codes (each code may bundle
@@ -97,11 +97,11 @@ def extract_heavys_offered_discounts(text: str) -> dict[str, Any]:
     if not text:
         return {"discount_amounts": [], "codes": []}
     amounts = []
-    for m in HEAVYS_DISCOUNT_PATTERN.finditer(text):
+    for m in ECOMMERCE_DISCOUNT_PATTERN.finditer(text):
         amount = _parse_amount(m.group(1))
         if amount is not None and 1 <= amount <= 1000:
             amounts.append(amount)
-    codes = list(set(m.group(0).upper() for m in HEAVYS_VIP_CODE_PATTERN.finditer(text)))
+    codes = list(set(m.group(0).upper() for m in ECOMMERCE_VIP_CODE_PATTERN.finditer(text)))
     return {"discount_amounts": amounts, "codes": codes}
 
 
@@ -114,12 +114,12 @@ def extract_customer_disclosed_competitor_price(
     price. Used to whitelist legitimate competitive matching from the
     anti-staircase gate.
 
-    Patterns matched (Libra NIS, all extracted to NIS amounts):
+    Patterns matched (Insurance USD, all extracted to USD amounts):
       - "I got quoted 2200 [from X]"
       - "X has it for 2200"
       - "I'm getting 2200 elsewhere"
       - "another company [quoted/offered] 2200"
-      - bare "2,200 NIS" alongside a competitor-context word
+      - bare "2,200 USD" alongside a competitor-context word
 
     Returns the most recent customer-disclosed competitor price, or None.
     """
@@ -138,7 +138,7 @@ def extract_customer_disclosed_competitor_price(
     )
     nis_pattern = re.compile(
         r"(?<!\d)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d{3,5}(?:\.\d+)?)\s*"
-        r"(?:nis|shekels?|₪)?",
+        r"(?:usd|dollars?|$)?",
         re.IGNORECASE,
     )
 
@@ -154,14 +154,14 @@ def extract_customer_disclosed_competitor_price(
                 val = float(raw)
             except ValueError:
                 continue
-            # Sanity bounds for car-insurance NIS prices
+            # Sanity bounds for car-insurance USD prices
             if 500 <= val <= 15000:
                 return val
     return None
 
 
 # 2026-05-06 — Context-aware cumulative-concession threshold (Option D).
-# Empirical finding: 23% of real won-deal Libra agents drop >15% from anchor.
+# Empirical finding: 23% of real won-deal Insurance agents drop >15% from anchor.
 # A static 15% gate over-blocks. Loosen DYNAMICALLY based on conversation
 # context: explicit competitor quote → already whitelisted (existing logic);
 # late-phase stall → 30%; customer-stated target → match exactly.
@@ -192,18 +192,18 @@ _CUSTOMER_TARGET_RE = _re_target.compile(
 )
 
 
-# R35 (2026-05-06) — Heavys customer-target extractor. Parallel to Libra
+# R35 (2026-05-06) — Ecommerce customer-target extractor. Parallel to Insurance
 # extract_customer_stated_target above but tuned for e-commerce $X off / X%
-# patterns instead of NIS prices. Returns either a dollar-discount target
+# patterns instead of USD prices. Returns either a dollar-discount target
 # ({"kind": "dollar_off", "amount": 80}) or a percent target
 # ({"kind": "percent_off", "amount": 25}). None when no target found.
 #
-# Empirical motivation (R34 doc 2026-05-06): in 43 won-deal Heavys pushback
+# Empirical motivation (R34 doc 2026-05-06): in 43 won-deal Ecommerce pushback
 # conversations, customer-target reveals were 6 of 43 (~14%); when they
 # happened, real agents went ABOVE the stated target ("you can do $42? Would
 # about $55 be useful?"), not matched-exactly. So the detected target is
 # the FLOOR for the agent's counter-offer, not the exact price to match.
-_HEAVYS_DOLLAR_TARGET_RE = _re_target.compile(
+_ECOMMERCE_DOLLAR_TARGET_RE = _re_target.compile(
     r"\$\s*(\d{1,4}(?:\.\d+)?)\s*(?:off|discount|deal|coupon)\b|"
     r"(?:i'?d|i would) (?:buy|take|order|pay)\s*(?:at|for)\s*\$?\s*(\d{1,5})|"
     r"\bholding out (?:for|until)\s*(?:the\s*)?\$?\s*(\d{1,4})\s*(?:off)?|"
@@ -211,20 +211,20 @@ _HEAVYS_DOLLAR_TARGET_RE = _re_target.compile(
     r"\b(?:match|hit|do)\s+(?:my|that|the)?\s*(?:offer|deal|price|coupon)?\s*(?:of|at)?\s*\$\s*(\d{1,4})",
     _re_target.IGNORECASE,
 )
-_HEAVYS_PERCENT_TARGET_RE = _re_target.compile(
+_ECOMMERCE_PERCENT_TARGET_RE = _re_target.compile(
     r"\b(\d{1,2})\s*%\s*(?:off|discount|deal)\b",
     _re_target.IGNORECASE,
 )
 
 
-def extract_customer_stated_target_heavys(
+def extract_customer_stated_target_ecommerce(
     dialog: list[dict] | None,
 ) -> dict | None:
-    """For e-commerce (Heavys-family) tenants, scan the customer's recent
+    """For e-commerce (Ecommerce-family) tenants, scan the customer's recent
     messages for an explicit dollar-off or percent-off target. Returns a
     dict {kind: 'dollar_off' | 'percent_off', amount: int} or None.
 
-    Looks at the LAST 3 customer messages (matches Libra version's window).
+    Looks at the LAST 3 customer messages (matches Insurance version's window).
     Prefers dollar-off (more specific) over percent-off when both match.
     """
     if not dialog:
@@ -233,7 +233,7 @@ def extract_customer_stated_target_heavys(
     for m in customer_msgs:
         text = m.get("text") or ""
         # Try dollar-off first
-        for match in _HEAVYS_DOLLAR_TARGET_RE.finditer(text):
+        for match in _ECOMMERCE_DOLLAR_TARGET_RE.finditer(text):
             for group in match.groups():
                 if group:
                     try:
@@ -243,7 +243,7 @@ def extract_customer_stated_target_heavys(
                     except (ValueError, TypeError):
                         pass
         # Fall back to percent-off
-        for match in _HEAVYS_PERCENT_TARGET_RE.finditer(text):
+        for match in _ECOMMERCE_PERCENT_TARGET_RE.finditer(text):
             try:
                 v = int(match.group(1))
                 if 5 <= v <= 80:  # plausible % off range
@@ -254,7 +254,7 @@ def extract_customer_stated_target_heavys(
 
 
 # Phase A (2026-05-10) — generic-numeric extractor for use after a semantic
-# classifier has fired. Scans for any plausible NIS-amount in the text.
+# classifier has fired. Scans for any plausible USD-amount in the text.
 # Works with Hebrew text too because it doesn't require an English currency
 # token next to the number — the classifier already established this is
 # target-statement context.
@@ -314,7 +314,7 @@ def extract_customer_stated_target(
                         return v
                 except (ValueError, TypeError):
                     pass
-            # Fallback: any plausible NIS amount in the message — picks the
+            # Fallback: any plausible USD amount in the message — picks the
             # smallest plausible amount (most-likely-target — customers
             # usually state a lower number than the agent's quote).
             candidates: list[int] = []
@@ -379,7 +379,7 @@ def detect_late_phase_stall(dialog: list[dict] | None,
 # ─────────────────────────────────────────────────────────────────────────────
 # R33 (2026-05-06) — Manager-escalation framing
 #
-# Empirical motivation: real-agent analysis (200 won-deal Libra Insurance
+# Empirical motivation: real-agent analysis (200 won-deal Insurance Insurance
 # Renewal × Price/Analytical conversations) found that 23% of won deals drop
 # >15% from anchor. Production agents have a `max_discount_pct_internal`
 # (typically 15%) — that's their DISCRETIONARY budget. For drops beyond that,
@@ -444,7 +444,7 @@ def should_inject_escalation_framing(
     triggering signal for telemetry.
 
     Active when ALL of:
-      - Tenant is Libra (price-quoted tenant; Heavys uses VIP codes via a
+      - Tenant is Insurance (price-quoted tenant; Ecommerce uses VIP codes via a
         separate mechanic)
       - At least one prior agent price offer exists (something to escalate
         beyond — first-quote turns don't need it)
@@ -464,7 +464,7 @@ def should_inject_escalation_framing(
             "already_escalated": False}
 
     tenant = (opp_meta or {}).get("company") if opp_meta else None
-    if not tenant or tenant.lower() != "libra":
+    if not tenant or tenant.lower() != "insurance":
         return False, meta
 
     prior_prices = [c["amount"] for c in (panel_concessions or [])
@@ -522,7 +522,7 @@ def render_escalation_framing_block(meta: dict, anchors: dict | None = None) -> 
             "still pushing back on price). Real agents in this state often "
             "escalate to a retention manager for an exception."),
         "customer_target_beyond_authority": (
-            f"Customer has stated a specific target price (≈{meta.get('customer_target')} NIS) "
+            f"Customer has stated a specific target price (≈{meta.get('customer_target')} USD) "
             f"that is beyond your default discretionary authority "
             f"(max_discount={max_disc}%). Real agents call their retention "
             f"manager in this situation."),
@@ -567,7 +567,7 @@ def check_staircase(
       panel_concessions: list of prior {turn, type, amount, ...} dicts
         accumulated on this panel during the live A/B phase
       new_text: the agent's just-generated message text
-      tenant: opp_meta.company — 'Libra' / 'Heavys' / other
+      tenant: opp_meta.company — 'Insurance' / 'Ecommerce' / other
       dialog: optional list of {role, text} dicts. When provided, the gate
         whitelists legitimate competitor-matching (agent matching a price
         the customer explicitly disclosed) so it doesn't get falsely
@@ -614,8 +614,8 @@ def check_staircase(
     meta["_config_used"] = bool(cfg)
     meta["_extractor_module"] = extractor_module
 
-    if extractor_module == "libra":
-        offers = extract_libra_offered_prices(new_text)
+    if extractor_module == "insurance":
+        offers = extract_insurance_offered_prices(new_text)
         if not offers:
             return False, meta
         new_min = min(offers)
@@ -637,7 +637,7 @@ def check_staircase(
             #   (c) conversation in late-phase stall (5+ turns, repeated
             #       objection) → loosen to 30% (matches what real human
             #       agents do per empirical analysis 2026-05-06)
-            # Empirical: 23% of real Libra won-deal agents drop >15%;
+            # Empirical: 23% of real Insurance won-deal agents drop >15%;
             # most of those happen in late-phase / target-match contexts.
 
             # Pre-check: customer-stated target (highest priority — match exactly)
@@ -645,13 +645,13 @@ def check_staircase(
             customer_target = extract_customer_stated_target(dialog, cfg=cfg)
             if customer_target is not None and abs(new_min - customer_target) <= customer_target_tolerance:
                 meta["reason"] = (
-                    f"libra customer-target match: customer stated target "
-                    f"{customer_target} NIS; agent offered {new_min} NIS within "
+                    f"insurance customer-target match: customer stated target "
+                    f"{customer_target} USD; agent offered {new_min} USD within "
                     f"±{customer_target_tolerance:.0f}. Legitimate close, not staircase.")
                 meta["competitor_match"] = False
                 meta["customer_target_match"] = True
                 meta["new_concessions"] = [
-                    {"type": "price", "amount": p, "currency": "NIS"} for p in offers]
+                    {"type": "price", "amount": p, "currency": "USD"} for p in offers]
                 return False, meta
 
             # Determine the active threshold for THIS turn (config-driven)
@@ -668,12 +668,12 @@ def check_staircase(
                 competitor_quote = extract_customer_disclosed_competitor_price(dialog)
                 if competitor_quote is not None and abs(new_min - competitor_quote) <= competitor_tolerance:
                     meta["reason"] = (
-                        f"libra competitive match (whitelisted, cumulative-OK): "
+                        f"insurance competitive match (whitelisted, cumulative-OK): "
                         f"agent offered {new_min} matching customer-disclosed "
                         f"competitor {competitor_quote}")
                     meta["competitor_match"] = True
                     meta["new_concessions"] = [
-                        {"type": "price", "amount": p, "currency": "NIS"} for p in offers]
+                        {"type": "price", "amount": p, "currency": "USD"} for p in offers]
                     return False, meta
                 # Block — over the (context-adjusted) threshold
                 threshold_pct = int(active_threshold * 100)
@@ -683,13 +683,13 @@ def check_staircase(
                 meta["observed_drop_pct"] = round(observed_drop * 100, 1)
                 meta["is_critical"] = is_critical
                 meta["reason"] = (
-                    f"libra cumulative concession: agent-offered {new_min} NIS "
-                    f"is >{threshold_pct}% below max-ever {prior_max} NIS "
+                    f"insurance cumulative concession: agent-offered {new_min} USD "
+                    f"is >{threshold_pct}% below max-ever {prior_max} USD "
                     f"(floor={cumulative_floor:.0f}, "
                     f"observed drop={meta['observed_drop_pct']}%, "
                     f"active threshold={threshold_pct}% "
                     f"{'(stall-relaxed)' if stall_active else '(default)'}). "
-                    f"Customer will perceive a {prior_max - new_min:.0f} NIS drop "
+                    f"Customer will perceive a {prior_max - new_min:.0f} USD drop "
                     f"and lose trust. Hold price or surface real justification."
                     + (f" [CRITICAL: ≥{int(critical_threshold*100)}% drop — "
                        f"will trigger safe-fallback on retry exhaustion]"
@@ -703,24 +703,24 @@ def check_staircase(
                 competitor_quote = extract_customer_disclosed_competitor_price(dialog)
                 if competitor_quote is not None and abs(new_min - competitor_quote) <= competitor_tolerance:
                     meta["reason"] = (
-                        f"libra competitive match (whitelisted): agent offered {new_min} "
-                        f"NIS within ±{competitor_tolerance:.0f} of customer-disclosed competitor "
-                        f"{competitor_quote} NIS")
+                        f"insurance competitive match (whitelisted): agent offered {new_min} "
+                        f"USD within ±{competitor_tolerance:.0f} of customer-disclosed competitor "
+                        f"{competitor_quote} USD")
                     meta["competitor_match"] = True
                     meta["new_concessions"] = [
-                        {"type": "price", "amount": p, "currency": "NIS"} for p in offers]
+                        {"type": "price", "amount": p, "currency": "USD"} for p in offers]
                     return False, meta
                 meta["reason"] = (
-                    f"libra staircase: agent-offered {new_min} NIS is below "
-                    f"prior best {prior_best} NIS")
+                    f"insurance staircase: agent-offered {new_min} USD is below "
+                    f"prior best {prior_best} USD")
                 return True, meta
         # Not a staircase → record new offers for panel state
         meta["new_concessions"] = [
-            {"type": "price", "amount": p, "currency": "NIS"} for p in offers]
+            {"type": "price", "amount": p, "currency": "USD"} for p in offers]
         return False, meta
 
-    if extractor_module == "heavys":
-        d = extract_heavys_offered_discounts(new_text)
+    if extractor_module == "ecommerce":
+        d = extract_ecommerce_offered_discounts(new_text)
         amounts = d["discount_amounts"]
         codes = d["codes"]
         if not amounts and not codes:
@@ -737,7 +737,7 @@ def check_staircase(
                 meta["prior_best"] = prior_best
                 if new_max > prior_best:
                     meta["reason"] = (
-                        f"heavys staircase: agent escalated discount to "
+                        f"ecommerce staircase: agent escalated discount to "
                         f"${new_max} off (prior best was ${prior_best})")
                     return True, meta
         # Code-count check: if 2+ distinct VIP codes already offered AND
@@ -750,7 +750,7 @@ def check_staircase(
         if len(prior_codes) >= 1 and new_codes:
             meta["detected_type"] = "code"
             meta["reason"] = (
-                f"heavys staircase: introducing additional discount code "
+                f"ecommerce staircase: introducing additional discount code "
                 f"{sorted(new_codes)} on top of prior {sorted(prior_codes)}")
             return True, meta
         # Not a staircase → record
@@ -777,14 +777,14 @@ def build_correction_prompt(meta: dict) -> str:
         return (
             f"\n\n# ⚠ STAIRCASE DETECTED — REGENERATE\n"
             f"Your previous draft would have lowered the price to "
-            f"{new_amount} NIS, below your prior best offer of {prior_best} NIS. "
+            f"{new_amount} USD, below your prior best offer of {prior_best} USD. "
             f"Multiple price drops in one conversation are a known sales "
             f"failure mode — customer reaction is 'why didn't you offer this "
             f"from the start?' followed by trust collapse.\n"
             f"REGENERATE this turn WITHOUT lowering the price. Address the "
             f"objection via coverage value, deductibles, loyalty perks, "
             f"installment terms, cashback, or relationship — anything except "
-            f"another price drop. Hold the line at {prior_best} NIS."
+            f"another price drop. Hold the line at {prior_best} USD."
         )
     if detected == "discount":
         return (

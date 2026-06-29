@@ -77,7 +77,7 @@ _RETREAT_PATTERNS = [
     re.compile(r"^\s*no\s*[.!]?\s*$", re.I),  # standalone "no"
     re.compile(r"\btake your time\b", re.I),  # agent honoring retreat
     re.compile(r"\bno worries\b.*\b(time|check)\b", re.I),
-    # US English / Heavys vocabulary (added 2026-05-04 after live-session gap)
+    # US English / Ecommerce vocabulary (added 2026-05-04 after live-session gap)
     re.compile(r"\bno thank you\b", re.I),
     re.compile(r"\bappreciate (the |your )?offer\b.*\b(but|however)\b", re.I),
     re.compile(r"\b(i'?ll |i would )?(have to )?pass\b", re.I),
@@ -98,11 +98,11 @@ _OBJECTION_PATTERNS = [
     re.compile(r"\b(comparing|compared) (other|to)\b", re.I),
     re.compile(r"\b(found|received|have|got) (a |an )?(quote|insurance|offer|price) (from|with|of|for)\b", re.I),
     re.compile(r"\b(phoenix|yashir|wesure|direct|menorah|harel|clal|migdal|ayalon)\b", re.I),
-    re.compile(r"\b\d{2,4}\s*(shekels?|nis|ש[\"״]?ח)\s*(cheaper|less|lower)\b", re.I),
+    re.compile(r"\b\d{2,4}\s*(dollars?|usd|ש[\"״]?ח)\s*(cheaper|less|lower)\b", re.I),
     re.compile(r"\b(loyal|long(time|-time)) customer\b", re.I),
     re.compile(r"\brefund\b", re.I),
     re.compile(r"\badditional discount\b", re.I),
-    # US English / Heavys vocabulary (added 2026-05-04 after live-session gap)
+    # US English / Ecommerce vocabulary (added 2026-05-04 after live-session gap)
     re.compile(r"\bhow much (?:of |is )(?:a |the )?discount\b", re.I),
     re.compile(r"\b(any|got any|got a|is there) (a )?(discount|promo|coupon|deal)\b", re.I),
     re.compile(r"\bwhat'?s the (discount|deal|lowest|best price)\b", re.I),
@@ -300,7 +300,7 @@ def _classify_cue(text: str, role: str, prev_phase: str, turn_idx: int) -> Optio
         if re.search(r"\b(market check|cheap|excellent price|won'?t find|competitive|significant difference)\b", t, re.I):
             return PHASE_OBJECTION_HANDLING
         # Agent challenge-coverage / value-differentiation rebuttal.
-        if re.search(r"\b(includes|automatically receive|libra (you|automatically))\b.*\b(coverage|headlights|hit and run|mirrors)\b", t, re.I):
+        if re.search(r"\b(includes|automatically receive|insurance (you|automatically))\b.*\b(coverage|headlights|hit and run|mirrors)\b", t, re.I):
             return PHASE_OBJECTION_HANDLING
 
     # Greet — first agent intro / customer auto-reply.
@@ -309,7 +309,7 @@ def _classify_cue(text: str, role: str, prev_phase: str, turn_idx: int) -> Optio
 
     # Agent factual answer to a probe (present).
     if role == "agent" and prev_phase == PHASE_PROBE:
-        if re.search(r"^\s*\d{3,4}\s*(NIS|nis|ש[\"״]?ח|total|shekels?)?\s*\.?\s*$", t):
+        if re.search(r"^\s*\d{3,4}\s*(USD|usd|ש[\"״]?ח|total|dollars?)?\s*\.?\s*$", t):
             return PHASE_PRESENT
         if re.search(r"^(third party|mandatory|comp(rehensive)?|tp)\b", t, re.I) and re.search(r"\b\d{3,4}\b", t) and not _matches_any(t, _CLOSE_ATTEMPT_PATTERNS):
             return PHASE_PRESENT

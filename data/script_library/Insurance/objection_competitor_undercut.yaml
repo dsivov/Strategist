@@ -13,7 +13,7 @@ description: 'Customer disclosed a competitor offer below our quote. Probe the o
 
   '
 applies_when:
-  tenant: Libra
+  tenant: Insurance
   profile:
     decision_logic:
     - Analytical
@@ -79,7 +79,7 @@ arc:
   turn_intent: List concrete coverage features as the value differentiator
   must_say_template: 'Check the coverage too, not just the price. With us you have:
 
-    deductible-waiver at arrangement garage (above 2,000 NIS damage),
+    deductible-waiver at arrangement garage (above 2,000 USD damage),
 
     hit-and-run that doesn''t raise your rate for 3 years, towing,
 
@@ -120,10 +120,10 @@ arc:
 - step_id: hold_with_conditional_close
   turn_intent: 'Conditional commitment: if I can lower to X, would that be relevant
     for renewal?'
-  must_say_template: 'If I can lower the comprehensive to {anchors.target_price_nis}
-    NIS
+  must_say_template: 'If I can lower the comprehensive to {anchors.target_price_usd}
+    USD
 
-    (incl. Librot discount) and mandatory to {anchors.mandatory_target_nis} NIS,
+    (incl. Librot discount) and mandatory to {anchors.mandatory_target_usd} USD,
 
     would that be relevant for renewal?
 
@@ -142,7 +142,7 @@ metadata:
   authored_by: visioner@team
   last_modified: 2026-05-10
   version: 2.0
-  empirical_basis: "Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message\
+  empirical_basis: "Mined from 500 insurance_c0 ClosedWon + 500 ClosedLost (message\
     \ ×\nresearch_message_strategy_flash, 2026-05-10). objection_handling\nstrategy\
     \ shows +15% won/lost lift.\n\nprobe_competitor_specifics:\n  - \"Expensive compared\
     \ to what?\" (n=43, won-side cluster)\n  - \"Could you share offer details?\"\
@@ -165,4 +165,4 @@ metadata:
   - r33_manager_escalation
   - graceful_close_no_match
 derived_from:
-  cohort: libra_c0
+  cohort: insurance_c0

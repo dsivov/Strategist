@@ -1,7 +1,8 @@
-"""POC FastAPI server — Luna Sales Strategist demo.
+"""POC FastAPI server — Sales Strategist Benchmark demo.
 
 Endpoints:
   GET  /                       → serves the single-page app
+  GET  /api/engines            → list registered engines (drives the UI selectors)
   GET  /api/scenarios          → list curated scenarios
   GET  /api/scenarios/{opp_id} → full scenario detail + transcript metadata
   POST /api/run/{opp_id}       → start a replay session
@@ -40,7 +41,7 @@ import httpx
 import uvicorn
 
 # ── POC package layout: server/ is the FastAPI app, poc/ holds the engines
-# and substrate (customer_simulator, luna_actor, gates), poc/strategist/ holds
+# and substrate (customer_simulator, actor, gates), poc/strategist/ holds
 # the Strategist's prompt chain, poc/planner/ is the Planner. All four dirs go
 # on sys.path so the modules can find each other with their original flat
 # imports.
@@ -103,33 +104,33 @@ async def _build_cache_in_background():
         CANDIDATE_CACHE = {}
 
 
-async def _prewarm_heavys_anchors():
-    """T-86 — pre-fetch Heavys CG anchor pack at server startup so the first
-    Heavys session doesn't pay the 6s cold-fetch cost."""
+async def _prewarm_ecommerce_anchors():
+    """T-86 — pre-fetch Ecommerce CG anchor pack at server startup so the first
+    Ecommerce session doesn't pay the 6s cold-fetch cost."""
     try:
-        from heavys_anchors import fetch_heavys_anchors
-        a = await fetch_heavys_anchors()
+        from ecommerce_anchors import fetch_ecommerce_anchors
+        a = await fetch_ecommerce_anchors()
         n_ok = a.get("_cg_queries_returned_content", 0)
         n_total = a.get("_cg_queries_total", 0)
-        log.info("Heavys anchor cache pre-warmed: %d/%d fields in %sms",
+        log.info("Ecommerce anchor cache pre-warmed: %d/%d fields in %sms",
                  n_ok, n_total, a.get("_fetch_ms"))
     except Exception as e:
-        log.warning("Heavys anchor pre-warm failed: %s", e)
+        log.warning("Ecommerce anchor pre-warm failed: %s", e)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("POC server starting on port 8443 — port binds NOW; "
-             "random_match cache + Heavys anchors warm in background")
+             "random_match cache + Ecommerce anchors warm in background")
     cache_task = asyncio.create_task(_build_cache_in_background())
-    heavys_task = asyncio.create_task(_prewarm_heavys_anchors())
+    ecommerce_task = asyncio.create_task(_prewarm_ecommerce_anchors())
     yield
     cache_task.cancel()
-    heavys_task.cancel()
+    ecommerce_task.cancel()
     log.info("POC server shutting down")
 
 
-app = FastAPI(title="Luna Sales Strategist POC", lifespan=lifespan)
+app = FastAPI(title="Sales Strategist Benchmark POC", lifespan=lifespan)
 
 
 _NO_CACHE_HEADERS = {
@@ -151,6 +152,19 @@ async def logs_page():
 
 # Serve client assets
 app.mount("/static", StaticFiles(directory=CLIENT_DIR), name="static")
+
+
+@app.get("/api/engines")
+async def list_engines():
+    """Available Strategy/Supervisor engines, from the pluggable registry.
+
+    The UI renders L/R panel selectors and per-engine parameter controls from
+    this response — engines are no longer hardcoded in the client. An engine
+    added in-tree (poc.registry.register) or via a `strategist.engines` entry
+    point appears here automatically.
+    """
+    from registry import all_specs
+    return {"engines": [s.to_public() for s in all_specs()]}
 
 
 @app.get("/api/scenarios")
@@ -280,22 +294,51 @@ async def start_run(opp_id: str, body: dict | None = Body(default=None)):
     # seed depths (more seed = supervisor sees more history; less = harder
     # cold-start).
     seed_end_override = int((body or {}).get("seed_end_override") or 0)
-    # R-side engine selector: "strategist" (default, existing) or "planner"
-    # (PCA-faithful, independent codebase). L-side + customer sim unchanged.
-    engine = ((body or {}).get("engine") or "strategist").lower()
-    if engine not in ("strategist", "planner"):
-        engine = "strategist"
-    # Topology-B: Planner econ-envelope mode (engine=planner only):
-    #   off | always | auto (difficulty-gated). Back-compatible: a bare
-    #   true/1 means "always".
+    # Per-panel engine selection (any-vs-any A/B). Each panel's engine id is
+    # validated against the pluggable registry — no hardcoded whitelist — so a
+    # newly-registered engine is accepted with no edit here. Defaults reproduce
+    # the classic pairing: LEFT = baseline (control), RIGHT = strategist.
+    from registry import has as _engine_known, get as _engine_get
+
+    def _resolve(engine_id: str, fallback: str) -> str:
+        eid = (engine_id or fallback).lower()
+        if not _engine_known(eid):
+            log.warning("unknown engine %r requested; falling back to %s", eid, fallback)
+            return fallback
+        return eid
+
+    engine = _resolve((body or {}).get("engine"), "strategist")            # R-side
+    engine_left = _resolve((body or {}).get("engine_left"), "baseline")    # L-side
+
+    def _coerce_params(engine_id: str, raw: dict | None) -> dict:
+        """Keep only params the engine declares; coerce a bare planner_envelope."""
+        raw = dict(raw or {})
+        try:
+            spec = _engine_get(engine_id)
+        except Exception:
+            return {}
+        allowed = {p.name for p in spec.params}
+        return {k: v for k, v in raw.items() if k in allowed}
+
+    # Back-compat: a top-level `planner_envelope` (bare true/1 == "always") maps
+    # onto the R-side engine's params.
     _pe_raw = (body or {}).get("planner_envelope")
-    if _pe_raw is True:
-        planner_envelope = "always"
-    else:
-        _pe_s = str(_pe_raw).strip().lower() if _pe_raw is not None else "off"
-        planner_envelope = (
-            "always" if _pe_s in ("always", "true", "1", "on", "yes")
-            else "auto" if _pe_s == "auto" else "off")
+    _pe = None
+    if _pe_raw is not None:
+        if _pe_raw is True:
+            _pe = "always"
+        else:
+            _pe_s = str(_pe_raw).strip().lower()
+            _pe = ("always" if _pe_s in ("always", "true", "1", "on", "yes")
+                   else "auto" if _pe_s == "auto" else "off")
+
+    engine_params = _coerce_params(engine, (body or {}).get("engine_params"))
+    if _pe is not None and "planner_envelope" not in engine_params and engine == "planner":
+        engine_params["planner_envelope"] = _pe
+    engine_params_left = _coerce_params(engine_left, (body or {}).get("engine_params_left"))
+    # Legacy field still surfaced for the existing UI/log lines.
+    planner_envelope = engine_params.get("planner_envelope", "off")
+
     SESSIONS[session_id] = {
         "opp_id": opp_id,
         "status": "ready",
@@ -304,17 +347,23 @@ async def start_run(opp_id: str, body: dict | None = Body(default=None)):
         "hard_customer": hard_customer,
         "seed_end_override": seed_end_override,
         "engine": engine,
+        "engine_left": engine_left,
+        "engine_params": engine_params,
+        "engine_params_left": engine_params_left,
         "planner_envelope": planner_envelope,
     }
-    log.info("Session %s ready for opp %s [engine=%s%s]%s%s",
-             session_id[:8], opp_id, engine,
-             f"+envelope:{planner_envelope}" if (planner_envelope != "off" and engine == "planner") else "",
+    log.info("Session %s ready for opp %s [L=%s R=%s%s]%s%s",
+             session_id[:8], opp_id, engine_left, engine,
+             f"+params:{engine_params}" if engine_params else "",
              " [HARD CUSTOMER]" if hard_customer else "",
              f" [SEED_OVERRIDE={seed_end_override}]" if seed_end_override > 0 else "")
     return {"session_id": session_id, "opp_id": opp_id,
             "hard_customer": hard_customer,
             "seed_end_override": seed_end_override,
             "engine": engine,
+            "engine_left": engine_left,
+            "engine_params": engine_params,
+            "engine_params_left": engine_params_left,
             "planner_envelope": planner_envelope}
 
 
@@ -379,13 +428,19 @@ async def websocket_session(ws: WebSocket, session_id: str):
     hard_customer = bool(sess.get("hard_customer", False))
     seed_end_override = int(sess.get("seed_end_override") or 0)
     engine = sess.get("engine", "strategist")
+    engine_left = sess.get("engine_left", "baseline")
     planner_envelope = sess.get("planner_envelope", "off")
+    engine_params = sess.get("engine_params") or {}
+    engine_params_left = sess.get("engine_params_left") or {}
     replayer_task = asyncio.create_task(
         run_session(session_id, opp_id, send, get_speed, scenario_meta,
                     hard_customer=hard_customer,
                     seed_end_override=seed_end_override,
                     engine=engine,
-                    planner_envelope=planner_envelope))
+                    planner_envelope=planner_envelope,
+                    engine_left=engine_left,
+                    engine_params=engine_params,
+                    engine_params_left=engine_params_left))
     control_task = asyncio.create_task(control_listener())
 
     try:
@@ -548,7 +603,7 @@ async def get_precedents(request: Request):
     """Phase 2 — cohort-conditioned precedent retrieval (two-tier router).
 
     Query params (all optional unless noted):
-      company                       Libra | Heavys
+      company                       Insurance | Ecommerce
       outcome                       ClosedWon (default) | ClosedLost
       decision_logic, primary_motivator, budget_sensitivity, communication_style,
         regulatory_focus, trust_level, purchase_urgency, primary_resistance,
@@ -594,8 +649,8 @@ async def historical_persuasion(opp_id: str):
     persuasion-over-time chart so the user can compare our supervised agent
     against actual historical performance.
 
-    Joins luna.research_turn_state_flash (per-turn persuasion + commitment)
-    with luna.message_event (sequence_number → timestamp + direction). Returns
+    Joins research_turn_state_flash (per-turn persuasion + commitment)
+    with message_event (sequence_number → timestamp + direction). Returns
     points indexed by sequence_number. Read-only.
     """
     try:
@@ -611,8 +666,8 @@ async def historical_persuasion(opp_id: str):
                    ts.p_conv            AS p_conv,
                    me.type              AS direction,
                    me.timestamp         AS ts_at
-            FROM luna.research_turn_state_flash ts
-            JOIN luna.message_event me
+            FROM research_turn_state_flash ts
+            JOIN message_event me
               ON me.message_id     = ts.message_id
              AND me.opportunity_id = ts.opportunity_id
             WHERE ts.opportunity_id = %s

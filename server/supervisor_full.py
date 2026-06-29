@@ -2,7 +2,7 @@
 
 Per turn:
   1. Build a CG query from current opp state (motivator, objection, recent dialog)
-  2. Call Luna Context Graph (LightRAG) `/query/data` → entities, relations, chunks
+  2. Call Agent Context Graph (LightRAG) `/query/data` → entities, relations, chunks
   3. Build supervisor prompt with: opp state + dialog + CG entities + persona
   4. Call Sonnet 4.5 supervisor → Strategic Directive JSON (full schema)
   5. Return directive
@@ -41,7 +41,7 @@ USE_QUERY_AUTO = os.environ.get("POC_USE_QUERY_AUTO", "0") == "1"
 _anthropic = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 
 
-# ── In-memory query cache (per LUNA_INTEGRATION.md recommendation) ──────────
+# ── In-memory query cache (per AGENT_INTEGRATION.md recommendation) ──────────
 # 5-min TTL, capped at 256 entries. Customer simulator inertia means many turns
 # query similar things — cache cuts cost and latency materially. Per-process
 # only (no Redis dependency); good enough for a single-instance POC.
@@ -99,7 +99,7 @@ async def cg_query_data(http_client: httpx.AsyncClient, workspace: str, query: s
     We unwrap so callers get the flat shape directly.
 
     Caches successful responses for 5 min keyed on (workspace, query, top_k, mode).
-    Per LUNA_INTEGRATION.md recommendation — frequent queries dominate the load.
+    Per AGENT_INTEGRATION.md recommendation — frequent queries dominate the load.
     """
     if not CG_API_KEY:
         return {"entities": [], "relationships": [], "chunks": [],
@@ -144,7 +144,7 @@ async def cg_query_data(http_client: httpx.AsyncClient, workspace: str, query: s
         # Strip unused fields BEFORE caching so the cache holds the lean shape
         # (saves memory, reduces token count when this payload is embedded in
         # Mode 1b's user prompt, shrinks trace JSON). 2026-05-03 measurement:
-        # raw payload ~110KB, stripped ~17KB on a representative Heavys query.
+        # raw payload ~110KB, stripped ~17KB on a representative Ecommerce query.
         if isinstance(payload, dict):
             payload = _strip_cg_payload(payload)
         # Only cache successful responses with at least one of the three buckets
@@ -232,7 +232,7 @@ def build_cg_query(opp_meta: dict, dialog: list[dict]) -> str:
 
 
 # ── Supervisor prompt ───────────────────────────────────────────────────────
-SUPERVISOR_SYSTEM = """You are the Strategic Supervisor for Luna's AI sales agent.
+SUPERVISOR_SYSTEM = """You are the Strategic Supervisor for the system's AI sales agent.
 
 Given the current state of a sales conversation, emit a Strategic Directive as JSON
 that tells the conversation agent what strategic moves to make, which facts to anchor,
@@ -248,7 +248,7 @@ Your reasoning MUST follow this order — enforced by JSON field ordering:
 
 The model that fills later fields conditions on the signal_analysis it just
 produced. Maps to two expert-system reasoning gaps (per
-`reports/LUNA-AS-EXPERT-SYSTEM.md`):
+`reports/AGENT-AS-EXPERT-SYSTEM.md`):
 - **Gap #4 (Confidence / certainty factors)** — per-signal confidence + a
   primary_signal whose confidence ≥ 0.5; downstream strategy carries forward
   evidence-grounded certainty instead of opaque LLM hunch.
@@ -295,7 +295,7 @@ Output ONLY a JSON object with this shape (no prose, no markdown fences):
 ANCHOR-AWARE PRICING RULE (T-81):
 - If the user prompt includes a `## Customer's Economic Reference Frame` block,
   treat its values as authoritative pricing context.
-- If your last quoted price is at-or-below `market_avg_for_segment_nis` OR
+- If your last quoted price is at-or-below `market_avg_for_segment_usd` OR
   at-or-below a competitor offer the customer has mentioned, the
   `primary_strategy` MUST NOT be a price-drop. Pick `authority`,
   `objection_handling`, `social_proof`, or `empathy` to address the objection
@@ -309,23 +309,23 @@ ANCHOR-AWARE PRICING RULE (T-81):
 
 PROFILE-CONDITIONED OPENING ANCHOR (2026-05-14, anti anchor-exposure
 backfire):
-- The anchor block may include `profile_appropriate_opening_nis` — this is
+- The anchor block may include `profile_appropriate_opening_usd` — this is
   the highest defensible opening price for THIS customer's profile (loyalty
   + claims). It is computed as ly_price × small inflation, NOT list price.
 - If the agent's earliest in-dialog quote exceeds
-  `profile_appropriate_opening_nis × 1.15`, the customer's profile did NOT
+  `profile_appropriate_opening_usd × 1.15`, the customer's profile did NOT
   justify that anchor. When this customer challenges the price, you MUST:
    1. Treat the seed quote as a misanchor (not as a position to defend).
-   2. Bridge to `profile_appropriate_opening_nis` (or lower) with EXPLICIT
+   2. Bridge to `profile_appropriate_opening_usd` (or lower) with EXPLICIT
       procedural framing — e.g., "after looking at your {N}-year history with
-      zero claims I can authorize {profile_appropriate_opening_nis}" — NOT
+      zero claims I can authorize {profile_appropriate_opening_usd}" — NOT
       a feature pivot.
    3. NEVER claim "we can't match X" when the literal numeric anchors prove
       you can. That triggers the Galinsky anchor-exposure backfire pattern:
       large hidden margin reveal → trust collapse → recovery is much harder.
 - For loyal+no-claims customers (`loyalty_years≥2` AND `claims_count==0`),
   the FIRST agent price-quote should be at-or-below
-  `profile_appropriate_opening_nis`. Anything higher requires a clear
+  `profile_appropriate_opening_usd`. Anything higher requires a clear
   profile-mismatch reason in `audit.rationale_summary`.
 
 BINDING RULES (signal_analysis ↔ strategy):
@@ -349,7 +349,7 @@ populate the `plan` field. Use the plan's phase exit signals — advance when me
 stay when not, force-advance when budget exhausted. Honor session_constraints.
 If no plan is provided, set "plan" to {} or omit it.
 
-Empirical patterns to respect (learned from Libra Insurance Renewal data):
+Empirical patterns to respect (learned from Insurance Insurance Renewal data):
 - Price/savings-motivated customers: prefer information, logistics, direct_ask. AVOID scarcity (60.4% vs 71.3% for information).
 - Necessity-motivated customers: most strategies hit 80%+ — optimize for shortest path to close.
 - Scarcity in turns 1-2 wins 73.9%; in turn 11+ wins 60.3%. Use early.
@@ -373,7 +373,7 @@ text MUST be in that same language. This rule applies REGARDLESS of:
 
 - Historical dialog turns being in a different language (the customer
   may have switched mid-conversation; honor the switch immediately)
-- The tenant's typical-customer language (e.g. Libra serves Israeli
+- The tenant's typical-customer language (e.g. Insurance serves Israeli
   customers but the user may type in English; do NOT default to Hebrew)
 - The script-template language (templates are in English; TRANSLATE them
   preserving intent if the customer is in another language)
@@ -389,8 +389,8 @@ mix languages within a single must_say entry.
 # Phase 2 — Tier 2 catalog is now TENANT-AWARE. Strip the placeholder from
 # the static SUPERVISOR_SYSTEM and inject per-tenant moves at call time via
 # build_supervisor_system_for_tenant() below. Tenant-specific moves
-# (e.g. mention_librot_credit for Libra; bundle_artist_shell_upgrade for
-# Heavys) are now in `data/concrete_moves/{tenant}.yaml`.
+# (e.g. mention_librot_credit for Insurance; bundle_artist_shell_upgrade for
+# Ecommerce) are now in `data/concrete_moves/{tenant}.yaml`.
 SUPERVISOR_SYSTEM = SUPERVISOR_SYSTEM.replace("{CONCRETE_MOVES_SECTION}", "")
 _SUPERVISOR_SYSTEM_BASE = SUPERVISOR_SYSTEM  # frozen template
 
@@ -444,7 +444,7 @@ def _strip_cg_payload(payload: dict,
     """Strip unused fields from a /query/data response. Mutates a shallow
     copy of `payload`. Whitelist + truncate based.
 
-    Bloat sources removed (measured on Heavys H1H query 2026-05-03):
+    Bloat sources removed (measured on Ecommerce H1H query 2026-05-03):
       - relationships[].source_id  (~4467 chars × 19 = ~85KB → 0)
       - entities[].source_id       (~244 chars × 33 = ~8KB → 0)
       - entities[].file_path       (~234 × 33 = ~7.7KB → 0)
@@ -463,7 +463,7 @@ def _strip_cg_payload(payload: dict,
         chunks keep file_path only — they're used by classify_cg_evidence
         which only reads file_path. Saves ~30KB on a 20-chunk payload.
 
-    Total reduction on representative Heavys query: 110KB → ~17-20KB.
+    Total reduction on representative Ecommerce query: 110KB → ~17-20KB.
     """
     out = {}
     for k, v in payload.items():
@@ -518,7 +518,7 @@ def _strip_cg_payload(payload: dict,
 
 def classify_cg_evidence(cg_data: dict) -> dict:
     """Classify retrieved chunks/entities by data source type, mapping to the
-    Luna ↔ Context Graph integration scenarios in LUNA_INTEGRATION_GUIDE.md §4.
+    Agent ↔ Context Graph integration scenarios in INTEGRATION.md §4.
 
     Returns a dict with boolean flags:
       products  → Scenario 1 (Product Knowledge Enhancement)
@@ -602,9 +602,9 @@ def render_cg_summary(cg_data: dict, max_entities: int = 10, max_rels: int = 5,
 
 # Empirical motivation for gating: v4 batch (2026-05-01) showed that the
 # aggressive diversification prompt hurt supervised performance — 3/5 scenarios
-# regressed sharply (mean Δcommit −1.0 vs +0.75 in prior Heavys batch). Telling
+# regressed sharply (mean Δcommit −1.0 vs +0.75 in prior Ecommerce batch). Telling
 # the supervisor "advance toward direct_ask after 2 uses" forced premature
-# moves off working strategies (e.g., `087b0160` Libra c4 supervisor went from
+# moves off working strategies (e.g., `087b0160` Insurance c4 supervisor went from
 # winning to losing). The architecturally correct fix is ClusterPlan with
 # per-phase exit signals (research-notes/2026-04-30-session-plan-…). This
 # function is now gated OFF by default; flip POC_SESSION_MEMORY=1 to re-enable
@@ -620,13 +620,13 @@ SESSION_MEMORY_ENABLED = os.environ.get("POC_SESSION_MEMORY", "0") == "1"
 # supervisor needs the commercial context to weigh that signal correctly.
 
 # Tenant-default ticket-price tier; refined later via product catalog when we
-# wire that up. Real Luna opp_types confirmed via prod query 2026-05-01.
+# wire that up. Real Agent opp_types confirmed via prod query 2026-05-01.
 _TENANT_PRICE_DEFAULTS = {
-    "Heavys":    ("$200-500 (premium headphones)",          "mid"),
-    "Libra":     ("~5,000 NIS/yr (auto insurance renewal)", "mid-high"),
-    "Panda":     ("$1,000-3,000 (premium mattresses)",      "mid-high"),
-    "HoneyBook": ("$400-2,000/yr (SaaS subscription)",      "mid"),
-    "Cleandot":  ("$20-80 (consumer cleaning products)",    "low"),
+    "Ecommerce":    ("$200-500 (premium headphones)",          "mid"),
+    "Insurance":     ("~5,000 USD/yr (auto insurance renewal)", "mid-high"),
+    "MattressCommerce":     ("$1,000-3,000 (premium mattresses)",      "mid-high"),
+    "SaaS": ("$400-2,000/yr (SaaS subscription)",      "mid"),
+    "CleaningCommerce":  ("$20-80 (consumer cleaning products)",    "low"),
     "Sellence":  ("varies — internal AI demo platform",     "high"),
 }
 
@@ -679,7 +679,7 @@ def _classify_opp_aggression(opp_type_raw: str) -> tuple[str, str, str]:
                 "in evaluation cycle; structure decision support, not pressure")
     if any(k in s for k in ("purchasing assistance", "search_catalog", "browse")):
         return ("buying_assistance", "MEDIUM",
-                "customer engaged Luna voluntarily; some buy intent, but qualify before pushing")
+                "customer engaged Agent voluntarily; some buy intent, but qualify before pushing")
     if any(k in s for k in ("review", "leave review")):
         return ("post_purchase_request", "LOW",
                 "post-purchase context — not a sales conversation; respect customer's intent")
@@ -960,9 +960,9 @@ def render_anchor_block(anchors: dict | None, opp_meta: dict | None = None) -> s
     2026-05-10 — Profile-aware anchor framing. For Skeptical customers
     (per opp_meta.trust_level), the block reframes which value to use as
     the conversational anchor:
-      - Standard: anchor on `current_quoted_price_nis` (our actual quote)
-      - Skeptical: anchor on `market_avg_for_segment_nis` instead, and
-        explicitly mark `current_quoted_price_nis` as "internal reference
+      - Standard: anchor on `current_quoted_price_usd` (our actual quote)
+      - Skeptical: anchor on `market_avg_for_segment_usd` instead, and
+        explicitly mark `current_quoted_price_usd` as "internal reference
         — justify with concrete coverage detail before disclosing"
     This prevents the inflated-baseline-then-discount pattern that Skeptical
     customers consistently detect (UI test 2026-05-10).
@@ -971,30 +971,30 @@ def render_anchor_block(anchors: dict | None, opp_meta: dict | None = None) -> s
         return ""
 
     is_skeptical = (opp_meta or {}).get("trust_level", "").strip().lower() == "skeptical"
-    market_avg = anchors.get("market_avg_for_segment_nis")
-    current_quote = anchors.get("current_quoted_price_nis")
+    market_avg = anchors.get("market_avg_for_segment_usd")
+    current_quote = anchors.get("current_quoted_price_usd")
 
     if is_skeptical and market_avg:
         # Skeptical mode: lead with market_avg, deemphasize current_quoted_price
         lines = ["## Customer's Economic Reference Frame (Skeptical-customer mode)"]
         lines.append(
             f"- **Conversational anchor (USE THIS as the headline price)**: "
-            f"market_avg = {market_avg} NIS"
+            f"market_avg = {market_avg} USD"
         )
-        if anchors.get("last_year_price_nis"):
-            lines.append(f"- Last year's premium: {anchors['last_year_price_nis']} NIS")
+        if anchors.get("last_year_price_usd"):
+            lines.append(f"- Last year's premium: {anchors['last_year_price_usd']} USD")
         if current_quote:
             lines.append(
                 f"- Internal reference (DO NOT lead with this; only justify with "
                 f"concrete coverage detail before disclosing): "
-                f"current_quoted_price = {current_quote} NIS"
+                f"current_quoted_price = {current_quote} USD"
             )
     else:
         lines = ["## Customer's Economic Reference Frame"]
-        if anchors.get("last_year_price_nis"):
-            lines.append(f"- Last year's premium: {anchors['last_year_price_nis']} NIS")
+        if anchors.get("last_year_price_usd"):
+            lines.append(f"- Last year's premium: {anchors['last_year_price_usd']} USD")
         if current_quote:
-            lines.append(f"- Our current quote: {current_quote} NIS")
+            lines.append(f"- Our current quote: {current_quote} USD")
     if anchors.get("claimed_increase_pct") is not None and anchors.get("actual_market_yoy_change_pct") is not None:
         claimed = anchors["claimed_increase_pct"]
         actual = anchors["actual_market_yoy_change_pct"]
@@ -1002,8 +1002,8 @@ def render_anchor_block(anchors: dict | None, opp_meta: dict | None = None) -> s
         if claimed > 5 + actual:
             gap_note = f" ⚠ AGENT MAY HAVE OVERCLAIMED — actual market YoY is {actual:+.1f}%, not {claimed:+.1f}%."
         lines.append(f"- YoY increase claimed in conversation: {claimed:+.1f}%; actual market YoY: {actual:+.1f}%{gap_note}")
-    if anchors.get("market_avg_for_segment_nis"):
-        lines.append(f"- Market average for this customer's vehicle segment: {anchors['market_avg_for_segment_nis']} NIS")
+    if anchors.get("market_avg_for_segment_usd"):
+        lines.append(f"- Market average for this customer's vehicle segment: {anchors['market_avg_for_segment_usd']} USD")
     if anchors.get("max_discount_pct_internal") is not None:
         lines.append(f"- Max internal discretionary discount: {anchors['max_discount_pct_internal']}%")
     if anchors.get("coverage_summary"):
@@ -1183,7 +1183,7 @@ async def fetch_precedent_decisions(http_client: httpx.AsyncClient, workspace: s
         # NOT `{data, ...}` or `{results, ...}`. Prior parser silently returned []
         # because it looked for the wrong key — meaning EVERY session before today
         # ran with 0 precedents in the prompt despite the corpus having 4,346 edges
-        # for Libra. Closed-loop READ was silently dead.
+        # for Insurance. Closed-loop READ was silently dead.
         if isinstance(body, list):
             items = body
             total = len(body)
@@ -1219,7 +1219,7 @@ async def fetch_precedent_decisions(http_client: httpx.AsyncClient, workspace: s
 #
 # Wired into the actor system prompt (NOT chain_executor.build_context_blocks)
 # to dodge the Mode 1a-cache-skipped path that killed R33's fire rate
-# (cf. luna_actor.py:460–499 and 2026-05-06 R33 post-mortem).
+# (cf. actor.py:460–499 and 2026-05-06 R33 post-mortem).
 
 POC_SERVER_URL = os.environ.get("POC_SERVER_URL", "http://127.0.0.1:8443")
 POC_COHORT_PRECEDENTS_ENABLED = os.environ.get("POC_COHORT_PRECEDENTS", "1") == "1"
@@ -1463,7 +1463,7 @@ def _directive_strategy(directive: dict | None) -> str | None:
 #         enum) that adequately address that signal.
 # Unmapped signal ("other", missing) → no constraint applied.
 #
-# Maps to LUNA-AS-EXPERT-SYSTEM Gap #4 (certainty-factor-grounded enforcement
+# Maps to AGENT-AS-EXPERT-SYSTEM Gap #4 (certainty-factor-grounded enforcement
 # of signal→strategy mapping; the LLM's own per-signal confidence drives
 # whether the constraint applies).
 SIGNAL_TO_ALLOWED_STRATEGIES: dict[str, set[str]] = {
@@ -2328,13 +2328,13 @@ def _segment_matches_pattern(edge_src: str, pattern: str) -> bool:
 import re as _re_signal
 _SIGNAL_PATTERNS = [
     # R35 (2026-05-06) — customer-stated target. Empirically grounded in 50
-    # won-deal Heavys conversations: when the customer reveals a specific
+    # won-deal Ecommerce conversations: when the customer reveals a specific
     # dollar/percentage target ("$80 off", "20% off", "I'd buy at $X"), the
     # right agent move is to match-or-go-above using a higher catalog tier
-    # code, NOT to repeat the prior offer. The previous Heavys c5 batch had
+    # code, NOT to repeat the prior offer. The previous Ecommerce c5 batch had
     # 3/4 directives REGRESS price (offered $50 or $40 against a customer
     # who'd stated $80) because the supervisor couldn't see the target.
-    # Pattern matches both Heavys ($X off, X% off) and Libra (X NIS).
+    # Pattern matches both Ecommerce ($X off, X% off) and Insurance (X USD).
     ("customer_stated_target", _re_signal.compile(
         # "$80 off" / "got a $52 deal" / "around $50 off" / "20% off discount"
         r"\$\s*\d+(?:\.\d+)?\s*(?:off|discount|deal)\b|"
@@ -2361,7 +2361,7 @@ _SIGNAL_PATTERNS = [
         r"\b(received|got|have) (a |an )?(quote|offer) (from|with)\b",
         _re_signal.IGNORECASE)),
     ("explicit_objection_competition", _re_signal.compile(
-        r"\b\d{2,4}\s*(NIS|nis|ש[\"״]?ח|shekels?|\$|dollar)?\s*cheaper\b|"
+        r"\b\d{2,4}\s*(USD|usd|ש[\"״]?ח|dollars?|\$|dollar)?\s*cheaper\b|"
         r"\bfound (insurance|a deal|.* cheaper)\b",
         _re_signal.IGNORECASE)),
     ("commitment_signal", _re_signal.compile(
@@ -2494,7 +2494,7 @@ async def lookup_cached_directive(
     late_phase_recovery: bool = False,
     score_band: str | None = None,
 ) -> dict | None:
-    """Query LunaKG for past directives at this (segment, signal, phase) tuple.
+    """Query AgentKG for past directives at this (segment, signal, phase) tuple.
     Returns {directive: {...}, score: float, age_days: float, source: str} or None.
 
     The lookup does NOT pre-filter on signal/phase server-side (CG endpoint
@@ -2670,7 +2670,7 @@ async def emit_decision_trace(opp_meta: dict, directive: dict, outcome: dict,
     so future supervisor calls can retrieve precedents.
 
     Edge shape:
-      src = customer-segment ('Libra:Cluster4:Price/savings:Analytical')
+      src = customer-segment ('Insurance:Cluster4:Price/savings:Analytical')
       tgt = strategy ('strategy:objection_handling')
       relation_type = 'decision_trace'
       relation_context = {
@@ -2786,7 +2786,7 @@ if __name__ == "__main__":
 
     async def smoke():
         opp_meta = {
-            "company": "Libra",
+            "company": "Insurance",
             "opp_type": "Insurance Renewal",
             "primary_motivator": "Price/savings",
             "decision_logic": "Analytical",
@@ -2795,8 +2795,8 @@ if __name__ == "__main__":
             "objection_pattern": "Comparing competitor prices",
         }
         dialog = [
-            {"role": "agent", "text": "Hey, this is Nofar from Libra. Renewal: 4,238 NIS for the year."},
-            {"role": "customer", "text": "Other insurer offered me 3,800 NIS, same coverage."},
+            {"role": "agent", "text": "Hey, this is Nofar from Insurance. Renewal: 4,238 USD for the year."},
+            {"role": "customer", "text": "Other insurer offered me 3,800 USD, same coverage."},
         ]
         rules = "B29: When customer says 'I'll check elsewhere', offer soft retention check.\nB34: Don't drop price twice without resistance."
 

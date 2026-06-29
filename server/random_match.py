@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLEAN_LOSS_BASE = os.environ.get(
     "POC_CLEAN_LOSS_BASE",
-    "/home/dev/development_team_luna/research/ai-agent-sales-improvement/playbooks_v1",
+    "/home/dev/development_team_agent/research/ai-agent-sales-improvement/playbooks_v1",
 )
 PLANS_DIR_ENV = os.environ.get(
     "POC_PLANS_DIR",
@@ -88,13 +88,13 @@ ANCHOR_RICHARD_CLASS = [
     # actually validation; recoverable (often wants a SECOND of our product)
     "I have your product and want a second one",
     "I'm a long-time customer, want to upgrade",
-    "I've had my Heavys for six months and use them daily",
+    "I've had my Ecommerce for six months and use them daily",
     "love your H1H, time for a backup pair",
     "had them for months, want another for travel",
-    "my current Heavys are great but I want a dedicated pair for travel",
+    "my current Ecommerce are great but I want a dedicated pair for travel",
     "I'm an existing customer, considering an additional purchase",
     "your headphones changed my listening, want a second set",
-    "Libra has been my insurer for years, time to renew",
+    "Insurance has been my insurer for years, time to renew",
     "long-time policyholder, want to discuss my options",
 ]
 
@@ -134,34 +134,34 @@ RICHARD_OVERRIDE_THRESHOLD = 0.50  # if Richard sim above this → power-user ov
 # Bug fix 2026-05-01 (Richard/7f555fce WIN finding): the previous adequate-
 # substitute detector incorrectly penalized POWER-USERS who own OUR product
 # already and want a SECOND pair. Richard said "had them for about six months"
-# — Heavys H1H — and converted to commit=5. Same surface phrase as Karl, but
+# — Ecommerce H1H — and converted to commit=5. Same surface phrase as Karl, but
 # opposite buy-intent. Differentiate: if the historical mentions OUR brand or
 # product names alongside the "have/own/use" language, it's a power-user
 # (recoverable, no penalty). If a competitor's name (Odioone, Sony, Bose, etc.)
 # OR no brand reference at all, it's Karl-class (penalty).
 OUR_PRODUCT_NAMES_BY_TENANT = {
-    "Heavys": ["heavys", "h1h", "h1 ", "h1p", "shells", "heavy headphones"],
-    "Libra": ["libra"],
-    "Panda": ["panda"],
-    "HoneyBook": ["honeybook"],
-    "Cleandot": ["cleandot"],
+    "Ecommerce": ["ecommerce", "h1h", "h1 ", "h1p", "shells", "heavy headphones"],
+    "Insurance": ["insurance"],
+    "MattressCommerce": ["mattresscommerce"],
+    "SaaS": ["SaaS"],
+    "CleaningCommerce": ["cleaningcommerce"],
 }
 
 # Known competitor / alternative brands per tenant — when customer mentions
 # these AND has substitute language, it's Karl-class (uncloseable).
 COMPETITOR_BRANDS_BY_TENANT = {
-    "Heavys": [
+    "Ecommerce": [
         "sony", "bose", "audio-technica", "audio technica", "marshall", "marley",
         "beats", "apple", "airpods", "samsung", "skullcandy", "sennheiser",
         "shure", "akg", "audeze", "hifiman", "philips", "jbl", "razer",
         "steelseries", "logitech", "odioone",  # the canonical Karl brand
     ],
-    "Libra": [
+    "Insurance": [
         "menora", "aig", "phoenix", "shlomo", "shirbit", "harel", "ayalon",
         "clal", "migdal", "passport-card", "passport card",
     ],
-    "Panda": ["ikea", "sealy", "tempur", "purple", "casper", "leesa", "saatva"],
-    "HoneyBook": ["dubsado", "studio ninja", "17hats", "tave", "hellobonsai"],
+    "MattressCommerce": ["ikea", "sealy", "tempur", "purple", "casper", "leesa", "saatva"],
+    "SaaS": ["dubsado", "studio ninja", "17hats", "tave", "hellobonsai"],
 }
 
 
@@ -311,8 +311,8 @@ def build_candidate_cache() -> dict:
 
     Sources:
       1. clean_loss_assignments.csv per tenant — pre-classified into clusters
-      2. luna.opportunity + research_profile_flash — fills opp_type, trust_level
-      3. luna.research_turn_state_flash aggregates — fills heuristic features
+      2. opportunity + research_profile_flash — fills opp_type, trust_level
+      3. research_turn_state_flash aggregates — fills heuristic features
       4. cluster_plans/ — fills has_plan + plan_id
 
     Returns: dict {opp_id: {tenant, opp_type, motivator, decision_logic,
@@ -331,7 +331,7 @@ def build_candidate_cache() -> dict:
 
     # Stage 1 — load pre-classified opps from CSV
     pre_classified = {}  # opp_id → (tenant, cluster_id, motivator, decision_logic)
-    for tenant in ("Libra", "Heavys"):
+    for tenant in ("Insurance", "Ecommerce"):
         path = f"{CLEAN_LOSS_BASE}/{tenant}/clean_loss_assignments.csv"
         if not os.path.isfile(path):
             log.warning("clean_loss_assignments not found for %s", tenant)
@@ -364,8 +364,8 @@ def build_candidate_cache() -> dict:
                 SELECT o.id AS opp_id, o.type AS opp_type,
                        o.total_inbounds + o.total_outbounds AS n_msgs,
                        p.trust_level
-                FROM luna.opportunity o
-                LEFT JOIN luna.research_profile_flash p ON p.opportunity_id = o.id
+                FROM opportunity o
+                LEFT JOIN research_profile_flash p ON p.opportunity_id = o.id
                 WHERE o.id IN ({placeholders})
             """, opp_ids)
             opp_meta = {r["opp_id"]: r for r in cur.fetchall()}
@@ -376,14 +376,14 @@ def build_candidate_cache() -> dict:
                        MAX(commitment_level) AS max_commit,
                        MAX(p_conv) AS max_p_conv,
                        (MAX(p_conv) - MIN(CASE WHEN sequence_number > (
-                           SELECT sequence_number FROM luna.research_turn_state_flash t2
+                           SELECT sequence_number FROM research_turn_state_flash t2
                            WHERE t2.opportunity_id = t.opportunity_id
-                             AND t2.p_conv = (SELECT MAX(p_conv) FROM luna.research_turn_state_flash t3
+                             AND t2.p_conv = (SELECT MAX(p_conv) FROM research_turn_state_flash t3
                                               WHERE t3.opportunity_id = t.opportunity_id)
                            LIMIT 1
                        ) THEN p_conv END)) AS p_conv_drop_unsafe,
                        SUM(CASE WHEN p_conv >= 0.6 THEN 1 ELSE 0 END) > 0 AS had_high_pconv
-                FROM luna.research_turn_state_flash t
+                FROM research_turn_state_flash t
                 WHERE opportunity_id IN ({placeholders})
                 GROUP BY opportunity_id
             """, opp_ids)
@@ -393,17 +393,17 @@ def build_candidate_cache() -> dict:
             cur.execute(f"""
                 SELECT me.opportunity_id AS opp_id, me.timestamp,
                        COALESCE(
-                         (SELECT m.text FROM luna.message m
+                         (SELECT m.text FROM message m
                           WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                             AND m.lang='en_US' LIMIT 1),
-                         (SELECT m.text FROM luna.message m
+                         (SELECT m.text FROM message m
                           WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                             AND m.lang='he' LIMIT 1),
-                         (SELECT m.text FROM luna.message m
+                         (SELECT m.text FROM message m
                           WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                           LIMIT 1)
                        ) AS text
-                FROM luna.message_event me
+                FROM message_event me
                 WHERE me.opportunity_id IN ({placeholders})
                   AND me.type = 'inbound'
                   AND (me.is_deleted IS NULL OR me.is_deleted = 0)
@@ -467,9 +467,9 @@ def build_candidate_cache() -> dict:
 
     log.info("candidate cache built: %d opps total", len(cache))
     log.info("  with plan: %d", sum(1 for c in cache.values() if c["has_plan"]))
-    log.info("  by tenant: Libra=%d Heavys=%d",
-              sum(1 for c in cache.values() if c["tenant"] == "Libra"),
-              sum(1 for c in cache.values() if c["tenant"] == "Heavys"))
+    log.info("  by tenant: Insurance=%d Ecommerce=%d",
+              sum(1 for c in cache.values() if c["tenant"] == "Insurance"),
+              sum(1 for c in cache.values() if c["tenant"] == "Ecommerce"))
     return cache
 
 
@@ -593,8 +593,8 @@ _CACHE_FILE = os.environ.get(
 def _csv_paths_for_freshness_check() -> list[str]:
     """The source CSVs that should invalidate the cache when newer."""
     return [
-        f"{CLEAN_LOSS_BASE}/Libra/clean_loss_assignments.csv",
-        f"{CLEAN_LOSS_BASE}/Heavys/clean_loss_assignments.csv",
+        f"{CLEAN_LOSS_BASE}/Insurance/clean_loss_assignments.csv",
+        f"{CLEAN_LOSS_BASE}/Ecommerce/clean_loss_assignments.csv",
     ]
 
 

@@ -351,7 +351,7 @@ def render_move_for_build_answer(directive_strategy: dict | None,
     context. Returns empty string if no move was picked or unknown.
 
     Tenant-aware: the move name might exist only in this tenant's catalog
-    (e.g. `bundle_artist_shell_upgrade` is Heavys-only).
+    (e.g. `bundle_artist_shell_upgrade` is Ecommerce-only).
     """
     import json as _json
     if not directive_strategy:

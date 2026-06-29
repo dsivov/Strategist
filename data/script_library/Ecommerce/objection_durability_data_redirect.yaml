@@ -19,7 +19,7 @@ description: |
   graceful_walk_data_gap.
 
 applies_when:
-  tenant: Heavys
+  tenant: Ecommerce
   conversation:
     customer_signals: [data_request, durability_concern, return_rate_request, failure_rate_request, material_question, build_question]
   exclude_when:
@@ -144,7 +144,7 @@ metadata:
     v2 fix: lead with the specific product knowledge we DO have from CG
     (driver count, patented arrangement, HellBlocker, ergonomic design),
     then redirect to warranty/trial only AFTER those facts are on the
-    table. Empirically, real winning Heavys agents (per 233-deal c3 mining)
+    table. Empirically, real winning Ecommerce agents (per 233-deal c3 mining)
     cite specific tech first; the warranty/trial redirect is a CLOSE move,
     not an opening move.
 
@@ -155,7 +155,7 @@ metadata:
     not to invent missing data.
   caveats: |
     Real CG-content fix: ingest engineering specs (frame material,
-    headband construction, hinge type) into the Heavys workspace.
+    headband construction, hinge type) into the Ecommerce workspace.
     Until that lands, this script is the best we can do without
     fabrication. Tracked in TENANT-ONBOARDING-RUNBOOK.md §0b depth-of-
     content audit.

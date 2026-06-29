@@ -1,4 +1,4 @@
-/* Luna Sales Strategist POC — dark theme, business-modern */
+/* Sales Strategist Benchmark POC — dark theme, business-modern */
 :root {
   --bg: #0F1419;
   --surface: #1A2332;
@@ -166,6 +166,42 @@ button.ghost, a.ghost { background: transparent; }
 .engine-btn.active {
   background: var(--accent);
   color: white;
+}
+.engine-select {
+  background: transparent;
+  border: 1px solid var(--accent);
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  max-width: 180px;
+}
+.engine-vs {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin: 0 4px;
+}
+.engine-params {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.engine-param {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.engine-param select,
+.engine-param input[type="text"] {
+  background: transparent;
+  border: 1px solid var(--border, #444);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+  padding: 2px 4px;
 }
 
 .hard-customer-toggle {

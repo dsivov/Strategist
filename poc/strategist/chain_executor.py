@@ -82,11 +82,11 @@ _CACHE_TTL = 60  # match production's prompt_loader TTL
 
 
 def load_prompt_text(prompt_name: str, prompt_id: int | None = None) -> str | None:
-    """Load and concatenate prompt sections from luna.ai_prompt_section.
+    """Load and concatenate prompt sections from ai_prompt_section.
     Returns None if not found. Caches with 60s TTL (matching production).
 
     T-86 fix: prefers prompt_id when provided. Multiple tenants have rows
-    with the same prompt_name in luna.ai_prompt; resolving by name picks
+    with the same prompt_name in ai_prompt; resolving by name picks
     the wrong one. The chain definition carries the correct prompt_id
     via the ai_agent_prompt join, so callers should always pass it.
     """
@@ -103,7 +103,7 @@ def load_prompt_text(prompt_name: str, prompt_id: int | None = None) -> str | No
             if prompt_id is None:
                 # Legacy fallback: by name (will pick first match — risky)
                 cur.execute(
-                    "SELECT prompt_id FROM luna.ai_prompt WHERE prompt_name = %s",
+                    "SELECT prompt_id FROM ai_prompt WHERE prompt_name = %s",
                     (prompt_name,))
                 row = cur.fetchone()
                 if not row:
@@ -111,7 +111,7 @@ def load_prompt_text(prompt_name: str, prompt_id: int | None = None) -> str | No
                     return None
                 prompt_id = row["prompt_id"]
             cur.execute("""
-                SELECT text FROM luna.ai_prompt_section
+                SELECT text FROM ai_prompt_section
                 WHERE prompt_id = %s AND is_draft = 0
                 ORDER BY section_id
             """, (prompt_id,))
@@ -214,7 +214,7 @@ def _render_directive_wrapper(directive: dict) -> str:
 # Per-stage system-prompt suffixes (Option 3 — Phase 4.1, 2026-05-10).
 # Appended to the prod-loaded prompt at dispatch time so the actor's instruction
 # set EXPECTS the supervisor directive in its user message. The prod prompt was
-# authored for vanilla Luna and knows nothing about a supervisor concept; this
+# authored for vanilla Agent and knows nothing about a supervisor concept; this
 # closes the architectural gap without modifying the prod prompt itself.
 _SYSTEM_SUFFIX_BUILD_ANSWER = """
 
@@ -274,7 +274,7 @@ def build_context_blocks(ctx: ChainContext, max_dialog_turns: int = 12) -> str:
             f"text MUST be in {cust_lang}. This rule applies regardless of:\n"
             f"- Historical dialog turns being in another language\n"
             f"- The supervisor directive's must_say being in another language\n"
-            f"- The tenant's typical-customer language (Libra typically serves\n"
+            f"- The tenant's typical-customer language (Insurance typically serves\n"
             f"  Hebrew customers — irrelevant; the customer just typed in {cust_lang})\n"
             f"- Script-template phrasing in any other language\n"
             f"\n"
@@ -317,20 +317,20 @@ def build_context_blocks(ctx: ChainContext, max_dialog_turns: int = 12) -> str:
     blocks.append(profile)
 
     if ctx.anchors:
-        # Detect anchor pack flavor — T-81 Libra has economic-frame keys;
-        # T-86 Heavys has product-catalog keys (different schema).
-        if (ctx.anchors.get("_source") or "").startswith("CG workspace=Heavys"):
-            from heavys_anchors import render_anchor_block
-            heavys_block = render_anchor_block(ctx.anchors, max_per_field=900)
-            if heavys_block:
-                blocks.append(heavys_block)
+        # Detect anchor pack flavor — T-81 Insurance has economic-frame keys;
+        # T-86 Ecommerce has product-catalog keys (different schema).
+        if (ctx.anchors.get("_source") or "").startswith("CG workspace=Ecommerce"):
+            from ecommerce_anchors import render_anchor_block
+            ecommerce_block = render_anchor_block(ctx.anchors, max_per_field=900)
+            if ecommerce_block:
+                blocks.append(ecommerce_block)
         else:
             anchor_lines = ["## anchors (economic reference frame — T-81)"]
-            for k in ("last_year_price_nis", "current_quoted_price_nis",
+            for k in ("last_year_price_usd", "current_quoted_price_usd",
                        "claimed_increase_pct", "actual_market_yoy_change_pct",
-                       "market_avg_for_segment_nis", "max_discount_pct_internal",
+                       "market_avg_for_segment_usd", "max_discount_pct_internal",
                        "coverage_summary", "loyalty_years", "claims_count",
-                       "profile_appropriate_opening_nis",
+                       "profile_appropriate_opening_usd",
                        "profile_appropriate_opening_reason"):
                 if ctx.anchors.get(k) is not None:
                     anchor_lines.append(f"- {k}: {ctx.anchors[k]}")
@@ -394,16 +394,16 @@ def build_context_blocks(ctx: ChainContext, max_dialog_turns: int = 12) -> str:
 
     # R33 (2026-05-06) — Manager-escalation framing was originally injected
     # here, but this path only runs on Mode 1b (fresh LLM directive). Most
-    # Libra c5 turns hit Mode 1a (cached directives) which skips the chain's
+    # Insurance c5 turns hit Mode 1a (cached directives) which skips the chain's
     # build_answer LLM call entirely — so R33 never activated. Moved to
-    # luna_actor.generate (the actor's LLM call) where it fires on every turn.
+    # actor.generate (the actor's LLM call) where it fires on every turn.
 
     # CR-PS Phase 4 (2026-05-07) — cohort-conditioned won-deal precedents.
     # Pre-fetched once per turn in replayer._live_turn (right-panel only),
     # carried through opp_meta["_cohort_precedent_block"]. We append here so
     # the prod-chain prompt_build_answer path sees the block; the legacy
     # regenerate-loop path consumes the same block via the cohort_precedent_block
-    # kwarg on luna_actor.generate. One fetch, two consumers — and because both
+    # kwarg on actor.generate. One fetch, two consumers — and because both
     # invocations land in the same SQLite-LRU 5min/256-entry cache, the
     # single fetch is the only network hop.
     cohort_block = (ctx.opp_meta or {}).get("_cohort_precedent_block")

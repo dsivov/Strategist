@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play the Match, Not the Exam — Evaluating Goal-Oriented Persuasion Agents</title>
+<style>
+:root{
+  --bg:#0f1117; --bg2:#161922; --panel:#1b1f2a; --panel2:#222736;
+  --ink:#e7ebf3; --ink-soft:#aab3c5; --ink-faint:#7b8499;
+  --line:#2c3346; --line-soft:#232a3a;
+  /* accents: a=evaluation/A-B, b=customer/simulator, c=dataset, ctrl=persuasion(Cialdini) */
+  --a:#5b8def; --b:#19b89a; --c:#f0a73c; --ctrl:#a974f0; --danger:#ef5b6e; --ok:#3ecf8e;
+  --shadow:0 10px 30px rgba(0,0,0,.35); --radius:14px; --maxw:1140px;
+  --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:
+    radial-gradient(1100px 600px at 82% -10%, rgba(169,116,240,.10), transparent 60%),
+    radial-gradient(900px 520px at -10% 8%, rgba(25,184,154,.08), transparent 55%),
+    var(--bg);
+  color:var(--ink);font:17px/1.7 "Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;}
+a{color:var(--a);text-decoration:none} a:hover{text-decoration:underline}
+code,pre,.mono{font-family:var(--mono)}
+svg{max-width:100%;height:auto}
+
+.hero{padding:70px 22px 34px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(169,116,240,.07),transparent)}
+.hero-inner{max-width:880px;margin:0 auto}
+.eyebrow{letter-spacing:.22em;text-transform:uppercase;font-size:12px;color:var(--ink-faint);font-weight:700}
+.hero h1{font-size:clamp(32px,5.5vw,56px);line-height:1.04;margin:.3em 0 .25em;
+  background:linear-gradient(92deg,#cfe0ff,#c6a8f5 48%,#ffd79a);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:clamp(17px,2.2vw,21px);color:var(--ink-soft)}
+.byline{margin-top:14px;color:var(--ink-faint);font-size:13.5px}
+.hero-tags{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap}
+.tag{border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);padding:5px 11px;border-radius:999px;font-size:12.5px}
+.tag b{color:var(--ink)}
+
+.layout{max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:230px 1fr;gap:40px;padding:30px 22px 90px}
+nav.toc{position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);overflow:auto;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:14px}
+nav.toc .tl-title{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:4px 6px 10px}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+nav.toc li{counter-increment:toc}
+nav.toc a{display:flex;gap:8px;padding:6px 8px;border-radius:8px;color:var(--ink-soft);font-size:13.5px;line-height:1.3}
+nav.toc a::before{content:counter(toc,decimal-leading-zero);color:var(--ink-faint);font-family:var(--mono);font-size:11px}
+nav.toc a:hover{background:var(--panel2);text-decoration:none;color:var(--ink)}
+nav.toc a.active{background:linear-gradient(90deg,rgba(169,116,240,.18),transparent);color:#fff;border-left:2px solid var(--ctrl)}
+
+main{min-width:0;max-width:760px}
+article section{margin:0 0 52px;scroll-margin-top:20px}
+h2{font-size:clamp(23px,3.2vw,31px);margin:0 0 6px;line-height:1.15}
+.kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ctrl);font-weight:700;margin-bottom:6px}
+h3{font-size:19px;margin:28px 0 8px}
+p{margin:.7em 0}
+.lead-p{font-size:19px;color:var(--ink)}
+.small{font-size:14px;color:var(--ink-faint)}
+.pull{font-size:22px;line-height:1.4;color:#d9e2f2;border-left:3px solid var(--ctrl);padding:6px 0 6px 18px;margin:22px 0;font-weight:500}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}nav.toc{display:none}.g2,.g3{grid-template-columns:1fr}main{max-width:none}}
+
+.callout{border-radius:12px;padding:14px 16px;border:1px solid var(--line);background:var(--panel2);margin:18px 0}
+.callout .clabel{font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.callout.info{border-color:rgba(91,141,239,.5);background:rgba(91,141,239,.08)} .callout.info .clabel{color:#9cc0ff}
+.callout.ok{border-color:rgba(62,207,142,.5);background:rgba(62,207,142,.08)} .callout.ok .clabel{color:#7ee3b4}
+.callout.caveat{border-color:rgba(240,167,60,.5);background:rgba(240,167,60,.08)} .callout.caveat .clabel{color:#ffce86}
+.callout.key{border-color:rgba(169,116,240,.55);background:rgba(169,116,240,.10)} .callout.key .clabel{color:#cdb1f7}
+
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--a)}
+.stat.b::after{background:var(--b)} .stat.c::after{background:var(--c)} .stat.ctrl::after{background:var(--ctrl)}
+.stat .v{font-size:30px;font-weight:800;letter-spacing:-.02em} .stat .l{color:var(--ink-faint);font-size:13px;margin-top:3px}
+
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:540px}
+thead th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12.5px;letter-spacing:.04em;color:var(--ink-soft)}
+td{padding:10px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;border:1px solid var(--line)}
+.pill.win{background:rgba(62,207,142,.14);color:#7ee3b4;border-color:rgba(62,207,142,.4)}
+.pill.loss{background:rgba(239,91,110,.14);color:#ff9aa8;border-color:rgba(239,91,110,.4)}
+.pill.a{background:rgba(91,141,239,.14);color:#9cc0ff;border-color:rgba(91,141,239,.4)}
+.pill.b{background:rgba(25,184,154,.14);color:#7fe3cf;border-color:rgba(25,184,154,.4)}
+.pill.c{background:rgba(240,167,60,.14);color:#ffce86;border-color:rgba(240,167,60,.4)}
+.pill.ctrl{background:rgba(169,116,240,.16);color:#cdb1f7;border-color:rgba(169,116,240,.45)}
+
+figure{margin:22px 0}
+figure .fig{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+figcaption{color:var(--ink-faint);font-size:13.5px;margin-top:8px} figcaption b{color:var(--ink-soft)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft);margin-top:8px}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.sw{width:22px;height:0;border-top:3px solid var(--a);display:inline-block}
+.sw.dash{border-top-style:dashed;border-top-color:var(--ink-faint)} .sw.b{border-top-color:var(--b)} .sw.ctrl{border-top-color:var(--ctrl)} .sw.ok{border-top-color:var(--ok)}
+
+/* rally */
+.rally{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:16px 0}
+.rally .turn{display:grid;grid-template-columns:84px 1fr;gap:0;border-bottom:1px solid var(--line-soft)}
+.rally .turn:last-child{border-bottom:none}
+.rally .who{padding:12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);background:var(--panel2)}
+.rally .who.cust{color:#7fe3cf} .rally .who.agent{color:#9cc0ff}
+.rally .msg{padding:12px 14px}
+.rally .msg .say{color:var(--ink)}
+.rally .meta{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rally .score{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+
+pre{background:#0c0e14;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-size:13px;line-height:1.55}
+pre code{color:#d6deec}
+.kw{color:#7aa2f7}.str{color:#9ece6a}.num{color:#ff9e64}.cm{color:#5c6685;font-style:italic}.fn{color:#7dcfff}
+hr.soft{border:none;border-top:1px solid var(--line-soft);margin:30px 0}
+.footer{max-width:var(--maxw);margin:0 auto;padding:30px 22px 70px;color:var(--ink-faint);font-size:13.5px;border-top:1px solid var(--line)}
+.backtotop{position:fixed;right:18px;bottom:18px;background:var(--panel);border:1px solid var(--line);color:var(--ink-soft);
+  border-radius:999px;padding:9px 14px;font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s}
+.backtotop.show{opacity:1;pointer-events:auto}
+b.hl{color:#cdb1f7}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">On evaluating persuasion</div>
+    <h1>Play the Match, Not the Exam</h1>
+    <p class="lede">You can't grade a conversation with an answer key. Here's how we evaluate goal-oriented
+      persuasion agents the way you'd judge a football team — by playing matches against the same opponent and
+      scoring not just who wins, but who plays better.</p>
+    <div class="byline">A field note on benchmarking conversational AI · framed through Robert Cialdini's
+      <i>Influence: The Psychology of Persuasion</i></div>
+    <div class="hero-tags">
+      <span class="tag"><b>112</b> match scenarios</span>
+      <span class="tag"><b>A/B</b> head-to-head</span>
+      <span class="tag"><b>6</b> principles of influence</span>
+      <span class="tag">turn-by-turn scoring</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <div class="tl-title">In this post</div>
+  <ol>
+    <li><a href="#exam">The exam has no answer key</a></li>
+    <li><a href="#match">So we play matches</a></li>
+    <li><a href="#opponent">The opponent: a calibrated customer</a></li>
+    <li><a href="#playbook">The playbook: Cialdini's six</a></li>
+    <li><a href="#rally">A worked rally</a></li>
+    <li><a href="#pitch">The pitch: our dataset</a></li>
+    <li><a href="#score">Keeping score: the metrics</a></li>
+    <li><a href="#rules">The rules of the match</a></li>
+    <li><a href="#winning">What it means to win</a></li>
+    <li><a href="#play">Step onto the pitch</a></li>
+  </ol>
+</nav>
+
+<main>
+<article>
+
+<!-- 1 -->
+<section id="exam">
+  <div class="kicker">The problem</div>
+  <h2>The exam has no answer key</h2>
+  <p class="lead-p">Most AI benchmarks are multiple-choice exams. There's a fixed question, a hidden answer key, and a
+  score that says how often the model picked the right box. That works beautifully for translation, classification, or
+  "what's the capital of France."</p>
+
+  <p>A sales conversation is not an exam. It's a <b>match</b>. The moment your agent says something, the customer reacts —
+  and the next question depends entirely on what just happened. There is no single correct reply to "your price went up
+  and I found cheaper elsewhere." There are dozens of reasonable moves, and the one that works depends on <i>who</i>
+  you're talking to and <i>how the rally has gone so far</i>.</p>
+
+  <p>So the classic recipe breaks down. You can't collect "ground truth" for a conversation that never happened, because
+  the instant your agent diverges from the historical transcript, the rest of that transcript becomes fiction. The
+  customer in the record was responding to a <i>different</i> agent.</p>
+
+  <p class="pull">Grading a persuasion agent against a fixed transcript is like grading a striker by replaying last
+  season's match and checking whether they stand exactly where the old striker stood.</p>
+
+  <figure><div class="fig">
+    <svg viewBox="0 0 880 270" role="img" aria-label="Exam versus match">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="#8a93a8"/></marker>
+        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22314f"/><stop offset="1" stop-color="#1a2236"/></linearGradient>
+        <linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#173a34"/><stop offset="1" stop-color="#13251f"/></linearGradient>
+        <linearGradient id="gC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a2f17"/><stop offset="1" stop-color="#241c10"/></linearGradient>
+        <linearGradient id="gP" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2e2347"/><stop offset="1" stop-color="#1d1730"/></linearGradient>
+      </defs>
+      <style>
+        .bx{rx:10;stroke:#39425a;stroke-width:1}
+        .t{fill:#e7ebf3;font:13px "Segoe UI",sans-serif} .ts{fill:#aab3c5;font:11px "Segoe UI",sans-serif}
+        .h{fill:#cfe0ff;font:600 13px "Segoe UI",sans-serif}
+        .ln{stroke:#8a93a8;stroke-width:1.6;fill:none;marker-end:url(#ar)}
+      </style>
+      <text class="h" x="150" y="24" text-anchor="middle">THE EXAM</text>
+      <rect class="bx" x="40" y="40" width="220" height="40" fill="url(#gA)"/>
+      <text class="t" x="150" y="65" text-anchor="middle">Question (fixed)</text>
+      <path class="ln" d="M150 80 V104"/>
+      <rect class="bx" x="40" y="106" width="220" height="40" fill="url(#gA)"/>
+      <text class="t" x="150" y="131" text-anchor="middle">Model answer</text>
+      <path class="ln" d="M150 146 V170"/>
+      <rect class="bx" x="40" y="172" width="220" height="44" fill="url(#gB)"/>
+      <text class="t" x="150" y="192" text-anchor="middle">Check vs answer key</text>
+      <text class="ts" x="150" y="208" text-anchor="middle">right / wrong</text>
+
+      <text class="h" x="600" y="24" text-anchor="middle">THE MATCH</text>
+      <rect class="bx" x="470" y="40" width="260" height="36" fill="url(#gP)"/>
+      <text class="t" x="600" y="63" text-anchor="middle">Opening move</text>
+      <!-- branching tree -->
+      <path class="ln" d="M600 76 C540 92 520 96 500 110"/>
+      <path class="ln" d="M600 76 C660 92 690 96 712 110"/>
+      <rect class="bx" x="430" y="112" width="150" height="32" fill="url(#gB)"/>
+      <text class="ts" x="505" y="132" text-anchor="middle">customer reacts</text>
+      <rect class="bx" x="636" y="112" width="160" height="32" fill="url(#gB)"/>
+      <text class="ts" x="716" y="132" text-anchor="middle">…or reacts otherwise</text>
+      <path class="ln" d="M505 144 C470 160 460 164 452 178"/>
+      <path class="ln" d="M505 144 C540 160 552 164 560 178"/>
+      <path class="ln" d="M716 144 C690 160 684 164 678 178"/>
+      <path class="ln" d="M716 144 C742 160 752 164 760 178"/>
+      <rect class="bx" x="404" y="180" width="96" height="30" fill="url(#gP)"/><text class="ts" x="452" y="199" text-anchor="middle">move</text>
+      <rect class="bx" x="514" y="180" width="96" height="30" fill="url(#gP)"/><text class="ts" x="562" y="199" text-anchor="middle">move</text>
+      <rect class="bx" x="630" y="180" width="96" height="30" fill="url(#gP)"/><text class="ts" x="678" y="199" text-anchor="middle">move</text>
+      <rect class="bx" x="714" y="180" width="92" height="30" fill="url(#gP)"/><text class="ts" x="760" y="199" text-anchor="middle">move</text>
+      <text class="ts" x="600" y="240" text-anchor="middle">…the path is emergent — outcome only known at the final whistle</text>
+    </svg>
+    <figcaption><b>Figure 1 —</b> An exam has one path to one key. A match branches at every turn because the opponent
+      responds to <i>your</i> move — so a fixed transcript can't be the answer key.</figcaption>
+  </div></figure>
+</section>
+
+<!-- 2 -->
+<section id="match">
+  <div class="kicker">The idea</div>
+  <h2>So we play matches</h2>
+  <p class="lead-p">If there's no answer key, judge the play. We evaluate agents the way you'd evaluate a football team:
+  put two of them on the same pitch, against the same opponent, under identical conditions — and see who wins, who wins
+  head-to-head, and who plays the better game.</p>
+
+  <p>Concretely, that's an <b>A/B test over synthetic dialogues</b>. We take a real customer situation, hand it to two
+  engines, and let each one negotiate a full conversation against a <b>simulated customer</b>. Same customer, same
+  starting point, same everything — the only variable is the agent. Whoever closes the deal scores; and because we watch
+  every turn, we can also see <i>how</i> they scored.</p>
+
+  <figure><div class="fig">
+    <svg viewBox="0 0 900 300" role="img" aria-label="The A/B pitch">
+      <style>
+        .bx2{rx:11;stroke:#39425a;stroke-width:1}
+        .t2{fill:#e7ebf3;font:13px "Segoe UI",sans-serif} .s2{fill:#aab3c5;font:11px "Segoe UI",sans-serif}
+        .m2{fill:#cfe0ff;font:11px var(--mono),monospace}
+        .lA{stroke:#5b8def;stroke-width:2.2;fill:none;marker-end:url(#ar)}
+        .lB{stroke:#19b89a;stroke-width:2.2;fill:none;marker-end:url(#ar)}
+      </style>
+      <!-- scenario -->
+      <rect class="bx2" x="350" y="20" width="200" height="46" fill="url(#gC)"/>
+      <text class="t2" x="450" y="40" text-anchor="middle" font-weight="700">One scenario</text>
+      <text class="s2" x="450" y="57" text-anchor="middle">same customer · same seed</text>
+      <!-- two engines -->
+      <rect class="bx2" x="60" y="110" width="220" height="50" fill="url(#gA)"/>
+      <text class="t2" x="170" y="131" text-anchor="middle" font-weight="700">Engine A</text>
+      <text class="s2" x="170" y="148" text-anchor="middle">e.g. Baseline</text>
+      <rect class="bx2" x="620" y="110" width="220" height="50" fill="url(#gA)"/>
+      <text class="t2" x="730" y="131" text-anchor="middle" font-weight="700">Engine B</text>
+      <text class="s2" x="730" y="148" text-anchor="middle">e.g. your engine</text>
+      <path class="lA" d="M400 66 C300 86 250 96 200 108"/>
+      <path class="lB" d="M500 66 C600 86 660 96 700 108"/>
+      <!-- shared simulator -->
+      <rect class="bx2" x="345" y="120" width="210" height="56" fill="url(#gB)"/>
+      <text class="t2" x="450" y="143" text-anchor="middle" font-weight="700">Same simulated customer</text>
+      <text class="s2" x="450" y="160" text-anchor="middle">the opponent both teams face</text>
+      <path class="lA" d="M282 140 C310 145 318 147 343 148" />
+      <path class="lB" d="M618 140 C590 145 582 147 557 148"/>
+      <!-- scoreboard -->
+      <rect class="bx2" x="250" y="220" width="400" height="60" fill="url(#gP)"/>
+      <text class="t2" x="450" y="244" text-anchor="middle" font-weight="700">Scoreboard</text>
+      <text class="s2" x="450" y="262" text-anchor="middle">win rate · head-to-head · turn-by-turn momentum</text>
+      <path class="lA" d="M200 162 C240 200 320 212 360 220"/>
+      <path class="lB" d="M700 162 C660 200 580 212 540 220"/>
+    </svg>
+    <figcaption><b>Figure 2 —</b> The A/B "pitch": two engines, one shared simulated customer, one scenario, identical
+      conditions. The only difference is the agent — so any difference in outcome is attributable to it.</figcaption>
+  </div></figure>
+
+  <div class="callout key">
+    <div class="clabel">◆ The core trick</div>
+    Hold everything constant except the agent. Same scenario, same customer simulator, same random seed. It's a
+    single-variable experiment — the conversational equivalent of two teams playing the same opponent on the same pitch,
+    same weather, same referee.
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="opponent">
+  <div class="kicker">The opponent</div>
+  <h2>The opponent: a calibrated customer</h2>
+  <p class="lead-p">A match is only as meaningful as the opponent. A sparring partner who folds at the first offer tells
+  you nothing; one who behaves like a real, varied buyer tells you a lot.</p>
+
+  <p>So the other side of every conversation is a <b>customer simulator</b> — an LLM playing the buyer. The hard part is
+  making it both <i>realistic</i> and <i>fair</i>. Two design rules do the heavy lifting:</p>
+
+  <div class="grid g2">
+    <div class="callout info"><div class="clabel">◆ It remembers, but can't see the future</div>
+      At each turn the simulator may glance at how the real customer reacted <i>at that same point</i> in history — as a
+      tone and posture reference — but never at what happened later. That stops outcome leakage (otherwise every
+      historically-won deal would "want" to be won regardless of the agent).</div>
+    <div class="callout info"><div class="clabel">◆ It reacts to the agent in front of it</div>
+      When your engine plays a different move than the historical agent did, the simulator adapts on-topic to <i>your</i>
+      move while keeping the customer's character. It plays you, not the tape.</div>
+  </div>
+
+  <p>We calibrated it against held-out real conversations. It agrees with the real outcome <b>78%</b> of the time, and
+  judges rate its adaptiveness <b>4.71 / 5</b>. It also has a known, deliberate bias:</p>
+
+  <div class="callout caveat">
+    <div class="clabel">▲ It's a tough referee — read it relative, not absolute</div>
+    The simulator is pessimistic by about <b>−22 percentage points</b>: it under-states wins. So absolute win-rates read
+    low. That's fine — and on purpose. What matters in an A/B test is the <i>gap</i> between two engines facing the
+    identical tough opponent, not the absolute number. A hard, consistent referee is exactly what you want when
+    comparing two teams.
+  </div>
+
+  <figure><div class="fig">
+    <svg viewBox="0 0 900 220" role="img" aria-label="The turn loop">
+      <style>
+        .t3{fill:#e7ebf3;font:13px "Segoe UI",sans-serif} .s3{fill:#aab3c5;font:11px "Segoe UI",sans-serif}
+        .lp{stroke:#a974f0;stroke-width:2.2;fill:none;marker-end:url(#ar)}
+        .lg{stroke:#8a93a8;stroke-width:1.5;fill:none;marker-end:url(#ar);stroke-dasharray:5 4}
+      </style>
+      <rect class="bx2" x="40" y="80" width="180" height="56" fill="url(#gA)"/>
+      <text class="t3" x="130" y="104" text-anchor="middle" font-weight="700">Agent move</text>
+      <text class="s3" x="130" y="121" text-anchor="middle">engine.produce()</text>
+      <rect class="bx2" x="300" y="80" width="200" height="56" fill="url(#gB)"/>
+      <text class="t3" x="400" y="104" text-anchor="middle" font-weight="700">Customer reacts</text>
+      <text class="s3" x="400" y="121" text-anchor="middle">simulator reply</text>
+      <rect class="bx2" x="580" y="80" width="200" height="56" fill="url(#gP)"/>
+      <text class="t3" x="680" y="104" text-anchor="middle" font-weight="700">Score the turn</text>
+      <text class="s3" x="680" y="121" text-anchor="middle">persuasion · commitment</text>
+      <path class="lp" d="M222 108 H298"/>
+      <path class="lp" d="M502 108 H578"/>
+      <path class="lp" d="M680 136 C680 180 300 188 130 162 L130 138"/>
+      <rect class="bx2" x="300" y="20" width="200" height="34" fill="url(#gB)"/>
+      <text class="s3" x="400" y="41" text-anchor="middle">same-turn reference (no future)</text>
+      <path class="lg" d="M400 54 V78"/>
+      <text class="s3" x="455" y="178" text-anchor="middle">repeat until won / lost / time</text>
+    </svg>
+    <figcaption><b>Figure 3 —</b> One rally of the match: the agent moves, the customer reacts (informed by a same-turn
+      reference, never the future), the turn is scored, and the loop repeats until the final whistle.</figcaption>
+  </div></figure>
+</section>
+
+<!-- 4 -->
+<section id="playbook">
+  <div class="kicker">The playbook</div>
+  <h2>The playbook: Cialdini's six</h2>
+  <p class="lead-p">If the match is the format, persuasion is the game being played — and the canonical playbook is
+  Robert Cialdini's <i>Influence</i>. His six principles aren't decoration here: they're recorded as data on every
+  single turn.</p>
+
+  <p>Each turn in our precedent corpus carries a flag for which principle the agent just used
+  (<span class="mono">reciprocity_activated</span>, <span class="mono">commitment_activated</span>, and so on), and each
+  customer carries traits for how susceptible they are to a given lever
+  (<span class="mono">authority</span>, <span class="mono">social_proof_susceptibility</span>, …). Persuasion is
+  literally the schema.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Principle</th><th>The set play (in a sales chat)</th><th>Recorded as</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill ctrl">Reciprocity</span></td><td>Give first — a useful comparison, a goodwill concession — and a sense of obligation to return follows.</td><td class="mono">reciprocity_activated</td></tr>
+        <tr><td><span class="pill ctrl">Commitment / Consistency</span></td><td>Earn small yeses that the customer will want to stay consistent with — the backbone of a closing trajectory.</td><td class="mono">commitment_activated · commitment_level (0–5)</td></tr>
+        <tr><td><span class="pill ctrl">Social proof</span></td><td>"Most customers in your segment chose…" — especially potent for socially-susceptible buyers.</td><td class="mono">social_proof_activated · social_proof_susceptibility</td></tr>
+        <tr><td><span class="pill ctrl">Authority</span></td><td>Lead with credible expertise and real figures, not bluster.</td><td class="mono">authority_activated · authority</td></tr>
+        <tr><td><span class="pill ctrl">Liking</span></td><td>Warmth and rapport — the "brand voice: warm, never pushy" the agent is held to.</td><td class="mono">liking_activated</td></tr>
+        <tr><td><span class="pill ctrl">Scarcity</span></td><td>Honest urgency — a rate that can be held only so long — to break a stall.</td><td class="mono">scarcity_activated</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="small">Cialdini later added a seventh principle, <b>Unity</b> (shared identity). It isn't encoded in our data
+  yet — a natural next play to add to the book.</p>
+
+  <div class="callout key">
+    <div class="clabel">◆ Why this matters for evaluation</div>
+    Because the plays are logged, we don't just learn <i>that</i> Engine B won more — we can see <i>which levers</i> it
+    pulled and whether it pulled the right one for that customer's susceptibilities. That turns a scoreboard into game
+    film.
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="rally">
+  <div class="kicker">Game film</div>
+  <h2>A worked rally</h2>
+  <p class="lead-p">Here's a short rally on an insurance-renewal scenario — the customer opens skeptical and
+  price-anchored. Watch the commitment level climb as the agent runs the playbook.</p>
+
+  <div class="rally">
+    <div class="turn"><div class="who cust">Customer</div><div class="msg">
+      <div class="say">"Your renewal came in higher than last year, and I found a cheaper quote elsewhere."</div>
+      <div class="meta"><span class="score">commitment 1/5 · persuasion 0.20</span></div>
+    </div></div>
+    <div class="turn"><div class="who agent">Agent</div><div class="msg">
+      <div class="say">"I pulled your file — the market average for your segment is $4,400; you're quoted $4,581, and last year you paid $4,238. So the increase is real but small, not the jump it feels like."</div>
+      <div class="meta"><span class="pill ctrl">Authority</span><span class="score">uses real anchors, not bluster</span></div>
+    </div></div>
+    <div class="turn"><div class="who agent">Agent</div><div class="msg">
+      <div class="say">"I have a loyalty adjustment I can apply that brings you to $4,400 — right at market."</div>
+      <div class="meta"><span class="pill ctrl">Reciprocity</span><span class="score">gives first</span></div>
+    </div></div>
+    <div class="turn"><div class="who cust">Customer</div><div class="msg">
+      <div class="say">"Okay, that's more reasonable. What about the coverage?"</div>
+      <div class="meta"><span class="score">commitment 3/5 · persuasion 0.55 — momentum shifts</span></div>
+    </div></div>
+    <div class="turn"><div class="who agent">Agent</div><div class="msg">
+      <div class="say">"Same comprehensive coverage you said you wanted — shall we lock it so you keep continuous cover with no gap?"</div>
+      <div class="meta"><span class="pill ctrl">Commitment</span><span class="score">a small, consistent yes</span></div>
+    </div></div>
+    <div class="turn"><div class="who agent">Agent</div><div class="msg">
+      <div class="say">"I can hold that adjusted rate through the weekend."</div>
+      <div class="meta"><span class="pill ctrl">Scarcity</span><span class="score">honest urgency to break the stall</span></div>
+    </div></div>
+    <div class="turn"><div class="who cust">Customer</div><div class="msg">
+      <div class="say">"Alright — let's renew. Use the card on file."</div>
+      <div class="meta"><span class="pill win">WON</span><span class="score">commitment 5/5 · payment captured</span></div>
+    </div></div>
+  </div>
+
+  <p>Notice there was no single "correct" line — a different customer (more socially-driven, less analytical) might have
+  needed <span class="pill ctrl">Social proof</span> instead of <span class="pill ctrl">Authority</span>. That's exactly
+  why a fixed answer key fails and a match succeeds: the right play depends on the opponent in front of you.</p>
+</section>
+
+<!-- 6 -->
+<section id="pitch">
+  <div class="kicker">The pitch</div>
+  <h2>The pitch: our dataset</h2>
+  <p class="lead-p">Every match is played on a real pitch. Our 112 scenarios are each anchored in an actual historical
+  opportunity — not invented prompts — across two industries.</p>
+
+  <div class="grid g2" style="margin:14px 0">
+    <div class="stat c"><div class="v">112</div><div class="l">scenarios · 51 Insurance + 61 Ecommerce</div></div>
+    <div class="stat c"><div class="v">23</div><div class="l">customer profile dimensions per buyer</div></div>
+    <div class="stat b"><div class="v">15</div><div class="l">diversity cells (farthest-point sampled)</div></div>
+    <div class="stat ctrl"><div class="v">~20%</div><div class="l">real-wins kept as regression sentinels</div></div>
+  </div>
+
+  <p>Each scenario is a snapshot of one buyer: a 23-dimension profile (their motivator, decision style, trust level,
+  objection pattern, susceptibility to each Cialdini lever), the full historical transcript, and the economic anchors
+  that ground the negotiation (last year's price, the segment's market average, the internal discount ceiling).</p>
+
+  <h3>Why it's built this way</h3>
+  <ul>
+    <li><b>Maximum variety, minimum size.</b> The 15 cells are chosen by farthest-point sampling on the profile vector,
+      so a compact set still spans wildly different buyers — analytical-skeptical, impulsive-trusting, and everything
+      between.</li>
+    <li><b>Self-contained matches.</b> The historical transcript ships with each scenario, so the simulator's same-turn
+      reference needs no database at run time. We seed the dialogue up to a takeover point, then the agent plays on.</li>
+    <li><b>Sentinels.</b> About a fifth are deals that genuinely closed in real life. They're a floor: an engine that
+      fumbles the easy wins is regressing, no matter how it does on the hard cases.</li>
+  </ul>
+
+  <div class="callout info">
+    <div class="clabel">◆ The honest part</div>
+    Because there's no answer key, the dataset's job isn't to store "the right reply." It's to set up a wide, realistic
+    range of <i>opening situations</i> and faithful opponents — and then let the match decide.
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="score">
+  <div class="kicker">Measuring</div>
+  <h2>Keeping score: the metrics</h2>
+  <p class="lead-p">A final score alone is a noisy signal — one deflected shot can flip a 1–0. So we score the match at
+  three levels, from the result down to the equivalent of expected goals.</p>
+
+  <figure><div class="fig">
+    <svg viewBox="0 0 880 280" role="img" aria-label="The metrics ladder">
+      <style>
+        .t5{fill:#e7ebf3;font:600 14px "Segoe UI",sans-serif} .s5{fill:#aab3c5;font:11.5px "Segoe UI",sans-serif}
+        .m5{fill:#cfe0ff;font:11px var(--mono),monospace}
+      </style>
+      <rect class="bx2" x="120" y="30" width="640" height="62" fill="url(#gP)"/>
+      <text class="t5" x="150" y="58">3 · Expected goals — win-proximity (continuous 0–1)</text>
+      <text class="s5" x="150" y="78">even a loss earns partial credit for how close it came: trajectory + similarity-to-wins + payment signals</text>
+      <rect class="bx2" x="90" y="108" width="700" height="62" fill="url(#gB)"/>
+      <text class="t5" x="120" y="136">2 · Momentum — per-turn persuasion (0–1) + commitment (0–5)</text>
+      <text class="s5" x="120" y="156">possession &amp; pressure: is the customer warming, turn over turn? scored by the same model production uses</text>
+      <rect class="bx2" x="60" y="186" width="760" height="62" fill="url(#gA)"/>
+      <text class="t5" x="90" y="214">1 · The final score — won / lost</text>
+      <text class="s5" x="90" y="234">did the deal close? the result every match ultimately resolves to</text>
+    </svg>
+    <figcaption><b>Figure 4 —</b> Three levels of scoring. The binary result sits on top of a per-turn momentum signal,
+      which feeds a continuous "expected-goals" score that extracts information even from matches that ended 0–0.</figcaption>
+  </div></figure>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Level</th><th>Football analogue</th><th>What it captures</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill a">Won / lost</span></td><td>The final score</td><td>Did the customer convert? The outcome that ultimately matters.</td></tr>
+        <tr><td><span class="pill b">Persuasion + commitment, per turn</span></td><td>Possession &amp; pressure</td><td>A 0–1 persuasion score and a 0–5 commitment level on every customer turn — is momentum building?</td></tr>
+        <tr><td><span class="pill ctrl">Win-proximity</span></td><td>Expected goals (xG)</td><td>A continuous 0–1 score blending the commitment trajectory, similarity to known winning conversations, and payment signals. A near-miss scores higher than a flat-out loss.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>That third level matters because conversion is rare and noisy. <b>Win-proximity</b> is our expected-goals: it reads
+  the quality of play, so two engines that both "lost" a hard scenario are still distinguishable — one created chances,
+  the other didn't. It's how we cut variance and see real differences without needing thousands of matches.</p>
+
+  <div class="callout ok">
+    <div class="clabel">✓ Apples to apples</div>
+    The per-turn persuasion score uses the <i>same model and prompt the production system uses</i> to score real
+    conversations — so a simulated turn's score is directly comparable to a real one. The benchmark also records each
+    agent's own telemetry (strategy, tone, which principle it pulled) verbatim, for post-match film study.
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="rules">
+  <div class="kicker">Methodology</div>
+  <h2>The rules of the match</h2>
+  <p class="lead-p">An A/B test is only trustworthy if the two teams truly played the same game. Four rules keep it
+  clean.</p>
+
+  <div class="grid g2">
+    <div class="card"><h3 style="margin-top:0">Single variable</h3>
+      <p class="small">Same scenario, same customer simulator, same random seed. Only the engine changes — so any
+      difference in result is the engine's doing, not luck of the draw.</p></div>
+    <div class="card"><h3 style="margin-top:0">Paired by scenario</h3>
+      <p class="small">Every engine plays the identical 112 fixtures. We compare them <i>per scenario</i> — A-better,
+      B-better, or tie — not just on season totals, which keeps easy and hard matches from washing out.</p></div>
+    <div class="card"><h3 style="margin-top:0">No peeking at the future</h3>
+      <p class="small">The simulator's same-turn reference rule means the historical outcome can't leak into the match.
+      The agent has to actually earn the win against a reacting opponent.</p></div>
+    <div class="card"><h3 style="margin-top:0">Read the gap, not the absolute</h3>
+      <p class="small">Because the referee is deliberately strict (−22 pp pessimism), absolute win-rates run low. The
+      signal is the <i>difference</i> between engines facing the same strict referee.</p></div>
+  </div>
+
+  <h3>What a result looks like</h3>
+  <p>Run two engines over the set and you get a paired summary: each engine's win rate, and the head-to-head tally.</p>
+<pre><code>{
+  <span class="str">"arms"</span>: {
+    <span class="str">"baseline"</span>: { <span class="str">"n"</span>: <span class="num">112</span>, <span class="str">"won"</span>: <span class="num">56</span>, <span class="str">"win_rate"</span>: <span class="num">0.500</span> },
+    <span class="str">"your_engine"</span>: { <span class="str">"n"</span>: <span class="num">112</span>, <span class="str">"won"</span>: <span class="num">71</span>, <span class="str">"win_rate"</span>: <span class="num">0.634</span> }
+  },
+  <span class="str">"pairwise"</span>: { <span class="str">"your_engine_better"</span>: <span class="num">19</span>, <span class="str">"baseline_better"</span>: <span class="num">4</span>, <span class="str">"ties"</span>: <span class="num">89</span> }
+}</code></pre>
+  <p class="small">Illustrative shape, not a measured claim. The 89 ties are mostly scenarios both engines win or both
+  lose; the story is in the 19-vs-4 split where they diverge.</p>
+</section>
+
+<!-- 9 -->
+<section id="winning">
+  <div class="kicker">The goal</div>
+  <h2>What it means to win</h2>
+  <p class="lead-p">In football, you can win ugly — but the teams you remember win <i>well</i>. The same is true here.
+  The deal is the score, but the experience is the game.</p>
+
+  <p>An agent that closes by dropping its price five times in a row "wins" the deal and loses the customer's trust. So we
+  watch for exactly that: a <b>no-staircase rule</b> flags repeated capitulating discounts, and we reward agents that
+  hold a fair price, address objections with value, and — when a deal genuinely isn't there — <b>close gracefully</b>
+  rather than spamming. Winning means converting <i>and</i> leaving the human better off than a competitor's agent
+  would.</p>
+
+  <p class="pull">Your team's success metric isn't just the goal — it's winning while giving the human a better
+  experience than the other side's striker would.</p>
+</section>
+
+<!-- 10 -->
+<section id="play">
+  <div class="kicker">Your move</div>
+  <h2>Step onto the pitch</h2>
+  <p class="lead-p">The whole point of a match format is that anyone can field a team. Bring an engine, and it plays the
+  same fixtures against the same opponent.</p>
+
+  <p>An engine is one method — given the customer profile and the conversation so far, return the next thing to say.
+  Register it once and it runs in the headless league and the live, side-by-side viewer alike.</p>
+<pre><code><span class="kw">async def</span> <span class="fn">produce</span>(self, opp_meta, dialog_history, business_rules=<span class="str">""</span>):
+    <span class="cm"># read the customer + the rally so far, run your strategy…</span>
+    <span class="kw">return</span> reply_text, {<span class="str">"principle"</span>: <span class="str">"reciprocity"</span>, <span class="str">"tone"</span>: <span class="str">"warm"</span>}
+
+results = <span class="kw">await</span> Benchmark(load_scenarios()).<span class="fn">run_engine</span>(<span class="str">"your_engine"</span>)</code></pre>
+
+  <p>Then read the scoreboard: who scored more, who won head-to-head, and — by replaying the film turn by turn — who
+  played the better game. No answer key required.</p>
+
+  <div class="callout key">
+    <div class="clabel">◆ The takeaway</div>
+    Goal-oriented conversation can't be graded like an exam, because the opponent writes half the test as you go. Play
+    matches instead: same opponent, same pitch, swap only the agent — and measure not just the final score, but the
+    momentum and the quality of play. That's how you tell a striker who got lucky from one who's genuinely better.
+  </div>
+</section>
+
+</article>
+</main>
+</div>
+
+<footer class="footer">
+  A field note on evaluating goal-oriented conversation agents · framed through Cialdini's <i>Influence: The Psychology
+  of Persuasion</i>. Self-contained HTML, no external resources; diagrams are hand-authored inline SVG. Figures and
+  example dialogue are illustrative; the dataset, metrics, and methodology described are real.
+</footer>
+
+<a href="#" class="backtotop" id="btt">↑ Top</a>
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('nav.toc a')), map={};
+  links.forEach(function(a){var id=a.getAttribute('href').slice(1),el=document.getElementById(id); if(el)map[id]=a;});
+  var obs=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){links.forEach(function(a){a.classList.remove('active');});var a=map[e.target.id];if(a)a.classList.add('active');}
+  });},{rootMargin:'-20% 0px -70% 0px',threshold:0});
+  Object.keys(map).forEach(function(id){obs.observe(document.getElementById(id));});
+  var btt=document.getElementById('btt');
+  window.addEventListener('scroll',function(){btt.classList.toggle('show',window.scrollY>700);});
+})();
+</script>
+</body>
+</html>

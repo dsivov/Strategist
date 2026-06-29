@@ -221,7 +221,7 @@ _THRESHOLDS = {
     "human_request": 0.60,      # hand-authored only (no labeled signal in DB)
     "engaged_question": 0.50,   # protective override — looser is safer
     # decline: stricter than farewell because false positive here marks panel
-    # `lost` prematurely. Mined Heavys data has "Thank you!" in both farewell
+    # `lost` prematurely. Mined Ecommerce data has "Thank you!" in both farewell
     # and decline sets, so we lean on threshold to disambiguate.
     "decline": 0.65,
     # customer_initiated_close: bug-session texts score 0.63-0.71, worst
@@ -289,7 +289,7 @@ def _resolve_anchors(intent: str, tenant: str | None = None) -> list[str]:
     (tenant-agnostic bridge) + hardcoded fallback. Cached.
 
     Cache key: <intent>:<tenant>. Different tenants get different anchor
-    matrices so we don't conflate Hebrew Libra phrasings with English Heavys.
+    matrices so we don't conflate Hebrew Insurance phrasings with English Ecommerce.
     """
     cache_key = f"{intent}:{tenant or ''}"
     if cache_key in _ANCHOR_PHRASES:

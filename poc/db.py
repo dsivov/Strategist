@@ -1,7 +1,7 @@
 """Read-only DB access for the POC.
 
 Connects via the existing SSH tunnel (mysql-prod-tunnel) using credentials
-from ~/.my.cnf. Pure-SQL helpers — no Luna imports, no transitive deps.
+from ~/.my.cnf. Pure-SQL helpers — no Agent imports, no transitive deps.
 """
 from __future__ import annotations
 
@@ -56,8 +56,8 @@ def fetch_opp_meta(conn, opp_id: str) -> dict | None:
                    p.purchase_urgency, p.primary_resistance,
                    p.communication_style, p.emotional_volatility,
                    p.tone, p.gender
-            FROM luna.opportunity o
-            LEFT JOIN luna.research_profile_flash p ON p.opportunity_id = o.id
+            FROM opportunity o
+            LEFT JOIN research_profile_flash p ON p.opportunity_id = o.id
             WHERE o.id = %s
         """, (opp_id,))
         return cur.fetchone()
@@ -71,17 +71,17 @@ def fetch_messages(conn, opp_id: str) -> list[dict]:
             SELECT me.message_id, me.type AS direction, me.timestamp,
                    me.is_reminder, me.is_followup, me.automatic_response,
                    COALESCE(
-                     (SELECT m.text FROM luna.message m
+                     (SELECT m.text FROM message m
                       WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                         AND m.lang='en_US' LIMIT 1),
-                     (SELECT m.text FROM luna.message m
+                     (SELECT m.text FROM message m
                       WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                         AND m.lang='he' LIMIT 1),
-                     (SELECT m.text FROM luna.message m
+                     (SELECT m.text FROM message m
                       WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                       LIMIT 1)
                    ) AS text
-            FROM luna.message_event me
+            FROM message_event me
             WHERE me.opportunity_id = %s
               AND (me.is_deleted IS NULL OR me.is_deleted = 0)
             ORDER BY me.timestamp ASC
@@ -95,7 +95,7 @@ def fetch_turn_states(conn, opp_id: str) -> list[dict]:
         cur.execute("""
             SELECT sequence_number, persuasion_score, commitment_level, sentiment,
                    objection_category, p_conv, message_id
-            FROM luna.research_turn_state_flash
+            FROM research_turn_state_flash
             WHERE opportunity_id = %s
             ORDER BY sequence_number ASC
         """, (opp_id,))
@@ -107,7 +107,7 @@ def fetch_persuasive_scores(conn, opp_id: str) -> dict[str, dict]:
     with conn.cursor() as cur:
         cur.execute("""
             SELECT user_message_id, score, reason
-            FROM luna.persuasive_score
+            FROM persuasive_score
             WHERE opportunity_id = %s
         """, (opp_id,))
         return {r["user_message_id"]: r for r in cur.fetchall()}
@@ -116,7 +116,7 @@ def fetch_persuasive_scores(conn, opp_id: str) -> dict[str, dict]:
 def fetch_business_rules(conn, company: str) -> str:
     with conn.cursor() as cur:
         cur.execute("""
-            SELECT info_data FROM luna.company_business_info
+            SELECT info_data FROM company_business_info
             WHERE company = %s AND info_type = 'business_rules' AND is_draft = 0
             ORDER BY ver_num DESC LIMIT 1
         """, (company,))
@@ -125,20 +125,20 @@ def fetch_business_rules(conn, company: str) -> str:
 
 
 # T-81 anchor enrichment (2026-05-02) — fixes the impoverished customer-state
-# model. Production Luna agent CAN reach `libra_stage_data` for any active
-# Libra renewal opp (ly_price, current quoted price, max_discount, coverage
+# model. Production sales agent CAN reach `insurance_stage_data` for any active
+# Insurance renewal opp (ly_price, current quoted price, max_discount, coverage
 # detail, claim history, market segment) — but currently doesn't. This
 # fetches those anchors so both the supervisor AND the customer simulator
 # can negotiate from a real economic reference frame instead of inventing
 # adversarial pushback (simulator) or staircase-pricing (supervised agent).
 #
 # Closes a structural gap empirically confirmed 2026-05-02: a3f517d7's seed
-# dialog quotes 1,272+1,887=3,159 NIS justified by a "48% market hike",
+# dialog quotes 1,272+1,887=3,159 USD justified by a "48% market hike",
 # but the actual prod data shows YoY change is +0.24% (effectively flat)
-# and market median for that car cohort is ~2,200 NIS. The conversation
+# and market median for that car cohort is ~2,200 USD. The conversation
 # was operating on a fabricated premium with no grounding in real data.
 
-# Synthetic anchors for our 2024-2025 test scenarios (libra_stage_data
+# Synthetic anchors for our 2024-2025 test scenarios (insurance_stage_data
 # only retains current cycle, so historical opps need synthesis from
 # seed-dialog signals + cohort medians). Tagged synthetic=True so the
 # prompts can be honest about provenance.
@@ -147,16 +147,16 @@ SYNTHETIC_ANCHORS_BY_OPP: dict[str, dict] = {
         # Older Nissan, "competed-away" cluster. Seed dialog quotes
         # 1,272+1,887=3,159 with claimed 48% increase justification.
         # Real YoY change in prod data: +0.24% — quote is inflated.
-        # Customer in dialog mentions competitor at ~2,400 NIS.
-        "last_year_price_nis": 2150,           # back-calculated assuming
+        # Customer in dialog mentions competitor at ~2,400 USD.
+        "last_year_price_usd": 2150,           # back-calculated assuming
                                                 # roughly flat YoY
-        "current_quoted_price_nis": 3159,
+        "current_quoted_price_usd": 3159,
         "claimed_increase_pct": 48.0,
         "actual_market_yoy_change_pct": 0.24,
-        "market_avg_for_segment_nis": 2200,    # 2014-2017 Nissan cohort
+        "market_avg_for_segment_usd": 2200,    # 2014-2017 Nissan cohort
         "max_discount_pct_internal": 15.0,     # "approval to match" implies
                                                 # they have ~15% discretion
-        "coverage_summary": "Third-party + mandatory; deductible 990 NIS arrangement / 1,500 NIS private; headlights/mirrors included",
+        "coverage_summary": "Third-party + mandatory; deductible 990 USD arrangement / 1,500 USD private; headlights/mirrors included",
         "loyalty_years": 3,                    # plausible from "renewal" context
         "vehicle": "older Nissan",
         "synthetic": True,
@@ -164,11 +164,11 @@ SYNTHETIC_ANCHORS_BY_OPP: dict[str, dict] = {
     },
     "5db6fda9-a5a1-403a-8c01-d1b62bbf14ba": {
         # Same cluster as a3f517d7 (competed-away)
-        "last_year_price_nis": 2050,
-        "current_quoted_price_nis": 2987,
+        "last_year_price_usd": 2050,
+        "current_quoted_price_usd": 2987,
         "claimed_increase_pct": 46.0,
         "actual_market_yoy_change_pct": 0.24,
-        "market_avg_for_segment_nis": 2100,
+        "market_avg_for_segment_usd": 2100,
         "max_discount_pct_internal": 15.0,
         "coverage_summary": "Third-party + mandatory",
         "loyalty_years": 4,
@@ -178,11 +178,11 @@ SYNTHETIC_ANCHORS_BY_OPP: dict[str, dict] = {
     },
     "bc2d3bd1-3f35-47b5-8bca-5cf9a64f5c12": {
         # Variance-run target opp (median difficulty)
-        "last_year_price_nis": 1950,
-        "current_quoted_price_nis": 2700,
+        "last_year_price_usd": 1950,
+        "current_quoted_price_usd": 2700,
         "claimed_increase_pct": 38.0,
         "actual_market_yoy_change_pct": 0.24,
-        "market_avg_for_segment_nis": 2100,
+        "market_avg_for_segment_usd": 2100,
         "max_discount_pct_internal": 15.0,
         "coverage_summary": "Third-party + mandatory",
         "loyalty_years": 3,
@@ -195,14 +195,14 @@ SYNTHETIC_ANCHORS_BY_OPP: dict[str, dict] = {
     # inferred from the seed dialog (customer mentions "several good years"
     # and "no incidents") and reasonable Kia/Citroën cohort baselines.
     "10a45705-0ba1-4763-b2ca-c35a4db94114": {
-        # Roy / Kia comprehensive renewal. Seed quotes 8,053 NIS; customer
+        # Roy / Kia comprehensive renewal. Seed quotes 8,053 USD; customer
         # says "I didn't expect a customer of several good years to receive
         # such an offer". Anchor-exposure backfire case.
-        "last_year_price_nis": 5000,
-        "current_quoted_price_nis": 8053,
+        "last_year_price_usd": 5000,
+        "current_quoted_price_usd": 8053,
         "claimed_increase_pct": 61.0,
         "actual_market_yoy_change_pct": 0.24,
-        "market_avg_for_segment_nis": 5500,
+        "market_avg_for_segment_usd": 5500,
         "max_discount_pct_internal": 35.0,
         "coverage_summary": "Comprehensive incl. headlights/mirrors, towing, windshield",
         "loyalty_years": 4,
@@ -214,11 +214,11 @@ SYNTHETIC_ANCHORS_BY_OPP: dict[str, dict] = {
     "087b0160-38d4-4854-8475-bf78566fecf2": {
         # Citroën third-party renewal. Customer rejects on price ("Still too
         # expensive for that car"). Older vehicle.
-        "last_year_price_nis": 1800,
-        "current_quoted_price_nis": 2500,
+        "last_year_price_usd": 1800,
+        "current_quoted_price_usd": 2500,
         "claimed_increase_pct": 39.0,
         "actual_market_yoy_change_pct": 0.24,
-        "market_avg_for_segment_nis": 2000,
+        "market_avg_for_segment_usd": 2000,
         "max_discount_pct_internal": 20.0,
         "coverage_summary": "Third-party + mandatory",
         "loyalty_years": 3,
@@ -228,14 +228,14 @@ SYNTHETIC_ANCHORS_BY_OPP: dict[str, dict] = {
         "provenance": "seed_dialog_extraction + cohort_baseline 2026-05-14",
     },
     "59f9696f-4c5a-44b3-b163-f97c42a82b06": {
-        # libra_c0 — the primary high-SNR measurement opp (3.06x intervention
+        # insurance_c0 — the primary high-SNR measurement opp (3.06x intervention
         # sensitivity per the Phase 5 power analysis). Was running on the
-        # hardcoded global default (libra_stage_data empty in this replica),
-        # which means prior libra_c0 deltas were measured against a generic
+        # hardcoded global default (insurance_stage_data empty in this replica),
+        # which means prior insurance_c0 deltas were measured against a generic
         # anchor, not this opp's real economic frame. Backfilled 2026-05-17.
         #
         # Seed dialog (Suzuki #5869374, Ofir): agent quotes comprehensive
-        # 2,447 NIS; ly comprehensive 2,317 + ly mandatory 1,580; agent's
+        # 2,447 USD; ly comprehensive 2,317 + ly mandatory 1,580; agent's
         # stated floor is third-party 1,200 + mandatory 1,628 = 2,828.
         # NOT an anchor-exposure case — the increase is a modest +5.6%.
         # The failure mode here is the aggressive price-shopper ("I'll do a
@@ -243,13 +243,13 @@ SYNTHETIC_ANCHORS_BY_OPP: dict[str, dict] = {
         # the supervisor the real frame to justify the small increase and
         # hold the floor rather than staircase. loyalty/claims not stated in
         # seed → conservative renewal defaults (2y, 0 claims).
-        "last_year_price_nis": 2317,
-        "current_quoted_price_nis": 2447,
+        "last_year_price_usd": 2317,
+        "current_quoted_price_usd": 2447,
         "claimed_increase_pct": 5.6,
         "actual_market_yoy_change_pct": 0.24,
-        "market_avg_for_segment_nis": 2400,    # small-car Suzuki comprehensive
+        "market_avg_for_segment_usd": 2400,    # small-car Suzuki comprehensive
         "max_discount_pct_internal": 15.0,
-        "coverage_summary": "Comprehensive; third-party 1,200 + mandatory 1,628 NIS option available",
+        "coverage_summary": "Comprehensive; third-party 1,200 + mandatory 1,628 USD option available",
         "loyalty_years": 2,                    # conservative — renewal, not stated
         "claims_count": 0,                     # none mentioned in seed
         "vehicle": "Suzuki (comprehensive)",
@@ -259,14 +259,14 @@ SYNTHETIC_ANCHORS_BY_OPP: dict[str, dict] = {
 }
 
 
-def fetch_libra_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict:
-    """Return anchor data for a Libra Insurance Renewal opp.
+def fetch_insurance_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict:
+    """Return anchor data for a Insurance Insurance Renewal opp.
 
     Sources, in priority order:
       1. Synthetic per-opp dict (for our historical 2024-2025 test scenarios
-         whose libra_stage_data row was purged)
-      2. Live `libra_stage_data` join via opp.external_id (for current opps)
-      3. Cohort fallback: market_avg only (computed from libra_stage_data
+         whose insurance_stage_data row was purged)
+      2. Live `insurance_stage_data` join via opp.external_id (for current opps)
+      3. Cohort fallback: market_avg only (computed from insurance_stage_data
          filtered by manufacture_year proxy — empty if cohort not derivable)
 
     Returned dict always carries `synthetic: bool` so prompts can be honest
@@ -276,14 +276,14 @@ def fetch_libra_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict
     if opp_id in SYNTHETIC_ANCHORS_BY_OPP:
         out = dict(SYNTHETIC_ANCHORS_BY_OPP[opp_id])
         # Compute profile-appropriate opening if not already present
-        if "profile_appropriate_opening_nis" not in out:
+        if "profile_appropriate_opening_usd" not in out:
             opening, reason = _profile_appropriate_opening(
-                out.get("last_year_price_nis", 0),
-                out.get("current_quoted_price_nis", 0),
+                out.get("last_year_price_usd", 0),
+                out.get("current_quoted_price_usd", 0),
                 out.get("loyalty_years"),
                 int(out.get("claims_count", 0)),
             )
-            out["profile_appropriate_opening_nis"] = opening
+            out["profile_appropriate_opening_usd"] = opening
             out["profile_appropriate_opening_reason"] = reason
             out.setdefault("claims_count", 0)
         return out
@@ -293,15 +293,15 @@ def fetch_libra_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict
         # Need external_id; fetch it
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT external_id, company FROM luna.opportunity WHERE id = %s",
+                "SELECT external_id, company FROM opportunity WHERE id = %s",
                 (opp_id,))
             r = cur.fetchone()
             if not r:
                 return {}
             opp_meta = r
 
-    if (opp_meta.get("company") or "").lower() != "libra":
-        return {}  # only Libra has stage_data
+    if (opp_meta.get("company") or "").lower() != "insurance":
+        return {}  # only Insurance has stage_data
     external_id = opp_meta.get("external_id")
     if not external_id:
         return {}
@@ -313,7 +313,7 @@ def fetch_libra_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict
                    first_claim, second_claim,
                    towing_service, windshield_service, headlights_service,
                    no_deductible
-            FROM luna.libra_stage_data
+            FROM insurance_stage_data
             WHERE external_id = %s
             ORDER BY id DESC
             LIMIT 1
@@ -345,11 +345,11 @@ def fetch_libra_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict
         ly, cur_p, loyalty_years, claims_count)
 
     return {
-        "last_year_price_nis": round(ly),
-        "current_quoted_price_nis": round(cur_p),
+        "last_year_price_usd": round(ly),
+        "current_quoted_price_usd": round(cur_p),
         "claimed_increase_pct": round(yoy_pct, 1),
         "actual_market_yoy_change_pct": 0.24,  # computed once from full table
-        "market_avg_for_segment_nis": market_avg,
+        "market_avg_for_segment_usd": market_avg,
         "max_discount_pct_internal": (
             float(sd["max_discount"]) if sd.get("max_discount") else 15.0),
         "coverage_summary": _summarize_coverage(sd),
@@ -362,11 +362,11 @@ def fetch_libra_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict
         # The behavioral-economics literature (anchor-exposure backfire,
         # Galinsky & Mussweiler 2001) shows large anchor reveals damage
         # trust below baseline. Open near last-year + market inflation.
-        "profile_appropriate_opening_nis": profile_open,
+        "profile_appropriate_opening_usd": profile_open,
         "profile_appropriate_opening_reason": profile_reason,
         "vehicle": (sd.get("manufacturer_and_model") or "").strip()[:60],
         "synthetic": False,
-        "provenance": "libra_stage_data live join",
+        "provenance": "insurance_stage_data live join",
     }
 
 
@@ -375,7 +375,7 @@ def _profile_appropriate_opening(ly: float, list_price: float,
                                    claims_count: int) -> tuple[int | None, str]:
     """Compute the highest acceptable opening price for a customer's profile.
 
-    Returns (opening_nis, reason). When the customer profile justifies a
+    Returns (opening_usd, reason). When the customer profile justifies a
     near-floor opening (loyal + no claims), the opening should approximate
     last_year + actual market inflation (~10%) rather than the list price.
 
@@ -390,18 +390,18 @@ def _profile_appropriate_opening(ly: float, list_price: float,
     loyalty = loyalty_years or 0
     if loyalty >= 2 and claims_count == 0:
         return (round(ly * 1.10),
-                f"loyal-{loyalty}y-noclaims: ly*1.10 = {round(ly*1.10)} NIS")
+                f"loyal-{loyalty}y-noclaims: ly*1.10 = {round(ly*1.10)} USD")
     if loyalty >= 2 and claims_count == 1:
         return (round(ly * 1.18),
-                f"loyal-{loyalty}y-1claim: ly*1.18 = {round(ly*1.18)} NIS")
+                f"loyal-{loyalty}y-1claim: ly*1.18 = {round(ly*1.18)} USD")
     if loyalty >= 1 and claims_count == 0:
         return (round(ly * 1.15),
-                f"loyalty-{loyalty}y-noclaims: ly*1.15 = {round(ly*1.15)} NIS")
+                f"loyalty-{loyalty}y-noclaims: ly*1.15 = {round(ly*1.15)} USD")
     return (round(list_price), f"list-price-acceptable (loyalty={loyalty}y, claims={claims_count})")
 
 
 def _compute_market_avg_by_year(conn, manufacture_year: Any) -> int | None:
-    """Median price (NIS, rounded) for cohort within ±2 years of given year."""
+    """Median price (USD, rounded) for cohort within ±2 years of given year."""
     try:
         year = int(manufacture_year) if manufacture_year else None
     except (ValueError, TypeError):
@@ -411,7 +411,7 @@ def _compute_market_avg_by_year(conn, manufacture_year: Any) -> int | None:
     with conn.cursor() as cur:
         cur.execute("""
             SELECT AVG(CAST(price AS DECIMAL(10,2))) AS avg_p, COUNT(*) AS n
-            FROM luna.libra_stage_data
+            FROM insurance_stage_data
             WHERE manufacture_year BETWEEN %s AND %s
               AND price IS NOT NULL AND price != ''
         """, (str(year - 2), str(year + 2)))
@@ -422,7 +422,7 @@ def _compute_market_avg_by_year(conn, manufacture_year: Any) -> int | None:
 
 
 def _compute_market_ly_by_year(conn, manufacture_year: Any) -> int | None:
-    """Median ly_price (NIS, rounded) for cohort within ±2 years. Parallel
+    """Median ly_price (USD, rounded) for cohort within ±2 years. Parallel
     to _compute_market_avg_by_year but pulls last-year prices."""
     try:
         year = int(manufacture_year) if manufacture_year else None
@@ -433,7 +433,7 @@ def _compute_market_ly_by_year(conn, manufacture_year: Any) -> int | None:
     with conn.cursor() as cur:
         cur.execute("""
             SELECT AVG(CAST(ly_price AS DECIMAL(10,2))) AS avg_ly, COUNT(*) AS n
-            FROM luna.libra_stage_data
+            FROM insurance_stage_data
             WHERE manufacture_year BETWEEN %s AND %s
               AND ly_price IS NOT NULL AND ly_price != ''
         """, (str(year - 2), str(year + 2)))
@@ -443,7 +443,7 @@ def _compute_market_ly_by_year(conn, manufacture_year: Any) -> int | None:
     return round(float(r["avg_ly"]))
 
 
-# Hardcoded global defaults for when libra_stage_data is empty (dev/POC
+# Hardcoded global defaults for when insurance_stage_data is empty (dev/POC
 # scenarios). These are Israeli insurance market plausible mid-cohort values
 # circa 2026; only used when ALL DB paths fail. Production would have
 # populated stage_data so this branch is never reached.
@@ -457,14 +457,14 @@ def _compute_cohort_market_avg(conn, opp_meta: dict) -> dict:
     Returns cohort-median current price + cohort-median last-year price
     + a profile-conditioned opening anchor computed under "default loyal
     renewal" assumptions (loyalty=2y, claims=0). This is the safe-direction
-    default: every Libra renewal opp is by definition an existing customer,
+    default: every Insurance renewal opp is by definition an existing customer,
     so loyalty≥1 is universal; defaulting to 0 claims biases the opening
     LOW (better trust outcome) rather than HIGH (anchor-exposure backfire).
 
     Resolution order:
-      1. Per-cohort by manufacture_year (≥30 rows in libra_stage_data)
-      2. Global aggregate over all libra_stage_data
-      3. Hardcoded global default (when libra_stage_data is empty — dev DB)
+      1. Per-cohort by manufacture_year (≥30 rows in insurance_stage_data)
+      2. Global aggregate over all insurance_stage_data
+      3. Hardcoded global default (when insurance_stage_data is empty — dev DB)
     """
     year = opp_meta.get("manufacture_year") if opp_meta else None
     cohort_avg = _compute_market_avg_by_year(conn, year)
@@ -480,7 +480,7 @@ def _compute_cohort_market_avg(conn, opp_meta: dict) -> dict:
                 SELECT AVG(CAST(price AS DECIMAL(10,2))) AS avg_p,
                        AVG(CAST(ly_price AS DECIMAL(10,2))) AS avg_ly,
                        COUNT(*) AS n
-                FROM luna.libra_stage_data
+                FROM insurance_stage_data
                 WHERE price IS NOT NULL AND price != ''
                   AND ly_price IS NOT NULL AND ly_price != ''
             """)
@@ -493,8 +493,8 @@ def _compute_cohort_market_avg(conn, opp_meta: dict) -> dict:
                 cohort_ly = round(float(r["avg_ly"]))
                 provenance_bits.append(f"global_ly_n={r.get('n')}")
 
-    # Final fallback — libra_stage_data is completely empty (dev DB).
-    # Use hardcoded global defaults so EVERY Libra opp gets some
+    # Final fallback — insurance_stage_data is completely empty (dev DB).
+    # Use hardcoded global defaults so EVERY Insurance opp gets some
     # profile-appropriate guidance, even without per-opp or cohort data.
     if cohort_avg is None:
         cohort_avg = _GLOBAL_DEFAULT_CURRENT_NIS
@@ -517,14 +517,14 @@ def _compute_cohort_market_avg(conn, opp_meta: dict) -> dict:
         )
 
     return {
-        "market_avg_for_segment_nis": cohort_avg,
+        "market_avg_for_segment_usd": cohort_avg,
         # Note: cohort median, NOT this opp's actual last-year price. Used
         # only for opening-anchor computation when per-opp data is absent.
-        "last_year_price_nis": cohort_ly,
+        "last_year_price_usd": cohort_ly,
         "actual_market_yoy_change_pct": 0.24,
         "loyalty_years": DEFAULT_LOYALTY_YEARS,
         "claims_count": DEFAULT_CLAIMS,
-        "profile_appropriate_opening_nis": opening,
+        "profile_appropriate_opening_usd": opening,
         "profile_appropriate_opening_reason": (
             f"cohort-fallback ({reason}); defaults to loyal-2y/claims-0 in "
             f"absence of per-opp data"

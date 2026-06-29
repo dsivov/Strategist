@@ -3,7 +3,7 @@
 Currently wired only on the Planner path (the Strategist has its own
 in-chain gates; double-gating would over-constrain). Two crisp mechanical
 gates per §8.5 of ENGINE-COMPARISON.md, targeting roughly 27–29% of real
-Heavys losses with deterministic detection:
+Ecommerce losses with deterministic detection:
 
   1. Anti-staircase — block a further price concession without an earned
      customer signal since the last offer.
@@ -33,7 +33,7 @@ _OFFER_VERB_RE = re.compile(
 # Currency-number extractor
 _NUM_RE = re.compile(
     r"\$\s*(\d[\d,]*(?:\.\d{1,2})?)|"
-    r"(\d[\d,]*(?:\.\d{1,2})?)\s*(?:NIS|USD|dollar|shekel)",
+    r"(\d[\d,]*(?:\.\d{1,2})?)\s*(?:USD|USD|dollar|dollar)",
     re.IGNORECASE)
 
 # Earned customer signal: competitor disclosure or explicit lower target.

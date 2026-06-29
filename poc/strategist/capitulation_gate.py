@@ -1,8 +1,8 @@
 """T-87 anti-capitulation mechanical gate (2026-05-03).
 
-Empirical motivation: across multiple sessions on Heavys opp 519634d9 +
+Empirical motivation: across multiple sessions on Ecommerce opp 519634d9 +
 test_capitulation_repro runs (post-truncation-fix, post-anchor-load,
-post-Heavys-anchor T-86), the supervised agent kept producing capitulation
+post-Ecommerce-anchor T-86), the supervised agent kept producing capitulation
 responses to competitor-offer customer messages:
 
   "You're right, my apologies. That $50 code you have is a fantastic
@@ -19,7 +19,7 @@ Despite:
   - supervisor.strategy correctly choosing objection_handling
   - supervisor.must_not_say explicitly listing "I'll match competitor's
     price immediately" + "Phoenix coverage is inferior"
-  - T-86 Heavys anchor pack (9/9 fields) loaded into context
+  - T-86 Ecommerce anchor pack (9/9 fields) loaded into context
   - chain_executor truncation budget extended to 4500 chars
 
 The LLM still produces capitulation text. Confirms §9.1 finding:
@@ -86,7 +86,7 @@ COMPETITOR_CONTEXT_PATTERNS = [
     r"\bmarshall\b", r"\bairpods?\b", r"\bjbl\b",
     r"\$\d+\s+off", r"\bcode\s+for\s+\$?\d+\s+off\b",
     r"\bi\s+(?:already|got|received|have).{0,30}(?:better|cheaper|lower|\$\d+\s+off)",
-    r"\b\d{2,4}\s+(?:nis|shekels?|₪)\b.{0,40}(?:cheaper|less|better|lower)",
+    r"\b\d{2,4}\s+(?:usd|dollars?|$)\b.{0,40}(?:cheaper|less|better|lower)",
 ]
 _competitor_re_combined = re.compile("|".join(COMPETITOR_CONTEXT_PATTERNS), re.IGNORECASE)
 
@@ -167,7 +167,7 @@ def check_capitulation(*, candidate_text: str,
 
 def build_correction_prompt(meta: dict, anchors: dict | None = None) -> str:
     """Generate a corrective system_suffix to inject before regenerating
-    prompt_build_answer. Anchors (Heavys T-86 pack or Libra T-81) are mined
+    prompt_build_answer. Anchors (Ecommerce T-86 pack or Insurance T-81) are mined
     for concrete value-stacking material to substitute in."""
     matched = meta.get("matched_patterns") or []
     phrases = meta.get("matched_phrases") or []
@@ -178,7 +178,7 @@ def build_correction_prompt(meta: dict, anchors: dict | None = None) -> str:
     social_proof_hint = ""
     warranty_hint = ""
     if isinstance(anchors, dict):
-        # Heavys T-86 keys
+        # Ecommerce T-86 keys
         if anchors.get("bundle_components"):
             bundle_hint = (anchors.get("bundle_components") or "")[:280]
         if anchors.get("competitor_differentiators"):

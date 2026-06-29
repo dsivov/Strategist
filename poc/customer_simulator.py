@@ -93,7 +93,7 @@ addition to your normal traits:
 Reply 1-2 sentences typical."""
 
 
-# 2026-05-10 — Post-match calibration overlay. Empirical libra_c0 distribution
+# 2026-05-10 — Post-match calibration overlay. Empirical insurance_c0 distribution
 # (n=1,814 won-side post-match pairs, see research-notes/POST-MATCH-CUSTOMER-
 # DISTRIBUTION.md): 65% close_intent, 29% short ack, 6% new_objection,
 # 0.1% trust_grievance, 0.1% counter_offer.
@@ -103,7 +103,7 @@ POST_MATCH_OVERLAY = """
 ## ⚠⚠⚠ POST-MATCH STATE — THIS RULE OVERRIDES YOUR PERSONA THIS TURN
 
 The agent has now matched your target price (or come within touching
-distance). You are at the moment of decision. Empirical libra_c0 won-deal
+distance). You are at the moment of decision. Empirical insurance_c0 won-deal
 data (n=1,814 real customers in your exact profile cohort: Skeptical +
 Analytical + Price/savings) shows what real people do at this moment:
 
@@ -142,14 +142,14 @@ distribution wins."""
 
 def _post_match_detected(live_agent_msg: str, dialog_history: list[dict]) -> bool:
     """Heuristic: does the agent's most recent message look like a price-match
-    delivery? Combines (a) NIS price present + (b) close-pivot phrase + (c)
+    delivery? Combines (a) USD price present + (b) close-pivot phrase + (c)
     a recent customer turn that mentioned competitor/match.
     """
     if not live_agent_msg:
         return False
     text = live_agent_msg.lower()
-    # (a) NIS price token present
-    has_price = bool(re.search(r"\d[\d,\.]{2,5}\s*(ש[״\"]ח|שח|₪|nis)",
+    # (a) USD price token present
+    has_price = bool(re.search(r"\d[\d,\.]{2,5}\s*(ש[״\"]ח|שח|$|usd)",
                                 live_agent_msg, re.IGNORECASE))
     if not has_price:
         return False
@@ -175,7 +175,7 @@ def _post_match_detected(live_agent_msg: str, dialog_history: list[dict]) -> boo
                "somewhere else", "another place", "different company"]
     HE_KEYS = ["מתחר", "להשוות", "זול", "במקום אחר", "חברה אחרת",
                "הצעה אחרת", "הצעה כוללת"]
-    PRICE_RE_LOCAL = re.compile(r"\d[\d,\.]{2,5}\s*(ש[״\"]ח|שח|₪|nis)", re.IGNORECASE)
+    PRICE_RE_LOCAL = re.compile(r"\d[\d,\.]{2,5}\s*(ש[״\"]ח|שח|$|usd)", re.IGNORECASE)
     try:
         from intent_classifier import intent_score, is_available
         has_classifier = is_available()
@@ -220,7 +220,7 @@ def render_opp_coherence_constraint(opp_meta: dict) -> str:
     GENERATE path doesn't produce responses that contradict the customer's
     actual buy-intent state.
 
-    Empirical motivation (2026-05-01): Karl-class customer (Heavys c3, opp_type=
+    Empirical motivation (2026-05-01): Karl-class customer (Ecommerce c3, opp_type=
     'Abandoned Cart') generated a response saying 'I wasn't even shopping for
     these' — which literally contradicts having added the product to cart 5
     minutes earlier. The persona was internally consistent but the opp-state
@@ -287,7 +287,7 @@ up for a trial of this product. Your responses MUST be consistent:
 
     if "purchasing assistance" in opp_type or "search_catalog" in opp_type or "browse" in opp_type:
         return f"""## Opportunity coherence constraint
-You ({tenant} customer) ENGAGED Luna voluntarily — you reached out for help
+You ({tenant} customer) ENGAGED Agent voluntarily — you reached out for help
 selecting a product. Your responses can be:
 
 - Buy-intent ("I'm looking for X") OR browse-intent ("just exploring") —
@@ -314,7 +314,7 @@ not a sales conversation. Your responses should be:
 # is marked Lost.
 #
 # IMPORTANT (2026-04-30): regex must distinguish HARD-DECLINE from BARGAINING.
-# Found in Libra c5 session 10a45705: "I'm not interested in being just a
+# Found in Insurance c5 session 10a45705: "I'm not interested in being just a
 # hundred or two below the competitor" was killing the supervised panel as
 # decline, but the customer was bargaining (the conditional was on price gap,
 # not on the deal). Negative-lookahead added to "not interested" excludes
@@ -536,7 +536,7 @@ def detect_customer_farewell(text: str, tenant: str | None = None) -> bool:
 # 3 customer messages contains one of these tokens, the customer is engaged
 # and the panel should NOT be marked saturated.
 _SATURATION_SIGNAL_RE = re.compile(
-    r"\?|\$|nis|shekel|price|cost|tax|ship|deliver|warrant|return|"
+    r"\?|\$|usd|dollar|price|cost|tax|ship|deliver|warrant|return|"
     r"discount|coupon|code|payment|installment|when|how|why|what|"
     # price-objection vocabulary
     r"expensive|expense|cheap(?:er)?|afford|budget|"
@@ -937,7 +937,7 @@ def _render_full_historical(historical_messages: list[dict] | None,
 
     Bug fix (2026-05-01, T-78): when conversation exceeds max_chars, keep the
     LATER turns (closer to divergence) rather than the earliest greetings.
-    Long Libra Renewal conversations (n_msgs 26-36) were losing their
+    Long Insurance Renewal conversations (n_msgs 26-36) were losing their
     bargaining/objection tail — the simulator was character-grounded in
     greetings + opening quote only, missing the price-pushback evidence.
     """
@@ -1040,10 +1040,10 @@ async def generate_persona_reply(opp_meta: dict, dialog_history: list[dict],
     anchors = opp_meta.get("anchors") or {}
     if anchors:
         a_lines = ["", "## YOUR economic reference frame as this customer (use it; you genuinely know these numbers)"]
-        if anchors.get("last_year_price_nis"):
-            a_lines.append(f"- Last year you paid: {anchors['last_year_price_nis']} NIS for similar coverage.")
-        if anchors.get("market_avg_for_segment_nis"):
-            a_lines.append(f"- You've heard market average for your vehicle is around {anchors['market_avg_for_segment_nis']} NIS.")
+        if anchors.get("last_year_price_usd"):
+            a_lines.append(f"- Last year you paid: {anchors['last_year_price_usd']} USD for similar coverage.")
+        if anchors.get("market_avg_for_segment_usd"):
+            a_lines.append(f"- You've heard market average for your vehicle is around {anchors['market_avg_for_segment_usd']} USD.")
         if anchors.get("actual_market_yoy_change_pct") is not None:
             a_lines.append(f"- You suspect prices haven't actually risen much this year ({anchors['actual_market_yoy_change_pct']:+.1f}% real change in the broader market). Any agent claim of a large hike (e.g. 'prices went up 48%') sounds inflated.")
         a_lines.append("")
@@ -1291,7 +1291,7 @@ if __name__ == "__main__":
 
     async def smoke():
         opp_meta = {
-            "company": "Libra",
+            "company": "Insurance",
             "primary_motivator": "Price/savings",
             "decision_logic": "Analytical",
             "trust_level": "Skeptical",
@@ -1301,15 +1301,15 @@ if __name__ == "__main__":
         }
         # Mock historical messages
         historical = [
-            {"direction": "outbound", "text": "Hey, this is Nofar from Libra. Your renewal: 4,238 NIS for the year."},
-            {"direction": "inbound", "text": "Other insurer offered me 3,800 NIS."},
+            {"direction": "outbound", "text": "Hey, this is Nofar from Insurance. Your renewal: 4,238 USD for the year."},
+            {"direction": "inbound", "text": "Other insurer offered me 3,800 USD."},
             {"direction": "outbound", "text": "Want me to lock in the rate?"},
             {"direction": "inbound", "text": "I'll think about it."},
         ]
         sim = CustomerSimulator(opp_meta, historical)
 
         # Path matches: agent says basically the same thing as history's first agent msg
-        dialog = [{"role":"agent","text":"Hi, this is Nofar from Libra. Your renewal price: 4,238 NIS for the year.","sequence_number":0}]
+        dialog = [{"role":"agent","text":"Hi, this is Nofar from Insurance. Your renewal price: 4,238 USD for the year.","sequence_number":0}]
         reply, mode = await sim.reply(dialog, dialog[0]["text"], agent_turn_index=0)
         print(f"=== TURN 0 (path-match expected) — mode={mode} ===")
         print(f"  customer reply: {reply}")
@@ -1317,7 +1317,7 @@ if __name__ == "__main__":
 
         # Path diverged: agent asks for breakdown (different from history)
         dialog2 = [
-            {"role":"agent","text":"Hey, this is Nofar from Libra. Your renewal: 4,238 NIS.","sequence_number":0},
+            {"role":"agent","text":"Hey, this is Nofar from Insurance. Your renewal: 4,238 USD.","sequence_number":0},
             {"role":"customer","text":"Other insurer offered 3,800.","sequence_number":1},
             {"role":"agent","text":"Got it — could you share the breakdown of their offer (mandatory vs comprehensive)?","sequence_number":2},
         ]

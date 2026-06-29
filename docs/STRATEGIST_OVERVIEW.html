@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strategist — Pluggable Sales-Conversation Benchmark · Field Guide</title>
+<style>
+:root{
+  --bg:#0f1117; --bg2:#161922; --panel:#1b1f2a; --panel2:#222736;
+  --ink:#e7ebf3; --ink-soft:#aab3c5; --ink-faint:#7b8499;
+  --line:#2c3346; --line-soft:#232a3a;
+  /* accent meanings: a=engines/registry, b=domain packs, c=data/scenarios, ctrl=server/UI */
+  --a:#5b8def; --b:#19b89a; --c:#f0a73c; --ctrl:#a974f0; --danger:#ef5b6e; --ok:#3ecf8e;
+  --shadow:0 10px 30px rgba(0,0,0,.35); --radius:14px; --maxw:1180px;
+  --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(91,141,239,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(25,184,154,.08), transparent 55%),
+    var(--bg);
+  color:var(--ink);
+  font:16px/1.6 "Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--a);text-decoration:none}
+a:hover{text-decoration:underline}
+code,pre,.mono{font-family:var(--mono)}
+svg{max-width:100%;height:auto}
+
+/* hero */
+.hero{padding:64px 22px 30px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(91,141,239,.06),transparent)}
+.hero-inner{max-width:var(--maxw);margin:0 auto}
+.eyebrow{letter-spacing:.22em;text-transform:uppercase;font-size:12px;color:var(--ink-faint);font-weight:700}
+.hero h1{font-size:clamp(30px,5vw,52px);line-height:1.05;margin:.3em 0 .2em;
+  background:linear-gradient(92deg,#cfe0ff, #8fd9c9 55%, #ffd79a);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:clamp(16px,2.1vw,20px);color:var(--ink-soft);max-width:880px}
+.hero-tags{margin-top:18px;display:flex;gap:8px;flex-wrap:wrap}
+.tag{border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);
+  padding:5px 11px;border-radius:999px;font-size:12.5px}
+.tag b{color:var(--ink)}
+
+/* layout */
+.layout{max-width:var(--maxw);margin:0 auto;display:grid;grid-template-columns:248px 1fr;gap:34px;padding:30px 22px 90px}
+nav.toc{position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);overflow:auto;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:14px}
+nav.toc .tl-title{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:4px 6px 10px}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+nav.toc li{counter-increment:toc}
+nav.toc a{display:flex;gap:8px;padding:6px 8px;border-radius:8px;color:var(--ink-soft);font-size:13.5px;line-height:1.3}
+nav.toc a::before{content:counter(toc,decimal-leading-zero);color:var(--ink-faint);font-family:var(--mono);font-size:11px}
+nav.toc a:hover{background:var(--panel2);text-decoration:none;color:var(--ink)}
+nav.toc a.active{background:linear-gradient(90deg,rgba(91,141,239,.18),transparent);color:#fff;border-left:2px solid var(--a)}
+
+main{min-width:0}
+section{margin:0 0 46px;scroll-margin-top:20px}
+h2{font-size:clamp(21px,3vw,28px);margin:0 0 4px;display:flex;align-items:baseline;gap:12px}
+.sec-num{font-family:var(--mono);font-size:14px;color:var(--a);border:1px solid var(--line);
+  border-radius:8px;padding:2px 8px;background:var(--panel)}
+.sec-sub{color:var(--ink-faint);margin:0 0 18px;font-size:15px}
+h3{font-size:18px;margin:26px 0 8px}
+p{margin:.6em 0}
+.small{font-size:13.5px;color:var(--ink-faint)}
+
+/* cards & grids */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.card+.card{margin-top:14px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}nav.toc{display:none}.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* callouts */
+.callout{border-radius:12px;padding:14px 16px;border:1px solid var(--line);background:var(--panel2);margin:14px 0}
+.callout .clabel{font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.callout.info{border-color:rgba(91,141,239,.5);background:rgba(91,141,239,.08)}
+.callout.info .clabel{color:#9cc0ff}
+.callout.ok{border-color:rgba(62,207,142,.5);background:rgba(62,207,142,.08)}
+.callout.ok .clabel{color:#7ee3b4}
+.callout.caveat{border-color:rgba(240,167,60,.5);background:rgba(240,167,60,.08)}
+.callout.caveat .clabel{color:#ffce86}
+.callout.gotcha{border-color:rgba(239,91,110,.5);background:rgba(239,91,110,.08)}
+.callout.gotcha .clabel{color:#ff9aa8}
+
+/* stat tiles */
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--a)}
+.stat.b::after{background:var(--b)} .stat.c::after{background:var(--c)} .stat.ctrl::after{background:var(--ctrl)}
+.stat .v{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.stat .l{color:var(--ink-faint);font-size:13px;margin-top:3px}
+
+/* tables */
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+thead th{position:sticky;top:0;background:var(--panel2);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12.5px;letter-spacing:.04em;color:var(--ink-soft)}
+td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;border:1px solid var(--line)}
+.pill.done{background:rgba(62,207,142,.14);color:#7ee3b4;border-color:rgba(62,207,142,.4)}
+.pill.wip{background:rgba(240,167,60,.14);color:#ffce86;border-color:rgba(240,167,60,.4)}
+.pill.todo{background:rgba(123,132,153,.14);color:var(--ink-soft)}
+.pill.danger{background:rgba(239,91,110,.14);color:#ff9aa8;border-color:rgba(239,91,110,.4)}
+.pill.a{background:rgba(91,141,239,.14);color:#9cc0ff;border-color:rgba(91,141,239,.4)}
+.pill.b{background:rgba(25,184,154,.14);color:#7fe3cf;border-color:rgba(25,184,154,.4)}
+.pill.c{background:rgba(240,167,60,.14);color:#ffce86;border-color:rgba(240,167,60,.4)}
+
+/* at-a-glance kvs */
+dl.kvs{display:grid;grid-template-columns:120px 1fr;gap:6px 14px;margin:0}
+dl.kvs dt{color:var(--ink-faint);font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+dl.kvs dd{margin:0;color:var(--ink)}
+
+/* model band */
+.modelband{border-radius:12px;padding:14px 16px;margin:8px 0 4px;border:1px solid var(--line);
+  background:linear-gradient(100deg,rgba(91,141,239,.16),rgba(25,184,154,.07));display:flex;align-items:center;gap:12px}
+.modelband .badge{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:7px;padding:3px 8px;background:var(--bg2);color:var(--ink-soft)}
+.modelband h3{margin:0;font-size:17px}
+
+/* timeline */
+.timeline{position:relative;margin:8px 0;padding-left:6px}
+.tl{display:grid;grid-template-columns:96px 26px 1fr;gap:6px;align-items:start;margin:0 0 4px}
+.tl .when{font-family:var(--mono);font-size:12px;color:var(--ink-faint);text-align:right;padding-top:8px}
+.tl .rail{position:relative;justify-self:center}
+.tl .rail::before{content:"";position:absolute;top:0;bottom:-14px;left:50%;width:2px;background:var(--line);transform:translateX(-50%)}
+.tl .dot{width:12px;height:12px;border-radius:50%;background:var(--a);margin:9px auto 0;position:relative;z-index:1;box-shadow:0 0 0 4px rgba(91,141,239,.15)}
+.tl.next .dot{background:var(--ink-faint);box-shadow:0 0 0 4px rgba(123,132,153,.15)}
+.tl .body{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 13px}
+.tl .body b{color:var(--ink)}
+
+/* tree */
+.tree{font-size:13.5px;line-height:1.7}
+.tree .d{color:#9cc0ff}
+.tree .note{color:var(--ink-faint)}
+.tree .new{color:#7ee3b4}
+
+/* folds */
+details.fold{border:1px solid var(--line);border-radius:12px;background:var(--panel);margin:12px 0;overflow:hidden}
+details.fold>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:center}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"▸";color:var(--a)}
+details.fold[open]>summary::before{content:"▾"}
+.foldbody{padding:4px 16px 16px;border-top:1px solid var(--line-soft)}
+
+/* code */
+pre{background:#0c0e14;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font-size:13px;line-height:1.55}
+pre code{color:#d6deec}
+.kw{color:#7aa2f7}.str{color:#9ece6a}.num{color:#ff9e64}.cm{color:#5c6685;font-style:italic}.fn{color:#7dcfff}
+
+/* figure */
+figure{margin:16px 0}
+figure .fig{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+figcaption{color:var(--ink-faint);font-size:13px;margin-top:8px}
+figcaption b{color:var(--ink-soft)}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft);margin-top:8px}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.sw{width:22px;height:0;border-top:3px solid var(--a);display:inline-block}
+.sw.dash{border-top:3px dashed var(--ink-faint)}
+.sw.b{border-top-color:var(--b)} .sw.c{border-top-color:var(--c)} .sw.ctrl{border-top-color:var(--ctrl)}
+
+hr.soft{border:none;border-top:1px solid var(--line-soft);margin:26px 0}
+.footer{max-width:var(--maxw);margin:0 auto;padding:30px 22px 60px;color:var(--ink-faint);font-size:13.5px;border-top:1px solid var(--line)}
+.backtotop{position:fixed;right:18px;bottom:18px;background:var(--panel);border:1px solid var(--line);color:var(--ink-soft);
+  border-radius:999px;padding:9px 14px;font-size:13px;box-shadow:var(--shadow);opacity:.0;pointer-events:none;transition:opacity .2s}
+.backtotop.show{opacity:1;pointer-events:auto}
+.tagrow{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+b.hl{color:#cfe0ff}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">Field Guide · Post-Refactor Overview</div>
+    <h1>Strategist — a pluggable sales-conversation AI benchmark</h1>
+    <p class="lede">A self-contained harness for A/B-testing sales-conversation engines against a 112-scenario,
+      diversity-stratified benchmark and a reference-aware customer simulator. The refactor turns it from a
+      hardcoded two-engine demo into a <b class="hl">platform</b>: register a Strategy/Supervisor algorithm once and it
+      appears in the headless runner, the REST API, and the live dual-panel UI — with the sales domain and the data
+      source now swappable behind clean interfaces.</p>
+    <div class="hero-tags">
+      <span class="tag"><b>112</b> scenarios</span>
+      <span class="tag"><b>3</b> built-in engines + plugins</span>
+      <span class="tag"><b>3</b> pluggable seams</span>
+      <span class="tag"><b>32</b> tests, all green</span>
+      <span class="tag">single <b>Engine.produce()</b> contract</span>
+      <span class="tag">zero external resources</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Table of contents">
+  <div class="tl-title">Contents</div>
+  <ol>
+    <li><a href="#summary">Executive summary</a></li>
+    <li><a href="#seams">The three pluggable seams</a></li>
+    <li><a href="#architecture">End-to-end architecture</a></li>
+    <li><a href="#registry">Engines &amp; the connect API</a></li>
+    <li><a href="#abtest">Any-vs-any A/B in the UI</a></li>
+    <li><a href="#simulator">The customer simulator</a></li>
+    <li><a href="#domain">Domain packs</a></li>
+    <li><a href="#source">Scenario / data sources</a></li>
+    <li><a href="#dataset">The benchmark dataset</a></li>
+    <li><a href="#safety">Behavior preservation</a></li>
+    <li><a href="#testing">Testing &amp; verification</a></li>
+    <li><a href="#roadmap">Roadmap &amp; caveats</a></li>
+    <li><a href="#repo">Repository map</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- 1 ─────────────────────────────────────────── -->
+<section id="summary">
+  <h2><span class="sec-num">01</span> Executive summary</h2>
+  <p class="sec-sub">What the platform is and how you use it.</p>
+
+  <p>The benchmark drops a candidate sales agent into the middle of a real historical conversation and lets it
+  negotiate, turn by turn, against a calibrated <b>customer simulator</b> until the customer converts (<span class="pill b">won</span>)
+  or walks (<span class="pill danger">lost</span>). Two reference agents — a single-call <b>Baseline</b> and a
+  planner-driven <b>Planner + Gates</b> — give you something to measure against. You plug in your own engine through a
+  one-method contract and run it head-to-head.</p>
+
+  <p>It's a <b>pluggable platform</b>: which algorithm runs, what domain frames the conversation, and where the data
+  comes from are each declared once behind an interface (§2). Engines are declared in a registry that the headless
+  runner, the REST API, and the live dual-panel UI all read from — so a new engine appears everywhere with no extra
+  wiring, and the UI discovers the available options dynamically rather than hardcoding them.</p>
+
+  <div class="grid g4" style="margin:18px 0">
+    <div class="stat a"><div class="v">1</div><div class="l">place to declare an engine (the registry)</div></div>
+    <div class="stat ctrl"><div class="v">any×any</div><div class="l">A/B panel pairings, selected live</div></div>
+    <div class="stat b"><div class="v">3</div><div class="l">pluggable seams: engine · domain · data</div></div>
+    <div class="stat c"><div class="v">32</div><div class="l">tests passing (no LLM calls required)</div></div>
+  </div>
+
+  <div class="callout info">
+    <div class="clabel">◆ The key invariant</div>
+    The default A/B pairing (LEFT = Baseline, RIGHT = Strategist) and the reference sales domain are
+    <b>behavior-preserving</b>: the default pairing maps one-to-one onto the supervised code path, and the sales domain
+    pack reproduces the original actor prompt byte-for-byte (pinned by a SHA-256 golden test). Swapping engines,
+    domains, or data sources is purely additive.
+  </div>
+</section>
+
+<!-- 2 ─────────────────────────────────────────── -->
+<section id="seams">
+  <h2><span class="sec-num">02</span> The three pluggable seams</h2>
+  <p class="sec-sub">The platform is organized around three small interfaces. Each has one job, one default
+  implementation, several consumers that read from it, and an extension path that needs no core edits.</p>
+
+  <p>Everything that varies between experiments lives behind one of these seams: <b>which algorithm</b> produces the
+  agent's turns (the engine registry), <b>what domain</b> defines the framing and the win/lost criteria (domain packs),
+  and <b>where the data</b> comes from (scenario sources). The benchmark runner, the REST API, and the live UI are all
+  consumers — they never hardcode the options, they read them from the seam.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Seam</th><th>Module</th><th>Job</th><th>Default impl</th><th>Read by</th><th>Extend without core edits?</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pill a">Engine registry</span></td>
+          <td class="mono">poc/registry.py</td>
+          <td>One declaration of an engine (id, name, params, factory) is the single source of truth.</td>
+          <td>baseline, planner, strategist</td>
+          <td>Benchmark runner · <span class="mono">/api/engines</span> · UI selectors</td>
+          <td><b>Yes</b> — <span class="mono">strategist.engines</span> entry point</td>
+        </tr>
+        <tr>
+          <td><span class="pill b">Domain pack</span></td>
+          <td class="mono">poc/domain.py</td>
+          <td>Tenant framing, opp-type coaching, anchor rendering, won/lost signals.</td>
+          <td>SalesDomainPack</td>
+          <td>actor · benchmark outcome check</td>
+          <td><b>Yes</b> — subclass + <span class="mono">register_domain</span></td>
+        </tr>
+        <tr>
+          <td><span class="pill c">Scenario source</span></td>
+          <td class="mono">poc/scenario_source.py</td>
+          <td>Where scenarios / opp-meta / transcripts / anchors come from.</td>
+          <td>JsonScenarioSource</td>
+          <td><span class="mono">load_scenarios()</span> · server data layer</td>
+          <td><b>Yes</b> — implement the protocol + <span class="mono">set_scenario_source</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="small">A fourth capability rides on the registry: the dual-panel server selects an engine per panel, so
+  <b>any registered engine can face any other</b> (§5). The customer it negotiates against is the same on both sides
+  (§6), keeping every comparison single-variable.</p>
+</section>
+
+<!-- 3 ─────────────────────────────────────────── -->
+<section id="architecture">
+  <h2><span class="sec-num">03</span> End-to-end architecture</h2>
+  <p class="sec-sub">One contract — <span class="mono">async produce(opp_meta, dialog, business_rules) → (text, meta)</span> — drives both run modes.</p>
+
+  <figure><div class="fig">
+    <svg viewBox="0 0 980 430" role="img" aria-label="End-to-end architecture diagram">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="#8a93a8"/>
+        </marker>
+        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22314f"/><stop offset="1" stop-color="#1a2236"/></linearGradient>
+        <linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#173a34"/><stop offset="1" stop-color="#13251f"/></linearGradient>
+        <linearGradient id="gC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a2f17"/><stop offset="1" stop-color="#241c10"/></linearGradient>
+        <linearGradient id="gCtrl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2e2347"/><stop offset="1" stop-color="#1d1730"/></linearGradient>
+      </defs>
+      <style>
+        .bx{rx:11;stroke:#39425a;stroke-width:1}
+        .t{fill:#e7ebf3;font:13px "Segoe UI",sans-serif}
+        .ts{fill:#aab3c5;font:11px "Segoe UI",sans-serif}
+        .tt{fill:#cfe0ff;font:12px var(--mono),monospace}
+        .ln{stroke:#8a93a8;stroke-width:1.6;fill:none;marker-end:url(#ar)}
+        .lnb{stroke:#5b8def;stroke-width:2.2;fill:none;marker-end:url(#ar)}
+      </style>
+
+      <!-- registry center -->
+      <rect class="bx" x="380" y="20" width="220" height="66" fill="url(#gA)"/>
+      <text class="t" x="490" y="46" text-anchor="middle" font-weight="700">Engine Registry</text>
+      <text class="tt" x="490" y="66" text-anchor="middle">poc/registry.py — EngineSpec[]</text>
+
+      <!-- discovery -->
+      <rect class="bx" x="40" y="28" width="190" height="50" fill="url(#gA)"/>
+      <text class="ts" x="135" y="48" text-anchor="middle">in-tree register()</text>
+      <text class="ts" x="135" y="64" text-anchor="middle">+ entry-point plugins</text>
+      <path class="ln" d="M232 53 H378"/>
+
+      <!-- consumers row -->
+      <rect class="bx" x="40" y="140" width="250" height="74" fill="url(#gCtrl)"/>
+      <text class="t" x="165" y="166" text-anchor="middle" font-weight="700">Dual-panel server + UI</text>
+      <text class="tt" x="165" y="186" text-anchor="middle">GET /api/engines</text>
+      <text class="ts" x="165" y="203" text-anchor="middle">renders L &amp; R selectors</text>
+
+      <rect class="bx" x="690" y="140" width="250" height="74" fill="url(#gA)"/>
+      <text class="t" x="815" y="166" text-anchor="middle" font-weight="700">Headless Benchmark</text>
+      <text class="tt" x="815" y="186" text-anchor="middle">run_engine("planner")</text>
+      <text class="ts" x="815" y="203" text-anchor="middle">112-scenario paired A/B</text>
+
+      <path class="ln" d="M470 88 C430 110 300 120 215 138"/>
+      <path class="ln" d="M520 88 C620 110 720 120 770 138"/>
+
+      <!-- engine -->
+      <rect class="bx" x="360" y="150" width="260" height="60" fill="url(#gA)"/>
+      <text class="t" x="490" y="175" text-anchor="middle" font-weight="700">Engine.produce()</text>
+      <text class="tt" x="490" y="194" text-anchor="middle">(text, meta) per turn</text>
+      <path class="lnb" d="M292 188 H358"/>
+      <path class="lnb" d="M688 188 H622" marker-end="url(#ar)"/>
+
+      <!-- simulator -->
+      <rect class="bx" x="360" y="262" width="260" height="60" fill="url(#gB)"/>
+      <text class="t" x="490" y="287" text-anchor="middle" font-weight="700">Customer Simulator</text>
+      <text class="ts" x="490" y="305" text-anchor="middle">v2 reference-aware reply</text>
+      <path class="lnb" d="M490 210 V260"/>
+      <path class="ln" d="M455 260 C440 235 440 232 470 212" />
+
+      <!-- domain + outcome -->
+      <rect class="bx" x="690" y="262" width="250" height="60" fill="url(#gB)"/>
+      <text class="t" x="815" y="287" text-anchor="middle" font-weight="700">Domain pack</text>
+      <text class="ts" x="815" y="305" text-anchor="middle">won / lost signals · framing</text>
+      <path class="ln" d="M620 292 H688"/>
+
+      <!-- data source -->
+      <rect class="bx" x="40" y="262" width="250" height="60" fill="url(#gC)"/>
+      <text class="t" x="165" y="287" text-anchor="middle" font-weight="700">Scenario source</text>
+      <text class="ts" x="165" y="305" text-anchor="middle">scenarios · opp-meta · anchors</text>
+      <path class="ln" d="M290 292 C330 292 330 200 360 188"/>
+
+      <!-- outcome -->
+      <rect class="bx" x="360" y="362" width="260" height="48" fill="url(#gCtrl)"/>
+      <text class="t" x="490" y="391" text-anchor="middle" font-weight="700">Outcome: won / lost + per-turn trace</text>
+      <path class="lnb" d="M490 322 V360"/>
+    </svg>
+    <figcaption><b>Figure 1 —</b> The registry feeds both run modes; both call the same <span class="mono">Engine.produce()</span>.
+      The engine's text becomes the agent turn; the simulator replies; the active <span style="color:#7fe3cf">domain pack</span>
+      decides won/lost. Bold blue = the live per-turn path. The supervised "Strategist" native flow is an internal
+      elaboration of the engine box (see §5); not all server scoring sidecars are shown.</figcaption>
+  </div></figure>
+
+  <div class="modelband"><span class="badge">models</span>
+    <h3>Two LLMs under the hood</h3>
+    <span class="ts" style="color:var(--ink-soft)">Customer-facing actor → Gemini 2.5 Pro · Simulator + Planner chain-of-thought → Anthropic Sonnet. The benchmark records each engine's <span class="mono">meta</span> verbatim and never interprets it.</span>
+  </div>
+</section>
+
+<!-- 4 ─────────────────────────────────────────── -->
+<section id="registry">
+  <h2><span class="sec-num">04</span> Engines &amp; the connect-your-algorithm API</h2>
+  <p class="sec-sub">Declare an engine once; it runs headless, over REST, and in the live UI. This is the path you
+  follow to test a new Strategy/Supervisor algorithm.</p>
+
+  <h3>The contract — one async method</h3>
+  <p>An engine is any object with a single coroutine. No base class, no inheritance — it's a
+  <span class="mono">runtime_checkable Protocol</span>, so structural shape is enough:</p>
+<pre><code><span class="kw">async def</span> <span class="fn">produce</span>(self, opp_meta: dict, dialog_history: list[dict],
+                  business_rules: str = <span class="str">""</span>) -&gt; tuple[str, dict]:
+    <span class="cm"># returns (customer_facing_text, telemetry_meta)</span></code></pre>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Parameter</th><th>Shape</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">opp_meta</td><td>dict</td><td>Customer profile + scenario context (id, company, 23 profile dims, anchors, voice_profile). Pass through to your stack.</td></tr>
+        <tr><td class="mono">dialog_history</td><td>list[{role,text}]</td><td><span class="mono">role ∈ {"agent","customer"}</span>, chronological. The last customer message is the one to answer.</td></tr>
+        <tr><td class="mono">business_rules</td><td>str</td><td>Tenant compliance text (may be empty).</td></tr>
+        <tr><td><b>returns</b></td><td>(str, dict)</td><td><b>text</b> = the customer-facing reply; <b>meta</b> = free-form telemetry, recorded verbatim, never interpreted (strategy/tone/confidence/gates…).</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small"><b>Stateless per call:</b> the dialogue is passed in every turn — keep no per-session state on
+  <span class="mono">self</span>. The benchmark and the live replayer both call exactly this method.</p>
+
+  <h3>Connect it — three steps</h3>
+  <div class="grid g3">
+    <div class="card"><h3 style="margin-top:0;color:#9cc0ff">1 · Implement</h3>
+      <p class="small">Write a class with <span class="mono">produce()</span>. Wrap an HTTP service, a local model, gRPC — whatever your stack is. See <span class="mono">examples/pi_engine_template.py</span>.</p></div>
+    <div class="card"><h3 style="margin-top:0;color:#9cc0ff">2 · Register</h3>
+      <p class="small">Declare an <span class="mono">EngineSpec</span> (id, name, params, factory) — in-tree via <span class="mono">register_engine()</span>, or out-of-tree via a <span class="mono">strategist.engines</span> entry point.</p></div>
+    <div class="card"><h3 style="margin-top:0;color:#9cc0ff">3 · Run / compare</h3>
+      <p class="small">Headless: <span class="mono">Benchmark.run_engine("myid")</span>. Live: pick it in either panel of the UI and watch it negotiate against another engine.</p></div>
+  </div>
+
+  <details class="fold"><summary>Code — implement, register, run by id</summary>
+  <div class="foldbody">
+<pre><code><span class="kw">class</span> <span class="fn">MyEngine</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, temperature=<span class="num">0.7</span>):
+        self.temperature = temperature
+    <span class="kw">async def</span> <span class="fn">produce</span>(self, opp_meta, dialog_history, business_rules=<span class="str">""</span>):
+        last = <span class="kw">next</span>((m[<span class="str">"text"</span>] <span class="kw">for</span> m <span class="kw">in</span> <span class="kw">reversed</span>(dialog_history)
+                     <span class="kw">if</span> m[<span class="str">"role"</span>] == <span class="str">"customer"</span>), <span class="str">""</span>)
+        text = <span class="kw">await</span> my_model.respond(opp_meta, last, temp=self.temperature)
+        <span class="kw">return</span> text, {<span class="str">"strategy"</span>: <span class="str">"reframe"</span>, <span class="str">"tone"</span>: <span class="str">"warm"</span>}
+
+<span class="kw">from</span> poc <span class="kw">import</span> register_engine, EngineSpec, ParamSpec, Benchmark, load_scenarios
+register_engine(EngineSpec(
+    id=<span class="str">"myengine"</span>, name=<span class="str">"My Engine"</span>,
+    params=(ParamSpec(name=<span class="str">"temperature"</span>, label=<span class="str">"Temperature"</span>, type=<span class="str">"string"</span>, default=<span class="str">"0.7"</span>),),
+    factory=<span class="kw">lambda</span> temperature=<span class="str">"0.7"</span>: MyEngine(float(temperature)),
+))
+results = <span class="kw">await</span> Benchmark(load_scenarios()).<span class="fn">run_engine</span>(<span class="str">"myengine"</span>, temperature=<span class="str">"0.4"</span>)</code></pre>
+  <p class="small">Full walkthrough: <span class="mono">docs/PLUGIN_GUIDE.md</span> and <span class="mono">docs/API.md</span>.</p>
+  </div></details>
+
+  <h3>The registry</h3>
+  <div class="card">
+    <dl class="kvs">
+      <dt>Role</dt><dd>Single source of truth for which Strategy/Supervisor engines exist and how to build them.</dd>
+      <dt>Type</dt><dd>In-memory registry of <span class="mono">EngineSpec</span> dataclasses, populated at import + lazily from entry points.</dd>
+      <dt>How built</dt><dd>Built-ins via <span class="mono">register()</span>; third-party via the <span class="mono">strategist.engines</span> setuptools entry-point group.</dd>
+      <dt>In → Out</dt><dd>engine id (+ param values) → an object implementing <span class="mono">Engine.produce()</span>.</dd>
+      <dt>Feeds</dt><dd><span class="mono">Benchmark.run_engine()</span>, the server's <span class="mono">/api/engines</span>, and the browser UI's panel selectors.</dd>
+    </dl>
+  </div>
+
+  <h3>What an engine declares</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Field</th><th>Meaning</th><th>Drives</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">id</td><td>Stable slug ("planner")</td><td>API, results dir, panel value</td></tr>
+        <tr><td class="mono">name</td><td>Display label</td><td>UI dropdown + panel title</td></tr>
+        <tr><td class="mono">description</td><td>One-liner</td><td>UI tooltip</td></tr>
+        <tr><td class="mono">runnable</td><td>Benchmark-instantiable?</td><td><span class="pill todo">false</span> for strategist (needs prod DB) → sorts last / flagged</td></tr>
+        <tr><td class="mono">requires</td><td>Capability tags ("mysql","lightrag")</td><td>UI badges</td></tr>
+        <tr><td class="mono">params</td><td><span class="mono">ParamSpec[]</span> (enum/bool/string + default)</td><td>Per-engine UI controls; validated server-side</td></tr>
+        <tr><td class="mono">live_mode</td><td><span class="mono">"produce"</span> | <span class="mono">"native"</span></td><td>How the live replayer drives it (generic vs. wired-in)</td></tr>
+        <tr><td class="mono">factory</td><td><span class="mono">(**params) → Engine</span></td><td>Instantiation for benchmark + generic live path</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout ok">
+    <div class="clabel">✓ Built-ins registered today</div>
+    <span class="pill a">baseline</span> Baseline (Original agent) · <span class="pill a">planner</span> Planner + Gates
+    (param: <span class="mono">planner_envelope ∈ {off,auto,always}</span>) · <span class="pill a">strategist</span>
+    Strategist (Supervisor) — <span class="pill todo">not benchmark-runnable</span>, requires the production system MySQL + Knowledge Graph.
+    The example <span class="pill b">echo</span> plugin (below) is discovered only when installed.
+  </div>
+
+  <figure><div class="fig">
+    <svg viewBox="0 0 940 250" role="img" aria-label="Registry as single source of truth">
+      <style>
+        .bx2{rx:10;stroke:#39425a;stroke-width:1}
+        .t2{fill:#e7ebf3;font:13px "Segoe UI",sans-serif}
+        .s2{fill:#aab3c5;font:11px "Segoe UI",sans-serif}
+        .m2{fill:#cfe0ff;font:11px var(--mono),monospace}
+        .l2{stroke:#5b8def;stroke-width:2;fill:none;marker-end:url(#ar)}
+        .l2g{stroke:#8a93a8;stroke-width:1.5;fill:none;marker-end:url(#ar);stroke-dasharray:5 4}
+      </style>
+      <rect class="bx2" x="40" y="40" width="200" height="48" fill="url(#gA)"/>
+      <text class="t2" x="140" y="60" text-anchor="middle">In-tree register()</text>
+      <text class="m2" x="140" y="77" text-anchor="middle">EngineSpec(...)</text>
+      <rect class="bx2" x="40" y="120" width="200" height="56" fill="url(#gA)"/>
+      <text class="t2" x="140" y="142" text-anchor="middle">Installed plugin</text>
+      <text class="m2" x="140" y="159" text-anchor="middle">strategist.engines EP</text>
+
+      <rect class="bx2" x="360" y="78" width="220" height="64" fill="url(#gA)"/>
+      <text class="t2" x="470" y="103" text-anchor="middle" font-weight="700">Registry</text>
+      <text class="m2" x="470" y="123" text-anchor="middle">all_specs() · create(id)</text>
+
+      <path class="l2" d="M242 64 C300 78 310 92 358 100"/>
+      <path class="l2g" d="M242 148 C300 138 312 126 358 118"/>
+
+      <rect class="bx2" x="720" y="20" width="190" height="46" fill="url(#gCtrl)"/>
+      <text class="t2" x="815" y="40" text-anchor="middle">UI selectors</text>
+      <text class="s2" x="815" y="56" text-anchor="middle">L &amp; R dropdowns</text>
+      <rect class="bx2" x="720" y="92" width="190" height="46" fill="url(#gCtrl)"/>
+      <text class="t2" x="815" y="112" text-anchor="middle">GET /api/engines</text>
+      <text class="s2" x="815" y="128" text-anchor="middle">JSON spec list</text>
+      <rect class="bx2" x="720" y="164" width="190" height="46" fill="url(#gA)"/>
+      <text class="t2" x="815" y="184" text-anchor="middle">Benchmark</text>
+      <text class="m2" x="815" y="200" text-anchor="middle">run_engine(id)</text>
+
+      <path class="l2" d="M582 100 C650 80 660 56 718 44"/>
+      <path class="l2" d="M582 110 C650 112 665 114 718 114"/>
+      <path class="l2" d="M582 122 C650 150 660 176 718 186"/>
+    </svg>
+    <figcaption><b>Figure 2 —</b> One declaration (solid = in-tree; dashed = auto-discovered plugin) flows to three
+      consumers. Adding an engine never touches the UI, the API handler, or the runner.</figcaption>
+  </div></figure>
+
+  <h3>Out-of-tree plugins (no core edits)</h3>
+  <p>A third party ships a package exposing a <span class="mono">strategist.engines</span> entry point; the registry
+  discovers it the first time it's read. Verified end-to-end: after
+  <span class="mono">pip install -e examples/external_engine_plugin</span>, the <span class="pill b">echo</span> engine
+  appears in <span class="mono">all_engine_specs()</span>, <span class="mono">/api/engines</span>, and the UI.</p>
+
+  <details class="fold"><summary>Code — declaring &amp; running an engine</summary>
+  <div class="foldbody">
+<pre><code><span class="cm"># in-tree: declare once</span>
+<span class="kw">from</span> poc <span class="kw">import</span> register_engine, EngineSpec, ParamSpec
+register_engine(EngineSpec(
+    id=<span class="str">"planner"</span>, name=<span class="str">"Planner + Gates"</span>,
+    params=(ParamSpec(name=<span class="str">"planner_envelope"</span>, label=<span class="str">"Econ envelope"</span>,
+                      type=<span class="str">"enum"</span>, default=<span class="str">"off"</span>, choices=(<span class="str">"off"</span>,<span class="str">"auto"</span>,<span class="str">"always"</span>)),),
+    factory=<span class="kw">lambda</span> planner_envelope=<span class="str">"off"</span>: PlannerEngine(planner_envelope=planner_envelope),
+))
+
+<span class="cm"># run any engine by id — params validated against its ParamSpecs</span>
+bench = Benchmark(load_scenarios())
+results = <span class="kw">await</span> bench.<span class="fn">run_engine</span>(<span class="str">"planner"</span>, planner_envelope=<span class="str">"auto"</span>)
+
+<span class="cm"># out-of-tree plugin: pyproject.toml</span>
+<span class="cm"># [project.entry-points."strategist.engines"]</span>
+<span class="cm"># echo = "strategist_echo:get_engines"</span></code></pre>
+  </div></details>
+
+  <div class="callout gotcha">
+    <div class="clabel">⚠ Dual-import trap (fixed)</div>
+    The codebase mixes flat imports (<span class="mono">import registry</span>, used by the server) and package imports
+    (<span class="mono">poc.registry</span>). Left alone, those are two module objects with separate registry/active-domain
+    state — a runtime <span class="mono">register</span> on one wouldn't be seen by the other. Fixed by importing the registry,
+    domain, and scenario-source modules under their <b>flat</b> names inside <span class="mono">poc/__init__.py</span> so every
+    consumer shares one instance.
+  </div>
+</section>
+
+<!-- 5 ─────────────────────────────────────────── -->
+<section id="abtest">
+  <h2><span class="sec-num">05</span> Any-vs-any A/B in the live UI</h2>
+  <p class="sec-sub">Both panels are independent, registry-driven selectors — and the default stays byte-identical.</p>
+
+  <p>The dual-panel server runs the same scenario down two panels against one shared customer simulator, so the engine
+  is the only variable. Previously the LEFT panel was hardwired to the baseline and only the RIGHT was switchable
+  (between two hardcoded options, via a planner "bridge" module that <i>was never shipped</i> and silently fell back).
+  Now each panel picks any registered engine, with its parameter controls rendered from the spec.</p>
+
+  <h3>The trick: gate on the engine, not the panel side</h3>
+  <p>The live replayer had ~9 places gated by <span class="mono">panel.side == "right"</span> that actually mean
+  "this is the supervised arm". Those were re-keyed to <span class="mono">panel_is_supervised = (engine_id == "strategist")</span>.
+  Because the default pairing is LEFT=baseline / RIGHT=strategist, the boolean evaluates exactly as the old side check —
+  so <b>the default comparison is unchanged by construction</b>, while novel pairings (e.g. Planner on the left) become possible.</p>
+
+  <figure><div class="fig">
+    <svg viewBox="0 0 940 300" role="img" aria-label="Any-vs-any panel routing">
+      <style>
+        .t3{fill:#e7ebf3;font:13px "Segoe UI",sans-serif}
+        .s3{fill:#aab3c5;font:11px "Segoe UI",sans-serif}
+        .m3{fill:#cfe0ff;font:11px var(--mono),monospace}
+        .l3{stroke:#5b8def;stroke-width:2;fill:none;marker-end:url(#ar)}
+        .l3v{stroke:#a974f0;stroke-width:2;fill:none;marker-end:url(#ar)}
+      </style>
+      <rect class="bx2" x="370" y="20" width="200" height="46" fill="url(#gCtrl)"/>
+      <text class="t3" x="470" y="40" text-anchor="middle">POST /api/run</text>
+      <text class="m3" x="470" y="56" text-anchor="middle">engine_left · engine</text>
+
+      <!-- left panel -->
+      <rect class="bx2" x="60" y="110" width="360" height="150" fill="url(#gA)"/>
+      <text class="t3" x="240" y="134" text-anchor="middle" font-weight="700">LEFT panel</text>
+      <rect class="bx2" x="84" y="150" width="150" height="40" fill="#10131b"/>
+      <text class="s3" x="159" y="167" text-anchor="middle">live_mode "native"</text>
+      <text class="m3" x="159" y="182" text-anchor="middle">baseline → actor</text>
+      <rect class="bx2" x="252" y="150" width="150" height="40" fill="#10131b"/>
+      <text class="s3" x="327" y="167" text-anchor="middle">live_mode "produce"</text>
+      <text class="m3" x="327" y="182" text-anchor="middle">engine.produce()</text>
+      <text class="s3" x="240" y="222" text-anchor="middle">panel_is_supervised = (id == "strategist")</text>
+      <text class="m3" x="240" y="242" text-anchor="middle">→ supervisor gates follow the engine</text>
+
+      <!-- right panel -->
+      <rect class="bx2" x="520" y="110" width="360" height="150" fill="url(#gB)"/>
+      <text class="t3" x="700" y="134" text-anchor="middle" font-weight="700">RIGHT panel</text>
+      <rect class="bx2" x="544" y="150" width="150" height="40" fill="#10131b"/>
+      <text class="s3" x="619" y="167" text-anchor="middle">native strategist</text>
+      <text class="m3" x="619" y="182" text-anchor="middle">supervisor chain</text>
+      <rect class="bx2" x="712" y="150" width="150" height="40" fill="#10131b"/>
+      <text class="s3" x="787" y="167" text-anchor="middle">produce engines</text>
+      <text class="m3" x="787" y="182" text-anchor="middle">planner · plugins</text>
+      <text class="s3" x="700" y="222" text-anchor="middle">same shared customer simulator</text>
+      <text class="m3" x="700" y="242" text-anchor="middle">→ engine is the only variable</text>
+
+      <path class="l3" d="M440 66 C360 86 300 96 240 108"/>
+      <path class="l3v" d="M500 66 C600 86 660 96 700 108"/>
+    </svg>
+    <figcaption><b>Figure 3 —</b> Each panel routes by its engine's <span class="mono">live_mode</span>: the wired-in
+      "native" flows (baseline, the supervised strategist chain) or the generic <span class="mono">produce()</span> path
+      (planner and every plugin). The customer simulator is shared, keeping the comparison single-variable.</figcaption>
+  </div></figure>
+
+  <div class="callout caveat">
+    <div class="clabel">▲ Validation honesty</div>
+    Offline + structural behavior is fully tested, but no live LLM sessions were run (no keys / cost). The default
+    pairing is covered by the byte-identical guarantee; a genuinely novel live pairing (e.g. the supervised Strategist
+    on the LEFT) is enabled structurally but deserves one keyed smoke run before being relied on.
+  </div>
+</section>
+
+<!-- 6 ─────────────────────────────────────────── -->
+<section id="simulator">
+  <h2><span class="sec-num">06</span> The customer simulator</h2>
+  <p class="sec-sub">The agent on the other side of every conversation — the thing that makes the benchmark a
+  closed loop rather than a transcript replay.</p>
+
+  <div class="card">
+    <dl class="kvs">
+      <dt>Role</dt><dd>Plays the customer: reads the dialogue + the engine's latest move and produces the customer's next reply, turn after turn, until the conversation converts or declines.</dd>
+      <dt>Type</dt><dd>LLM-driven simulator (<span class="mono">poc/customer_simulator.py</span>, class <span class="mono">CustomerSimulator</span>), v2 <b>reference-aware</b> mode (default on).</dd>
+      <dt>How built</dt><dd>Anchored to a real historical conversation: it sees the customer's actual reply <i>at the current turn</i> as a posture/tone reference, then writes in this customer's extracted voice.</dd>
+      <dt>In → Out</dt><dd><span class="mono">reply(dialog_history, live_agent_msg, k)</span> → <span class="mono">(customer_text, sim_mode)</span>.</dd>
+      <dt>Shared</dt><dd>One simulator instance faces <b>both</b> A/B panels, so the engine is the only variable across the comparison.</dd>
+    </dl>
+  </div>
+
+  <h3>Why a reference-aware simulator</h3>
+  <p>A naive simulator either (a) replays the historical customer — which ignores what the live agent actually said —
+  or (b) free-generates, which drifts off-persona and leaks outcomes (every real-won scenario would tilt "won"
+  regardless of the agent under test). The v2 design threads the needle with two rules:</p>
+
+  <div class="grid g2">
+    <div class="callout info"><div class="clabel">◆ Same-turn-only reference</div>
+      At turn <span class="mono">k</span>, the simulator may look at the historical customer reply <i>at turn k</i> as a
+      posture/tone anchor — <b>never</b> the future. This is what prevents outcome leakage.</div>
+    <div class="callout info"><div class="clabel">◆ Adapt to the live agent</div>
+      When the live engine's move diverges from what the historical agent said, the simulator adapts <i>on-topic</i> to
+      the live move while keeping the reference's posture — it doesn't parrot the transcript.</div>
+  </div>
+
+  <figure><div class="fig">
+    <svg viewBox="0 0 940 250" role="img" aria-label="Customer simulator dispatch">
+      <style>
+        .ts4{fill:#aab3c5;font:11px "Segoe UI",sans-serif}
+        .t4{fill:#e7ebf3;font:13px "Segoe UI",sans-serif}
+        .m4{fill:#7fe3cf;font:11px var(--mono),monospace}
+        .l4{stroke:#19b89a;stroke-width:2;fill:none;marker-end:url(#ar)}
+        .l4g{stroke:#8a93a8;stroke-width:1.5;fill:none;marker-end:url(#ar);stroke-dasharray:5 4}
+      </style>
+      <rect class="bx2" x="40" y="100" width="180" height="54" fill="url(#gA)"/>
+      <text class="t4" x="130" y="124" text-anchor="middle">engine.produce()</text>
+      <text class="m4" x="130" y="142" text-anchor="middle">live agent move</text>
+
+      <rect class="bx2" x="300" y="40" width="220" height="44" fill="url(#gB)"/>
+      <text class="ts4" x="410" y="60" text-anchor="middle">historical reply @ turn k</text>
+      <text class="m4" x="410" y="76" text-anchor="middle">posture / tone reference</text>
+
+      <rect class="bx2" x="300" y="160" width="220" height="44" fill="url(#gB)"/>
+      <text class="ts4" x="410" y="180" text-anchor="middle">extracted voice profile</text>
+      <text class="m4" x="410" y="196" text-anchor="middle">register · decisiveness</text>
+
+      <rect class="bx2" x="360" y="100" width="120" height="54" fill="url(#gB)"/>
+      <text class="t4" x="420" y="131" text-anchor="middle">Simulator</text>
+
+      <rect class="bx2" x="600" y="100" width="200" height="54" fill="url(#gCtrl)"/>
+      <text class="t4" x="700" y="124" text-anchor="middle">customer reply</text>
+      <text class="m4" x="700" y="142" text-anchor="middle">+ sim_mode + outcome</text>
+
+      <path class="l4" d="M222 127 H358"/>
+      <path class="l4g" d="M410 84 V98"/>
+      <path class="l4g" d="M410 160 V156"/>
+      <path class="l4" d="M482 127 H598"/>
+    </svg>
+    <figcaption><b>Figure 4 —</b> The simulator fuses the live agent's move (solid) with the same-turn historical
+      reference and the customer's extracted voice (dashed, reference-only) to produce the next customer turn. Future
+      turns of the transcript are never visible.</figcaption>
+  </div></figure>
+
+  <h3>How calibrated</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Test</th><th>Setup</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Realism</td><td>held-out continuation, n=23</td><td><b>78%</b> outcome agreement; <b>−22 pp</b> pessimism bias (under-states wins)</td></tr>
+        <tr><td>Adaptivity</td><td>perturbed agent, n=28, 2 judges</td><td><b>4.71 / 5</b> mean; 3.6–7.1% echo rate</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small">The −22 pp pessimism bias is a known, documented property: the simulator under-states wins, so absolute
+  win-rates read low — but the <b>relative</b> A/B comparison between engines stays informative.</p>
+
+  <h3>Dispatch &amp; sim_mode</h3>
+  <p>Each reply is tagged with the mode that produced it, recorded per turn in the results:</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th><span class="mono">sim_mode</span></th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">generate_v2_ref</td><td>v2 on, a same-turn historical reference exists (the default path)</td></tr>
+        <tr><td class="mono">generate_v2_no_ref</td><td>v2 on, but the live conversation has run past the transcript — no reference available</td></tr>
+        <tr><td class="mono">rephrase</td><td>v1 hybrid: live move closely matches history → rephrase the historical reply in-voice</td></tr>
+        <tr><td class="mono">generate</td><td>v1 hybrid: live move diverges → free-generate on-topic</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout caveat">
+    <div class="clabel">▲ Configuration</div>
+    <span class="mono">POC_SIM_V2_REFERENCE=on</span> (default) selects the reference-aware path; <span class="mono">off</span>
+    falls back to the v1 rephrase-vs-generate hybrid (kept for sanity-check comparisons). A per-session
+    <b>hard-customer</b> overlay makes the simulated buyer more skeptical for stress-testing. Outcome detection
+    (won/lost) comes from the active <b>domain pack</b> (§7), so the simulator stays domain-agnostic.
+  </div>
+</section>
+
+<!-- 7 ─────────────────────────────────────────── -->
+<section id="domain">
+  <h2><span class="sec-num">07</span> Domain packs</h2>
+  <p class="sec-sub">Sales stays the reference domain — but as a <i>provider</i>, not an inlined assumption.</p>
+
+  <div class="card">
+    <dl class="kvs">
+      <dt>Role</dt><dd>Supplies the domain-specific text + outcome logic the engines and scorer need.</dd>
+      <dt>Type</dt><dd><span class="mono">DomainPack</span> base class; selected globally via <span class="mono">set_active_domain</span> / <span class="mono">POC_DOMAIN</span>.</dd>
+      <dt>How built</dt><dd><span class="mono">SalesDomainPack</span> holds the original Insurance/Ecommerce strings verbatim and is the default.</dd>
+      <dt>In → Out</dt><dd>tenant / opp-type / anchors / customer text → framing strings &amp; won/lost booleans.</dd>
+      <dt>Feeds</dt><dd><span class="mono">actor</span> (system prompt) and <span class="mono">benchmark</span> (outcome check).</dd>
+    </dl>
+  </div>
+
+  <p>The bundled dataset is, and stays, a sales/insurance corpus — you can't make fixed historical conversations
+  domain-neutral. What was decoupled is the <i>code's</i> coupling: per-tenant business descriptions, opportunity-type
+  coaching, the USD pricing "economic reference frame", and the win/decline detectors all used to be inlined across the
+  core. They now come from the active pack.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Extracted surface</th><th>Was inlined in</th><th>Now provided by</th></tr></thead>
+      <tbody>
+        <tr><td>Per-tenant business / conversion description</td><td class="mono">actor._domain_desc</td><td class="mono">describe_tenant()</td></tr>
+        <tr><td>Opportunity-type behavioral coaching</td><td class="mono">actor._opp_type_behavioral_note</td><td class="mono">opp_type_note()</td></tr>
+        <tr><td>Economic-anchor section (currency, anti-staircase rule)</td><td class="mono">actor._build_anchor_section</td><td class="mono">render_anchor_section()</td></tr>
+        <tr><td>Win / decline (won/lost) detection</td><td class="mono">benchmark._check_customer_outcome</td><td class="mono">detect_close()/detect_decline()</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout ok">
+    <div class="clabel">✓ Proven byte-identical</div>
+    The assembled actor system prompt hashes to the same SHA-256 before and after extraction
+    (<span class="mono">test_actor_system_prompt_golden</span>, 4245 chars). A companion test
+    (<span class="mono">test_domain.py</span>) flips to a custom support-domain pack and asserts the text actually changes,
+    then restores — proving the seam is real in both directions.
+  </div>
+
+  <details class="fold"><summary>Code — a custom domain in ~15 lines</summary>
+  <div class="foldbody">
+<pre><code><span class="kw">from</span> poc <span class="kw">import</span> DomainPack, set_active_domain
+
+<span class="kw">class</span> <span class="fn">SupportDomain</span>(DomainPack):
+    name = <span class="str">"support"</span>
+    <span class="kw">def</span> <span class="fn">describe_tenant</span>(self, tenant):
+        <span class="kw">return</span> <span class="str">"B2C technical support; resolution = customer confirms the issue is fixed"</span>
+    <span class="kw">def</span> <span class="fn">detect_close</span>(self, text):
+        <span class="kw">return</span> <span class="str">"that worked"</span> <span class="kw">in</span> text.lower() <span class="kw">or</span> <span class="str">"resolved"</span> <span class="kw">in</span> text.lower()
+    <span class="kw">def</span> <span class="fn">render_anchor_section</span>(self, anchors):
+        <span class="kw">return</span> <span class="str">""</span>  <span class="cm"># no pricing in a support domain</span>
+
+set_active_domain(SupportDomain())   <span class="cm"># actor + benchmark now read from it</span></code></pre>
+  </div></details>
+</section>
+
+<!-- 7 ─────────────────────────────────────────── -->
+<section id="source">
+  <h2><span class="sec-num">08</span> Scenario / data sources</h2>
+  <p class="sec-sub">Where the data comes from is now an interface, not a hardcoded file path.</p>
+
+  <div class="card">
+    <dl class="kvs">
+      <dt>Role</dt><dd>Read-only access to scenarios, opportunity metadata, transcripts, business rules, anchors.</dd>
+      <dt>Type</dt><dd><span class="mono">ScenarioSource</span> protocol; active instance swappable via <span class="mono">set_scenario_source</span>.</dd>
+      <dt>How built</dt><dd><span class="mono">JsonScenarioSource</span> over the bundled <span class="mono">v1_scenarios.json</span> (default); MySQL via <span class="mono">poc/db.py</span>.</dd>
+      <dt>In → Out</dt><dd>opp_id → opp-meta / messages / anchors; or the full scenario list.</dd>
+      <dt>Feeds</dt><dd><span class="mono">load_scenarios()</span> and the live server's data layer.</dd>
+    </dl>
+  </div>
+
+  <p><span class="mono">load_scenarios()</span> keeps its legacy <span class="mono">path=</span> argument (direct file read)
+  for full backward compatibility, but with no arguments it routes through the active source — so a custom backend
+  (a different DB, an API, another file format) plugs in with one call. The existing function-style
+  <span class="mono">server/db.py</span> shim (JSON ↔ MySQL switch on <span class="mono">POC_USE_MYSQL</span>) remains the
+  live server's data layer and mirrors the same field shapes.</p>
+
+  <div class="callout info">
+    <div class="clabel">◆ Resolution order</div>
+    <span class="mono">load_scenarios(source=…)</span> &nbsp;→&nbsp; <span class="mono">load_scenarios(path=…)</span> (legacy file read)
+    &nbsp;→&nbsp; the active <span class="mono">ScenarioSource</span> (bundled JSON by default).
+  </div>
+</section>
+
+<!-- 8 ─────────────────────────────────────────── -->
+<section id="dataset">
+  <h2><span class="sec-num">09</span> The benchmark dataset</h2>
+  <p class="sec-sub">112 scenarios, each anchored in a real historical conversation across two industries.</p>
+
+  <div class="grid g4" style="margin:14px 0">
+    <div class="stat"><div class="v">112</div><div class="l">scenarios (51 Insurance · 61 Ecommerce)</div></div>
+    <div class="stat b"><div class="v">15</div><div class="l">diversity cells (6 insurance · 9 ecommerce)</div></div>
+    <div class="stat c"><div class="v">23</div><div class="l">customer profile dimensions</div></div>
+    <div class="stat ctrl"><div class="v">~20%</div><div class="l">real-wins (regression sentinels)</div></div>
+  </div>
+
+  <p>Two industries are represented: <b>Insurance</b> (auto-insurance renewal — an existing customer at renewal with a
+  prior premium and likely competitor quotes) and <b>Ecommerce</b> (cart abandonment — a buyer who added an item and
+  walked away). Each scenario is a snapshot of one real opportunity: a 23-dimension customer profile, the full
+  historical transcript, and — where available — the economic anchors (last year's price, market average, internal
+  discount ceiling) that ground the negotiation.</p>
+
+  <h3>How it's built &amp; used</h3>
+  <div class="grid g2">
+    <div class="card"><h3 style="margin-top:0">Diversity stratification</h3>
+      <p class="small">15 cells (6 insurance + 9 ecommerce), each sampled by <b>farthest-point sampling</b> on the
+      23-dimension profile vector — maximizing spread of customer types rather than sampling uniformly, so a small set
+      still exercises a wide range of buyers.</p></div>
+    <div class="card"><h3 style="margin-top:0">Embedded transcripts &amp; the seed cut</h3>
+      <p class="small">Every scenario carries its full historical transcript. At run time the benchmark seeds the
+      dialogue up to <span class="mono">seed_dialog_cut_idx</span> (the point of live takeover), then the engine drives
+      the rest. Embedding the transcript makes the package self-contained — the simulator's same-turn reference needs no
+      DB at run time (§6).</p></div>
+    <div class="card"><h3 style="margin-top:0">Regression sentinels</h3>
+      <p class="small">About 20% are real-wins: scenarios that genuinely converted historically. They act as a floor —
+      an engine that loses the easy cases is regressing, independent of how it does on the hard ones.</p></div>
+    <div class="card"><h3 style="margin-top:0">Anchors (when present)</h3>
+      <p class="small">Per-opportunity economic reference frame. The agent must negotiate from these real figures rather
+      than fabricating market claims; <span class="mono">anchor_real:false</span> marks cohort-fallback anchors.</p></div>
+  </div>
+
+  <h3>The outcome model</h3>
+  <p>A scenario resolves to <span class="pill b">won</span> or <span class="pill danger">lost</span>. The customer's
+  reply is checked each turn by the active <b>domain pack</b>: a close/payment signal → <span class="mono">won</span>;
+  a decline → <span class="mono">lost</span>; a deferral ("let me think about it") keeps the conversation going. If no
+  resolution by <span class="mono">max_turns</span>, it's recorded <span class="mono">lost</span> with
+  <span class="mono">end_reason = max_turns_no_close</span>. Results are paired across arms by
+  <span class="mono">scenario_id</span> so engines are compared on identical scenarios.</p>
+
+  <details class="fold"><summary>Scenario schema (abridged)</summary>
+  <div class="foldbody">
+<pre><code>{
+  <span class="str">"scenario_id"</span>: <span class="str">"L_Pr_An_Sk_04"</span>,        <span class="cm">// opaque id (cell-coded)</span>
+  <span class="str">"opp_id"</span>:      <span class="str">"00733e8d-…"</span>,
+  <span class="str">"tenant"</span>:      <span class="str">"Insurance"</span>,            <span class="cm">// or "Ecommerce"</span>
+  <span class="str">"diversity_bucket"</span>: <span class="str">"Price/savings × Analytical × Skeptical"</span>,
+  <span class="str">"real_outcome"</span>: <span class="str">"won"</span>,                <span class="cm">// historical ground truth</span>
+  <span class="str">"is_sentinel"</span>:  <span class="kw">false</span>,
+  <span class="str">"rng_seed"</span>:     <span class="num">17004</span>,               <span class="cm">// deterministic per-scenario seed</span>
+  <span class="str">"seed_dialog_cut_idx"</span>: <span class="num">9</span>,           <span class="cm">// live takeover point</span>
+  <span class="str">"attributes"</span>: { <span class="cm">/* 23 dims: primary_motivator, decision_logic, trust_level,</span>
+                     <span class="cm">communication_style, objection_pattern, purchase_urgency, … */</span> },
+  <span class="str">"anchors"</span>: { <span class="str">"last_year_price_usd"</span>: <span class="num">4238</span>, <span class="str">"current_quoted_price_usd"</span>: <span class="num">4581</span>,
+              <span class="str">"market_avg_for_segment_usd"</span>: <span class="num">4400</span>, <span class="str">"max_discount_pct_internal"</span>: <span class="num">15</span> },
+  <span class="str">"anchor_real"</span>: <span class="kw">true</span>,
+  <span class="str">"seed_messages"</span>: [ <span class="cm">/* full historical transcript: direction, text, timestamp, … */</span> ]
+}</code></pre>
+  </div></details>
+
+  <details class="fold"><summary>Per-scenario result JSON (what a run writes)</summary>
+  <div class="foldbody">
+<pre><code>{
+  <span class="str">"arm"</span>: <span class="str">"planner"</span>, <span class="str">"scenario_id"</span>: <span class="str">"L_Pr_An_Sk_04"</span>, <span class="str">"tenant"</span>: <span class="str">"Insurance"</span>,
+  <span class="str">"real_outcome"</span>: <span class="str">"won"</span>, <span class="str">"outcome"</span>: <span class="str">"won"</span>, <span class="str">"end_reason"</span>: <span class="str">"customer_won"</span>,
+  <span class="str">"n_live_turns"</span>: <span class="num">3</span>, <span class="str">"elapsed_s"</span>: <span class="num">78.4</span>,
+  <span class="str">"turns"</span>: [ { <span class="str">"live_turn"</span>: <span class="num">0</span>, <span class="str">"agent_text"</span>: <span class="str">"…"</span>, <span class="str">"customer_text"</span>: <span class="str">"…"</span>,
+              <span class="str">"sim_mode"</span>: <span class="str">"generate_v2_ref"</span>, <span class="str">"agent_meta"</span>: { <span class="cm">/* your verbatim meta */</span> } } ]
+}</code></pre>
+  <p class="small">Written to <span class="mono">{results_dir}/{arm}/{scenario_id}.json</span>; runs are resumable
+  (existing files are skipped). Aggregate across arms with <span class="mono">paired_summary(...)</span>.</p>
+  </div></details>
+</section>
+
+<!-- 9 ─────────────────────────────────────────── -->
+<section id="safety">
+  <h2><span class="sec-num">10</span> Behavior preservation &amp; cross-cutting concerns</h2>
+  <p class="sec-sub">How a large refactor stayed safe without live LLM runs.</p>
+
+  <div class="grid g3">
+    <div class="card"><h3 style="margin-top:0">Golden safety net</h3>
+      <p class="small">Phase 0 captured the domain-coupled behavior offline — actor-prompt hash, anchor section,
+      opp-type notes, outcome detectors, paired-summary math — <i>before</i> any extraction, so any drift fails loudly.</p></div>
+    <div class="card"><h3 style="margin-top:0">Default-path identity</h3>
+      <p class="small">Supervised gates re-keyed from panel side to engine id; the default L/R pairing maps 1:1 onto the
+      old branches. New behavior is opt-in.</p></div>
+    <div class="card"><h3 style="margin-top:0">Graceful degradation</h3>
+      <p class="small">Unknown engine ids fall back to defaults; a failing plugin is logged and skipped without breaking
+      discovery; the JSON data shim runs the server with no prod DB.</p></div>
+  </div>
+
+  <div class="callout info" style="margin-top:16px">
+    <div class="clabel">◆ Removed dead code</div>
+    The old live "planner" path imported a <span class="mono">from engines import planner_produce</span> bridge that was
+    never shipped — it silently fell back to the classic flow, so live Planner never actually ran. Routing through the
+    registry's generic <span class="mono">produce()</span> path both deletes that dead branch and makes live Planner work.
+  </div>
+</section>
+
+<!-- 10 ─────────────────────────────────────────── -->
+<section id="testing">
+  <h2><span class="sec-num">11</span> Testing &amp; verification</h2>
+  <p class="sec-sub">32 tests, all green, none requiring an LLM call.</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Suite</th><th>Tests</th><th>Covers</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">test_smoke.py</td><td>6</td><td>Imports, bundled-data sanity, protocol check (pre-existing)</td><td><span class="pill done">pass</span></td></tr>
+        <tr><td class="mono">test_characterization.py</td><td>11</td><td>Golden domain behavior (byte-identical pins)</td><td><span class="pill done">pass</span></td></tr>
+        <tr><td class="mono">test_registry.py</td><td>8</td><td>Registry, params, create/raise, run_engine delegation</td><td><span class="pill done">pass</span></td></tr>
+        <tr><td class="mono">test_domain.py</td><td>3</td><td>Domain-pack swap changes actor text + outcomes</td><td><span class="pill done">pass</span></td></tr>
+        <tr><td class="mono">test_scenario_source.py</td><td>4</td><td>Default + custom sources, legacy path</td><td><span class="pill done">pass</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout ok" style="margin-top:14px">
+    <div class="clabel">✓ End-to-end checks performed</div>
+    Server boots; <span class="mono">/api/engines</span> serves the registry; per-panel runs accept ids + params with
+    bad-engine fallback; and a real <span class="mono">pip install -e</span> of the example plugin makes the
+    <span class="mono">echo</span> engine auto-appear in the API, the spec list, and produce output with its
+    <span class="mono">prefix</span> param.
+  </div>
+</section>
+
+<!-- 11 ─────────────────────────────────────────── -->
+<section id="roadmap">
+  <h2><span class="sec-num">12</span> Roadmap — done vs. pending</h2>
+  <p class="sec-sub">All six planned phases landed; a few honest follow-ups remain.</p>
+
+  <div class="timeline">
+    <div class="tl"><div class="when">Phase 0</div><div class="rail"><div class="dot"></div></div><div class="body"><b>Characterization safety net</b> — offline golden tests pinning domain behavior. <span class="pill done">done</span></div></div>
+    <div class="tl"><div class="when">Phase 1</div><div class="rail"><div class="dot"></div></div><div class="body"><b>Engine registry + /api/engines + dynamic UI</b> — registry, entry-point discovery, dead bridge removed. <span class="pill done">done</span></div></div>
+    <div class="tl"><div class="when">Phase 2</div><div class="rail"><div class="dot"></div></div><div class="body"><b>Any-vs-any A/B</b> — per-panel selection; supervised gates re-keyed on engine id. <span class="pill done">done</span></div></div>
+    <div class="tl"><div class="when">Phase 3</div><div class="rail"><div class="dot"></div></div><div class="body"><b>Domain packs</b> — SalesDomainPack extracted byte-for-byte; routed through actor + benchmark. <span class="pill done">done</span></div></div>
+    <div class="tl"><div class="when">Phase 4</div><div class="rail"><div class="dot"></div></div><div class="body"><b>Scenario sources</b> — ScenarioSource protocol + JsonScenarioSource default. <span class="pill done">done</span></div></div>
+    <div class="tl"><div class="when">Phase 5</div><div class="rail"><div class="dot"></div></div><div class="body"><b>Docs + examples</b> — README/INTEGRATION, installable plugin, custom-domain &amp; registry-driven benchmark scripts. <span class="pill done">done</span></div></div>
+    <div class="tl next"><div class="when">next</div><div class="rail"><div class="dot"></div></div><div class="body"><b>Keyed live smoke</b> of a novel pairing (Strategist-on-left) to validate the engine-id re-keying under real LLM calls. <span class="pill wip">pending</span></div></div>
+    <div class="tl next"><div class="when">next</div><div class="rail"><div class="dot"></div></div><div class="body"><b>Deeper domain extraction</b> — the customer simulator + intent classifier still carry sales vocabulary inline; candidates for the same pack interface. <span class="pill todo">optional</span></div></div>
+  </div>
+</section>
+
+<!-- 12 ─────────────────────────────────────────── -->
+<section id="repo">
+  <h2><span class="sec-num">13</span> Repository map</h2>
+  <p class="sec-sub">New files marked; the public library lives in <span class="mono">poc/</span>.</p>
+
+  <div class="card tree mono">
+poc/<br>
+&nbsp;├─ <span class="d">__init__.py</span> <span class="note"># public API — registry/domain/source via flat imports</span><br>
+&nbsp;├─ <span class="d">engine.py</span> <span class="note"># Engine protocol + Baseline/Planner/Strategist</span><br>
+&nbsp;├─ <span class="new">registry.py</span> <span class="note"># ★ EngineSpec registry + entry-point discovery</span><br>
+&nbsp;├─ <span class="new">domain.py</span> <span class="note"># ★ DomainPack + SalesDomainPack (default)</span><br>
+&nbsp;├─ <span class="new">scenario_source.py</span> <span class="note"># ★ ScenarioSource + JsonScenarioSource</span><br>
+&nbsp;├─ <span class="d">benchmark.py</span> <span class="note"># runner; run_engine(id) added</span><br>
+&nbsp;├─ <span class="d">customer_simulator.py</span> · <span class="d">actor.py</span> <span class="note"># substrate (actor now reads domain pack)</span><br>
+&nbsp;├─ <span class="d">planner/</span> <span class="note"># PCA state-graph planner</span><br>
+&nbsp;└─ <span class="d">strategist/</span> <span class="note"># supervisor chain + gates (source for review)</span><br>
+server/ <span class="note"># FastAPI dual-panel UI</span><br>
+&nbsp;├─ <span class="d">main.py</span> <span class="note"># + GET /api/engines; per-panel engine validation</span><br>
+&nbsp;└─ <span class="d">replayer.py</span> <span class="note"># generic produce() path; supervised gates by engine id</span><br>
+client/ <span class="note"># static UI</span><br>
+&nbsp;├─ <span class="d">index.html</span> · <span class="d">app.js</span> <span class="note"># dynamic L/R selectors from /api/engines</span><br>
+&nbsp;└─ <span class="d">style.css</span><br>
+examples/<br>
+&nbsp;├─ <span class="new">external_engine_plugin/</span> <span class="note"># ★ installable entry-point plugin (echo)</span><br>
+&nbsp;├─ <span class="new">custom_domain_pack.py</span> · <span class="new">run_pluggable_benchmark.py</span> <span class="note"># ★</span><br>
+&nbsp;└─ <span class="d">pi_engine_template.py</span> · <span class="d">run_benchmark.py</span><br>
+tests/ <span class="note"># 32 tests, no LLM calls</span><br>
+&nbsp;└─ <span class="new">test_characterization · test_registry · test_domain · test_scenario_source</span> <span class="note"># ★</span>
+  </div>
+</section>
+
+<!-- 13 ─────────────────────────────────────────── -->
+<section id="glossary">
+  <h2><span class="sec-num">14</span> Glossary</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">Engine</td><td>An object with <span class="mono">async produce(opp_meta, dialog, business_rules) → (text, meta)</span> — produces one agent turn.</td></tr>
+        <tr><td class="mono">EngineSpec</td><td>The registry record describing an engine (id, name, params, factory, live_mode).</td></tr>
+        <tr><td class="mono">live_mode</td><td>How the live server drives an engine: <span class="mono">"native"</span> (wired-in flow) or <span class="mono">"produce"</span> (generic).</td></tr>
+        <tr><td class="mono">DomainPack</td><td>Supplies domain framing + win/lost signals; <span class="mono">SalesDomainPack</span> is the default.</td></tr>
+        <tr><td class="mono">ScenarioSource</td><td>Pluggable provider of scenarios/opp-meta/transcripts/anchors.</td></tr>
+        <tr><td>opp_meta</td><td>Customer profile + scenario context dict passed to every engine turn.</td></tr>
+        <tr><td>anchors</td><td>Per-opportunity economic reference frame (prices, discount cap, loyalty).</td></tr>
+        <tr><td>arm</td><td>One engine's full run over the scenario set; results compared pairwise.</td></tr>
+        <tr><td>seed cut</td><td>The point in the historical transcript where the live agent takes over.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+</div>
+
+<footer class="footer">
+  Strategist — pluggable sales-conversation benchmark · post-refactor field guide. Self-contained HTML, no external
+  resources. Figures are hand-authored inline SVG; numbers are quoted from the repository source of truth.
+</footer>
+
+<a href="#" class="backtotop" id="btt">↑ Top</a>
+
+<script>
+// scrollspy: highlight the ToC entry for the section in view
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var map = {};
+  links.forEach(function(a){ var id=a.getAttribute('href').slice(1); var el=document.getElementById(id); if(el) map[id]=a; });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(a){a.classList.remove('active');});
+        var a = map[e.target.id]; if(a) a.classList.add('active');
+      }
+    });
+  }, {rootMargin:'-20% 0px -70% 0px', threshold:0});
+  Object.keys(map).forEach(function(id){ obs.observe(document.getElementById(id)); });
+  var btt = document.getElementById('btt');
+  window.addEventListener('scroll', function(){ btt.classList.toggle('show', window.scrollY>600); });
+})();
+</script>
+</body>
+</html>

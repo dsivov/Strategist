@@ -65,7 +65,7 @@ markers, anything.
 | Key                       | Type    | Notes |
 |---------------------------|---------|-------|
 | `id`                      | str     | Opportunity ID (UUID). |
-| `company`                 | str     | Tenant — `"Libra"` (insurance) or `"Heavys"` (e-commerce). |
+| `company`                 | str     | Tenant — `"Insurance"` (insurance) or `"Ecommerce"` (e-commerce). |
 | `primary_motivator`       | str     | Cialdini-style classification. `"Price/savings"`, `"Necessity"`, `"Security/fear"`, etc. |
 | `decision_logic`          | str     | `"Analytical"`, `"Emotional"`, `"Pragmatic"`. |
 | `trust_level`             | str     | `"Skeptical"`, `"Trusting"`, `"Neutral"`. |
@@ -77,7 +77,7 @@ markers, anything.
 | `purchase_urgency`        | str/None| `"Low"`, `"High"`, or `None` for sentinel scenarios. |
 | `primary_resistance`      | str     | Top blocker — `"Price"`, `"Authority"`, `"Time"`, etc. |
 | `opp_type`                | str     | Use case — `"Insurance Renewal"`, `"Abandoned Cart"`. |
-| `anchors`                 | dict    | Per-opp pricing: `last_year_price_nis`, `current_quoted_price_nis`, `market_avg_for_segment_nis`, `max_discount_pct_internal`. |
+| `anchors`                 | dict    | Per-opp pricing: `last_year_price_usd`, `current_quoted_price_usd`, `market_avg_for_segment_usd`, `max_discount_pct_internal`. |
 | `voice_profile`           | dict?   | Optional voice cues mined from the historical transcript. |
 
 **`dialog_history` (list[dict])** — `[{"role": "agent"|"customer", "text": str}]`,
@@ -202,7 +202,7 @@ print(f"PI win rate: {won}/{len(results)} = {won/len(results):.0%}")
 print(Counter(r["end_reason"] for r in results))
 
 # Per-tenant breakdown
-for tenant in ("Libra", "Heavys"):
+for tenant in ("Insurance", "Ecommerce"):
     sub = [r for r in results if r["tenant"] == tenant]
     if sub:
         wr = sum(r["outcome"] == "won" for r in sub) / len(sub)
@@ -253,6 +253,36 @@ returning.
 Every scenario sets `random.seed(scenario.rng_seed)` before the engine's
 first turn. LLM stochasticity in your stack is independent of this — if you
 want fully deterministic runs, set your LLM temperature to 0.
+
+---
+
+## Step 5 — (optional) Register the engine so it shows up everywhere
+
+The adapter above runs headlessly via `Benchmark(...).run_arm("pi", PIEngine())`.
+To also drive it by id (`run_engine("pi")`) and have it appear in the live
+dual-panel UI's engine selectors automatically, register an `EngineSpec`:
+
+```python
+from poc import register_engine, EngineSpec, ParamSpec
+from pi_adapter import PIEngine
+
+register_engine(EngineSpec(
+    id="pi",
+    name="PI stack",
+    description="Persuasion Intelligence engine via the PI adapter.",
+    runnable=True,
+    params=(ParamSpec(name="api_url", label="API URL", type="string"),),
+    factory=lambda api_url=None: PIEngine(api_url=api_url),
+))
+```
+
+In-tree, call that at import. **Out-of-tree** (no edits to this package), ship
+your adapter as its own installable package exposing a `strategist.engines`
+entry point — see [`examples/external_engine_plugin/`](examples/external_engine_plugin).
+Once installed, `poc.all_engine_specs()`, the server's `GET /api/engines`, and
+the UI all pick it up with no further changes. The engine still implements the
+exact same `produce()` contract from Step 1 — registration only adds discovery
+metadata.
 
 ---
 

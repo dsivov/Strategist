@@ -8,11 +8,11 @@ description: |
   Manager-escalation framing for the "match-or-walk" point in negotiation.
   Reached when objection_competitor_undercut's probe arc indicates the
   customer won't disclose details / refuses value framing / hits frustration.
-  Empirically the canonical Libra escalation move is conditional commitment:
+  Empirically the canonical Insurance escalation move is conditional commitment:
   "If they approve me to match the price — will we close?"
 
 applies_when:
-  tenant: Libra
+  tenant: Insurance
   profile:
     decision_logic: [Analytical, Mixed]
     trust_level: [Skeptical, Neutral]
@@ -68,7 +68,7 @@ arc:
     turn_intent: "Deliver the confirmed match price + payment-collection pivot"
     must_say_template: |
       Talked with the manager — comprehensive at {customer_disclosed_competitor_price}
-      NIS after the discount. How many installments? Up to 10, no interest.
+      USD after the discount. How many installments? Up to 10, no interest.
       And the last 4 digits of your card for verification?
     must_not_say:
       - "discount"
@@ -124,9 +124,9 @@ arc:
     # explanation FIRST and tightly causal makes truncation produce broken text
     # that fails downstream gates rather than evasive-but-grammatical text.
     must_say_template: |
-      Fair question — the {anchors.current_quoted_price_nis} NIS is our standard
+      Fair question — the {anchors.current_quoted_price_usd} USD is our standard
       renewal rate, and bringing the competing offer is exactly what unlocked the
-      {customer_disclosed_competitor_price} NIS manager-approved match. That's
+      {customer_disclosed_competitor_price} USD manager-approved match. That's
       why the price moved now and not before. Same coverage, same benefits —
       shall we lock it in? How many installments?
     must_not_say:
@@ -135,7 +135,7 @@ arc:
       - "let me check with my manager"
       - "I'll get back to you"
       - "the coverage and benefits remain the same"   # evasive close-only bypass
-      - "we can lock in the X NIS price"              # evasive close-only bypass
+      - "we can lock in the X USD price"              # evasive close-only bypass
     required_phrases:
       # The template's truncation-failure-mode is dropping the explanation half
       # and emitting only the close-pivot. These required phrases force the
@@ -163,8 +163,8 @@ arc:
   - step_id: send_signature_after_match
     turn_intent: "Final close after match — answer last logistics + initiate signature"
     must_say_template: |
-      Right — comprehensive {customer_disclosed_competitor_price} NIS, mandatory
-      {anchors.mandatory_nis} NIS. The policy will arrive by email shortly,
+      Right — comprehensive {customer_disclosed_competitor_price} USD, mandatory
+      {anchors.mandatory_usd} USD. The policy will arrive by email shortly,
       password to open is your mobile number :)
     must_not_say:
       - "discount"
@@ -178,11 +178,11 @@ metadata:
   last_modified: 2026-05-10
   version: 2.0
   empirical_basis: |
-    Mined from 500 libra_c0 ClosedWon + 500 ClosedLost (luna.message ×
+    Mined from 500 insurance_c0 ClosedWon + 500 ClosedLost (message ×
     research_message_strategy_flash, 2026-05-10). authority strategy
     shows +23% won/lost lift — the strongest positive lift across all
     strategies. Manager-escalation framing is the highest-value move
-    in the Libra renewal arc.
+    in the Insurance renewal arc.
 
     escalate_for_match (conditional commitment):
       - "אם יאשרו לי להשוות את המחיר נסגור?" (n=7, won-side commitment cluster)

@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 
 # ── R5.2 — no-disparagement patterns ────────────────────────────────────────
-# Day-4 evidence: cases 5/8 had real Libra agents saying "Phoenix is missing
+# Day-4 evidence: cases 5/8 had real Insurance agents saying "Phoenix is missing
 # headlights coverage" — that's NOT disparagement (it's factual differentiation).
 # Disparagement is opinion-laden: "Phoenix is unreliable / shady / a bad choice".
 # These patterns lean conservative — only flag clearly negative judgment language.
@@ -66,7 +66,7 @@ def _check_disparagement(text: str) -> dict | None:
 
 
 # ── R5.3 — no-fabricated-statistics patterns ────────────────────────────────
-# Day-4 evidence: case 7 (abda27f1) had real Libra agent saying "Prices have
+# Day-4 evidence: case 7 (abda27f1) had real Insurance agent saying "Prices have
 # gone up across the entire insurance industry, there was a tariff update,
 # raising prices by up to 48 percent." The anchor's actual_market_yoy_change_pct
 # was much lower (~10-15%). Customer reaction: "Hahaha" — credibility blown.
@@ -154,22 +154,22 @@ def _check_regulatory(text: str) -> dict | None:
 
 
 # ── R5.1 — max-discount-pct guard ───────────────────────────────────────────
-# Anchor pack carries `max_discount_pct_internal` (Libra) or
-# `max_authorized_discount_pct_internal` (Heavys). If the candidate's quoted
-# price implies a discount > cap from `current_quoted_price_nis` (Libra) or
-# from the catalog price (Heavys), that's a violation.
+# Anchor pack carries `max_discount_pct_internal` (Insurance) or
+# `max_authorized_discount_pct_internal` (Ecommerce). If the candidate's quoted
+# price implies a discount > cap from `current_quoted_price_usd` (Insurance) or
+# from the catalog price (Ecommerce), that's a violation.
 #
 # Conservative pattern: extract the largest 4-digit price-like number from
 # candidate, compare to current_quote * (1 - max_discount). False positives
 # (numbers that aren't prices) handled by the threshold tolerance.
-_PRICE_NUMBER_PATTERN = re.compile(r"\b(\d{3,4})\s*(?:NIS|nis|ש[\"״]?ח|shekels?|\$|USD)?", re.IGNORECASE)
+_PRICE_NUMBER_PATTERN = re.compile(r"\b(\d{3,4})\s*(?:USD|usd|ש[\"״]?ח|dollars?|\$|USD)?", re.IGNORECASE)
 
 
 def _check_max_discount(text: str, anchors: dict | None) -> dict | None:
     if not anchors:
         return None
     current_quote = (
-        anchors.get("current_quoted_price_nis")
+        anchors.get("current_quoted_price_usd")
         or anchors.get("current_quoted_price")
         or anchors.get("catalog_price")
     )
@@ -183,7 +183,7 @@ def _check_max_discount(text: str, anchors: dict | None) -> dict | None:
         return None
     floor = current_quote * (1 - max_pct / 100.0)
     # Find lowest price-like number in candidate that's above some sanity floor
-    sanity_min = current_quote * 0.4  # don't flag mentions of 100 NIS deductibles etc.
+    sanity_min = current_quote * 0.4  # don't flag mentions of 100 USD deductibles etc.
     candidates = []
     for m in _PRICE_NUMBER_PATTERN.finditer(text):
         try:

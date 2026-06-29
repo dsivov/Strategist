@@ -1,0 +1,25 @@
+# Example of an OUT-OF-TREE engine plugin for the Strategist benchmark.
+#
+# Install it into the same environment as the benchmark:
+#
+#     pip install -e examples/external_engine_plugin
+#
+# After install, the engine is discovered automatically — no edits to the core.
+# It appears in `poc.all_engine_specs()`, the `/api/engines` endpoint, and the
+# dual-panel UI selectors. The hook is the `strategist.engines` entry-point
+# group below.
+[project]
+name = "strategist-echo-engine"
+version = "0.1.0"
+description = "Example third-party engine plugin for the Strategist benchmark."
+requires-python = ">=3.9"
+dependencies = []
+
+[project.entry-points."strategist.engines"]
+# name = "module:attribute"  — attribute may be an EngineSpec, or (as here) a
+# zero-arg callable returning one or a list of them.
+echo = "strategist_echo:get_engines"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

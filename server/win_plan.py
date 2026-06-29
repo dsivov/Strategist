@@ -31,7 +31,7 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-WIN_PLANS_DIR = "/home/dev/development_team_luna/research/poc-supervisor-strategist/data/win_plans"
+WIN_PLANS_DIR = "/home/dev/development_team_agent/research/poc-supervisor-strategist/data/win_plans"
 
 
 def _slug(s: str) -> str:

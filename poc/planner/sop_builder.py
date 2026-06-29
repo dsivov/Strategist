@@ -6,7 +6,7 @@ Our only departure from PCA §4's pure role-play is that we *ground* the
 prompt with real won-deal transition frequencies mined from precedents.db
 (read as data — no Strategist imports).
 
-Run:  python -m planner.sop_builder --tenant Libra --opp-type renewal
+Run:  python -m planner.sop_builder --tenant Insurance --opp-type renewal
 """
 from __future__ import annotations
 
@@ -155,7 +155,7 @@ def build(tenant: str, opp_type: str, model: str = "claude-sonnet-4-5") -> dict:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tenant", default="Libra")
+    ap.add_argument("--tenant", default="Insurance")
     ap.add_argument("--opp-type", default="renewal")
     ap.add_argument("--model", default="claude-sonnet-4-5")
     a = ap.parse_args()

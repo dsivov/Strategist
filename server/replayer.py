@@ -47,10 +47,10 @@ import anthropic
 from db import (
     open_conn, fetch_opp_meta, fetch_messages, fetch_turn_states,
     fetch_persuasive_scores, fetch_business_rules, find_failure_mode_turn_index,
-    find_supervisor_intervention_index, fetch_libra_anchors,
+    find_supervisor_intervention_index, fetch_insurance_anchors,
 )
 from session_logger import SessionLogger
-from luna_actor import generate as actor_generate, build_actor_system
+from actor import generate as actor_generate, build_actor_system
 from staircase_gate import check_staircase, build_correction_prompt
 from customer_simulator import (
     CustomerSimulator, detect_decline, detect_close_signal,
@@ -131,25 +131,25 @@ HAIKU_CLIENT = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
 
 MAX_LIVE_TURNS = 8    # default max agent-turn iterations per panel after seed
                        # (≈ 4-5 min/session at instant speed with Gemini 2.5 Pro)
-# Per-tenant override — Heavys customers ask multi-axis questions (drivers +
-# price + warranty + shells), so 8 turns ceilings them at commit=4. Libra is
+# Per-tenant override — Ecommerce customers ask multi-axis questions (drivers +
+# price + warranty + shells), so 8 turns ceilings them at commit=4. Insurance is
 # linear (price → renew), so 8 turns is enough. Empirically calibrated from
-# the 5-scenario Heavys batch on 2026-04-30 (all 5 ceilinged at c4 in 8 turns).
+# the 5-scenario Ecommerce batch on 2026-04-30 (all 5 ceilinged at c4 in 8 turns).
 MAX_LIVE_TURNS_BY_TENANT = {
     # 2026-05-12 — Bumped from 12 → 18 after session 13f9b2c6 / opp e4bbc864
     # timed out on an engaged customer asking the final-justification question
     # (post factual-error recovery at agent t30, customer t31 asked
     # "why pay $199 over DT177X $120?"). Conversation was clearly in closing
-    # arc; cap killed it. Same pattern that forced the Libra 12→20 bump on
-    # 2026-05-10. Heavys multi-axis questions (drivers + price + warranty +
+    # arc; cap killed it. Same pattern that forced the Insurance 12→20 bump on
+    # 2026-05-10. Ecommerce multi-axis questions (drivers + price + warranty +
     # trust + factual-error recovery) need more runway.
-    "Heavys": 18,
-    "Libra":  20,   # was 12 — engaged-but-frustrated customer trajectories need
-                    # more turns to recover. Real Libra won-deals in our 12,401-deal
+    "Ecommerce": 18,
+    "Insurance":  20,   # was 12 — engaged-but-frustrated customer trajectories need
+                    # more turns to recover. Real Insurance won-deals in our 12,401-deal
                     # mining often run 30+ total turns. Engagement-override at the
                     # stall-gate keeps panels alive through frustrated questions, but
                     # the absolute turn cap was killing them at T30. Bumped to 20 live
-                    # turns (~30+ total counting seed). 2026-05-10. Was: 12 — Libra c5
+                    # turns (~30+ total counting seed). 2026-05-10. Was: 12 — Insurance c5
                     # 'competed-away' needs ≥12 turns to recover
                     # under 8-turn ceiling, both panels timed out at commit=4)
 }
@@ -387,13 +387,13 @@ class PanelState:
 class SessionCtx:
     """Mutable shared state — `stopped` is checked before each LLM call to support
     fast cancellation when the user clicks Stop. `scenarios` accumulates which
-    LUNA_INTEGRATION_GUIDE.md §4 scenarios this session has demonstrated."""
+    INTEGRATION.md §4 scenarios this session has demonstrated."""
     stopped: bool = False
     # Set of scenario IDs demonstrated so far (e.g., "S1", "S2", "S4")
     scenarios: set[str] = field(default_factory=set)
 
 
-# Map LUNA_INTEGRATION_GUIDE.md §4 scenarios → display metadata.
+# Map INTEGRATION.md §4 scenarios → display metadata.
 GUIDE_SCENARIOS = [
     {"id": "S1", "title": "Product Knowledge",       "blurb": "kg_products via /query"},
     {"id": "S2", "title": "Business Rules Retrieval","blurb": "kg_rules via /query"},
@@ -587,12 +587,12 @@ async def _run_via_chain_runner(panel, opp_meta: dict, business_rules: str,
         return None, {}, None
 
     # 2026-05-05 — Length enforcement for R-side. The chain runner uses
-    # chain_executor.dispatch_llm() which bypasses luna_actor.generate()'s
+    # chain_executor.dispatch_llm() which bypasses actor.generate()'s
     # post-gen length checks. Apply the same `_enforce_length` truncation
     # here so R-side messages also obey the 35-word cap. (Regen path stays
-    # in luna_actor.generate; here we only truncate as last resort.)
+    # in actor.generate; here we only truncate as last resort.)
     try:
-        from luna_actor import _enforce_length as _enforce_length_fn
+        from actor import _enforce_length as _enforce_length_fn
         truncated_text, was_truncated = _enforce_length_fn(agent_text)
         if was_truncated:
             import re as _re
@@ -802,9 +802,9 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
     # Bypasses the classic supervisor+actor flow; downstream (refusal
     # detection, customer reply, scoring) continues normally.
     # POC_USE_PROD_CHAIN=1 enables chain_runner ON THE RIGHT (SUPERVISED) PANEL
-    # ONLY. LEFT panel always uses the fast single-call luna_actor.generate
+    # ONLY. LEFT panel always uses the fast single-call actor.generate
     # baseline so the side-by-side comparison stays usable: LEFT = ~5s/turn
-    # (Original Luna), RIGHT = ~30-60s/turn (production-equivalent chain +
+    # (Original agent), RIGHT = ~30-60s/turn (production-equivalent chain +
     # supervisor splice). Running both through chain_runner used to balloon
     # per-turn latency to 150-200s, making live demos unusable.
     USE_PROD_CHAIN = (os.environ.get("POC_USE_PROD_CHAIN", "0") == "1"
@@ -813,23 +813,58 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
     chain_directive_meta: dict = {}
     chain_directive: dict | None = None
 
-    # R-side engine = PLANNER (independent PCA-faithful codebase). Only the
-    # RIGHT panel routes here; LEFT (vanilla) + customer sim are untouched.
-    # The Planner emits its own directive; the shared actor renders it
-    # downstream (single-variable invariant preserved — actor is harness
-    # substrate, not Strategist code).
-    PLANNER_MODE = (panel.side == "right"
-                    and (opp_meta or {}).get("_engine") == "planner")
-    if PLANNER_MODE:
-        try:
-            from engines import planner_produce
-            chain_agent_text, chain_directive_meta, chain_directive = \
-                await planner_produce(panel, opp_meta, business_rules, send)
-        except Exception as e:
-            log.warning("[%s] planner engine failed: %s", panel.side, e)
-            chain_agent_text = None
+    # Pluggable-engine path. Any registered engine whose live_mode is "produce"
+    # (the Planner and every third-party plugin) is driven generically here via
+    # its Engine.produce() contract. The engine returns final customer-facing
+    # text + a telemetry meta dict; the shared actor/customer-sim substrate
+    # downstream is untouched (single-variable invariant preserved). The legacy
+    # "strategist" (supervised) and "baseline" (vanilla) ids are live_mode
+    # "native" and fall through to the classic flow below.
+    # NOTE: ENGINE_MODE supersedes the old hardcoded PLANNER_MODE branch, which
+    # imported a `planner_produce` bridge that never shipped (it silently fell
+    # back). Routing through the registry both fixes live Planner and opens the
+    # path to arbitrary engines.
+    # Per-panel engine selection (any-vs-any A/B). Each panel's engine id rides
+    # on the shared opp_meta as `_engine_<side>`; the legacy single `_engine`
+    # key (R-side) is honored as a fallback. Defaults preserve the classic
+    # pairing — LEFT = baseline (control), RIGHT = strategist (supervised) — so
+    # an unconfigured session is byte-identical to the pre-registry flow.
+    panel_engine = (opp_meta or {}).get(f"_engine_{panel.side}")
+    if not panel_engine:
+        panel_engine = (((opp_meta or {}).get("_engine") if panel.side == "right" else None)
+                        or ("strategist" if panel.side == "right" else "baseline"))
+    # The supervised ("strategist") native flow follows the ENGINE, not the
+    # side. Re-keying the old `panel.side == "right"` supervisor gates on this
+    # boolean keeps the default pairing unchanged while letting the supervisor
+    # run on either panel.
+    panel_is_supervised = (panel_engine == "strategist")
 
-    if USE_PROD_CHAIN and not PLANNER_MODE:
+    ENGINE_MODE = False
+    if panel_engine:
+        try:
+            from registry import get as _get_engine_spec
+            _spec = _get_engine_spec(panel_engine)
+        except Exception:
+            _spec = None
+        if _spec is not None and _spec.live_mode == "produce":
+            ENGINE_MODE = True
+            try:
+                eng = getattr(panel, "_engine_instance", None)
+                if eng is None:
+                    eng = _spec.create(
+                        **((opp_meta or {}).get(f"_engine_params_{panel.side}") or {}))
+                    try:
+                        panel._engine_instance = eng  # reuse across turns
+                    except Exception:
+                        pass
+                chain_agent_text, chain_directive_meta = await eng.produce(
+                    opp_meta, panel.dialog, business_rules or "")
+                chain_directive = chain_directive_meta or {}
+            except Exception as e:
+                log.warning("[%s] engine %r failed: %s", panel.side, panel_engine, e)
+                chain_agent_text = None
+
+    if USE_PROD_CHAIN and not ENGINE_MODE:
         # Stash cluster_id in opp_meta so chain stages (cache lookup, decision-
         # trace emit) can build the segment key. Legacy branch sets this
         # after Manager classifies; the chain path skips that branch, so we
@@ -860,13 +895,13 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
     # T-85 Phase A.3: skip classic supervisor+actor flow if chain_runner produced text
     directive = None
     directive_meta = {}
-    if (USE_PROD_CHAIN or PLANNER_MODE) and chain_agent_text is not None:
+    if (USE_PROD_CHAIN or ENGINE_MODE) and chain_agent_text is not None:
         # Chain runner succeeded; use synthesized directive + meta so the UI
         # still gets architecture/strategy labels and integration-scenario
         # updates per turn.
         directive = chain_directive
         directive_meta = chain_directive_meta
-    elif panel.side == "right":
+    elif panel_is_supervised:
         try:
             # Decide which tier this turn uses
             classifier_conf = 0.0
@@ -908,7 +943,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
                 # Win-mode plan lazy-load (T-76 Day 4) — cell-keyed, gated by
                 # POC_WIN_PLAN_ENABLED. Loads alongside cluster_plan but stays
                 # dormant until engagement gate fires.
-                if (POC_WIN_PLAN_ENABLED and panel.side == "right"
+                if (POC_WIN_PLAN_ENABLED and panel_is_supervised
                         and panel.win_plan_state is None):
                     win_plan_dict = wp_mod.load_win_plan(
                         opp_meta.get("company"),
@@ -950,7 +985,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
             pre_rendered_plan_section = None
             adherence_preferred_actions: list[str] | None = None
             adherence_phase_label: str | None = None
-            if (POC_WIN_PLAN_ENABLED and panel.side == "right"
+            if (POC_WIN_PLAN_ENABLED and panel_is_supervised
                     and panel.win_plan_state is not None):
                 turn_idx_so_far = len(panel.commitment_history)
                 panel_metrics = {
@@ -1054,7 +1089,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
             # right_msg event (and the session log) record which plan phase
             # this turn's strategy was chosen UNDER. Enables retrospective
             # adherence audits and per-phase strategy distribution analysis.
-            if (POC_WIN_PLAN_ENABLED and panel.side == "right"
+            if (POC_WIN_PLAN_ENABLED and panel_is_supervised
                     and panel.win_plan_state is not None
                     and panel.plan_mode_active == "win"):
                 directive_meta["plan_phase_id"] = (
@@ -1117,13 +1152,13 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
     # directive entirely so the agent's natural soft-retention behavior
     # takes over. Empirical evidence (2026-05-02 d7bdba96 session, t11-t17):
     # supervisor's engagement strategies cause trust collapse when customer
-    # has signaled "let me think". Original Luna's system prompt rule
+    # has signaled "let me think". Original agent's system prompt rule
     # ("If customer signals 'I want to think' → soft retention check, not
     # pressure") handles retreat correctly only when no directive overrides it.
     # The supervisor's strategy enum has no "back off" primitive, so we get
     # the equivalent behavior by passing directive=None on retreat signals.
     RETREAT_SIGNALS = {"pace_request", "disengagement"}
-    if directive and panel.side == "right":
+    if directive and panel_is_supervised:
         sa = directive.get("signal_analysis") or {}
         if sa.get("primary_signal") in RETREAT_SIGNALS:
             log.info("[%s] retreat passthrough — primary_signal=%s, suppressing directive",
@@ -1135,7 +1170,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
                 "suppressed_strategy": _directive_strategy(directive),
                 "turn": panel.seq_counter + 1,
             })
-            directive = None  # natural-Luna behavior takes over
+            directive = None  # natural-Agent behavior takes over
 
     # 2. Agent reply (forced to seed language if simulator detected one)
     forced_lang = simulator.seed_language if simulator.seed_language in ("en", "he") else None
@@ -1147,7 +1182,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
     # actor_generate). Same block, two consumers — opp_meta is the carrier.
     cohort_block = ""
     opp_meta.pop("_cohort_precedent_block", None)
-    if panel.side == "right" and http_client is not None:
+    if panel_is_supervised and http_client is not None:
         try:
             from supervisor_full import (fetch_cohort_precedents,
                                          render_cohort_precedent_block,
@@ -1185,7 +1220,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
 
     # T-85 Phase A.3: if chain_runner produced text, use it directly and skip
     # the classic regenerate-loop (the chain has its own staircase semantics).
-    if (USE_PROD_CHAIN or PLANNER_MODE) and chain_agent_text is not None:
+    if (USE_PROD_CHAIN or ENGINE_MODE) and chain_agent_text is not None:
         agent_text = chain_agent_text
         _meta = {}
         directive_meta = chain_directive_meta
@@ -1292,7 +1327,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
     # Bug fix (2026-04-30): the previous condition `recent_low or not history`
     # mis-fired on the FIRST live turn — supervisor would emit a soft sign-off
     # before any commitment signal existed, ending the panel prematurely
-    # (caused the dfb34792 c3 regression in the Heavys batch). Now: only fire
+    # (caused the dfb34792 c3 regression in the Ecommerce batch). Now: only fire
     # graceful-close when we have actual evidence the customer is disengaged.
     #
     # Bug fix (2026-05-01): supervisor with plan loaded was choosing `empathy`
@@ -1402,7 +1437,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
         # Scenario coverage update — fold this turn's CG evidence into the
         # cumulative session set and emit if it grew. This populates the
         # "Integration scenarios demonstrated" panel in the UI live.
-        if ctx is not None and panel.side == "right":
+        if ctx is not None and panel_is_supervised:
             mode_id = directive_meta.get("mode")
             evidence = directive_meta.get("cg_evidence") or {}
             fired_this_turn = _evidence_to_scenarios(evidence, mode_id)
@@ -1722,7 +1757,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
 
     # 6. ClusterPlan advancement (right panel only) — after customer reply lands
     # so we can use customer's last message as the advancement signal.
-    if panel.side == "right" and panel.plan_state is not None:
+    if panel_is_supervised and panel.plan_state is not None:
         # Increment turns_in_current_phase BEFORE checking advance (we just had a turn)
         panel.plan_state.turns_in_current_phase += 1
         before_phase = panel.plan_state.current_phase_id
@@ -1748,7 +1783,7 @@ async def _live_turn(panel: PanelState, opp_meta: dict, business_rules: str,
             })
 
     # Win-mode plan advancement — only when active (T-76 Day 4)
-    if (panel.side == "right" and panel.win_plan_state is not None
+    if (panel_is_supervised and panel.win_plan_state is not None
             and panel.plan_mode_active == "win"):
         panel.win_plan_state.turns_in_current_phase += 1
         wp_before = panel.win_plan_state.current_phase_id
@@ -1791,11 +1826,11 @@ def _brief_anchors(anchors: dict | None) -> dict | None:
     if not anchors:
         return None
     keys = (
-        "last_year_price_nis", "current_quoted_price_nis",
-        "market_avg_for_segment_nis", "max_discount_pct_internal",
+        "last_year_price_usd", "current_quoted_price_usd",
+        "market_avg_for_segment_usd", "max_discount_pct_internal",
         "claimed_increase_pct", "actual_market_yoy_change_pct",
         "loyalty_years", "synthetic", "provenance",
-        # Heavys-side keys (T-86 anchor pack)
+        # Ecommerce-side keys (T-86 anchor pack)
         "max_authorized_discount_pct_internal",
         "_cg_queries_returned_content", "_cg_queries_total",
     )
@@ -2018,7 +2053,10 @@ async def run_session(session_id: str, opp_id: str, send: SEND_FN, get_speed: SP
                        hard_customer: bool = False,
                        seed_end_override: int = 0,
                        engine: str = "strategist",
-                       planner_envelope: str = "off") -> None:
+                       planner_envelope: str = "off",
+                       engine_left: str = "baseline",
+                       engine_params: dict | None = None,
+                       engine_params_left: dict | None = None) -> None:
     log.info("[%s] starting session for opp %s", session_id[:8], opp_id)
     logger = SessionLogger(session_id, opp_id, scenario=scenario_meta)
 
@@ -2040,7 +2078,10 @@ async def run_session(session_id: str, opp_id: str, send: SEND_FN, get_speed: SP
                                   hard_customer=hard_customer,
                                   seed_end_override=seed_end_override,
                                   engine=engine,
-                                  planner_envelope=planner_envelope)
+                                  planner_envelope=planner_envelope,
+                                  engine_left=engine_left,
+                                  engine_params=engine_params,
+                                  engine_params_left=engine_params_left)
     except asyncio.CancelledError:
         logger.add_note("session cancelled (likely WS disconnect)")
         raise
@@ -2083,7 +2124,10 @@ async def _run_session_inner(session_id: str, opp_id: str, send_and_log: SEND_FN
                               hard_customer: bool = False,
                               seed_end_override: int = 0,
                               engine: str = "strategist",
-                              planner_envelope: str = "off") -> None:
+                              planner_envelope: str = "off",
+                              engine_left: str = "baseline",
+                              engine_params: dict | None = None,
+                              engine_params_left: dict | None = None) -> None:
     # Snapshot CG endpoint counters at session start; we'll compute the delta
     # at session end to surface "CG calls this session" in the architecture banner.
     cg_calls_at_start = dict(CG_ENDPOINT_CALLS)
@@ -2102,31 +2146,36 @@ async def _run_session_inner(session_id: str, opp_id: str, send_and_log: SEND_FN
             log.info("[%s] hard_customer mode ENABLED for this session",
                      session_id[:8])
             logger.add_note("hard_customer_mode_enabled")
-        # R-side engine selector. "strategist" = existing flow (unchanged).
-        # "planner" = independent PCA-faithful engine (planner/ package); only
-        # the RIGHT panel is affected — L-side + customer sim are invariant.
+        # Per-panel engine selection (any-vs-any A/B). The engine ids ride on
+        # opp_meta so _live_turn can route each panel independently. Defaults
+        # (_engine_left=baseline, _engine_right=strategist) reproduce the
+        # classic control-vs-supervisor pairing exactly. `_engine` is kept as a
+        # back-compat alias for the R-side id.
+        opp_meta["_engine_left"] = engine_left or "baseline"
+        opp_meta["_engine_right"] = engine
         opp_meta["_engine"] = engine
-        opp_meta["_planner_envelope"] = planner_envelope or "off"
-        if engine == "planner":
-            _pe = planner_envelope or "off"
-            log.info("[%s] R-side engine = PLANNER%s (independent)",
-                     session_id[:8],
-                     f"+ENVELOPE[{_pe}]" if _pe != "off" else "")
-            logger.add_note(f"engine_planner_envelope_{_pe}"
-                            if _pe != "off" else "engine_planner")
+        opp_meta["_engine_params_left"] = dict(engine_params_left or {})
+        opp_meta["_engine_params_right"] = dict(engine_params or {})
+        # Back-compat: PlannerEngine.produce reads _planner_envelope off opp_meta.
+        # Honor an explicit per-panel value first, else the legacy top-level arg.
+        opp_meta["_planner_envelope"] = (
+            (engine_params or {}).get("planner_envelope") or planner_envelope or "off")
+        log.info("[%s] engines: L=%s R=%s", session_id[:8],
+                 opp_meta["_engine_left"], opp_meta["_engine_right"])
+        logger.add_note(f"engines_L_{opp_meta['_engine_left']}_R_{opp_meta['_engine_right']}")
         # T-81 anchor enrichment — fetch economic reference frame so the
         # supervisor and customer simulator both negotiate from real anchors
         # (last year's price, market avg, max discretionary discount) instead
         # of the unanchored adversarial defaults that produced staircase
         # pricing in 2026-05-02 sessions.
         try:
-            anchors = fetch_libra_anchors(conn, opp_id, opp_meta)
+            anchors = fetch_insurance_anchors(conn, opp_id, opp_meta)
             if anchors:
                 opp_meta["anchors"] = anchors
                 log.info("[%s] anchors loaded: %s", session_id[:8],
                           {k: v for k, v in anchors.items()
-                           if k in ("last_year_price_nis", "current_quoted_price_nis",
-                                    "market_avg_for_segment_nis", "synthetic", "provenance")})
+                           if k in ("last_year_price_usd", "current_quoted_price_usd",
+                                    "market_avg_for_segment_usd", "synthetic", "provenance")})
         except Exception as e:
             log.warning("[%s] anchor fetch failed: %s", session_id[:8], e)
         messages = fetch_messages(conn, opp_id)
@@ -2213,7 +2262,7 @@ async def _run_session_inner(session_id: str, opp_id: str, send_and_log: SEND_FN
     # Customer simulator (shared instance for both panels' historical alignment)
     simulator = CustomerSimulator(opp_meta, messages)
 
-    precomputed_scores = {}  # could fetch from luna.persuasive_score if desired
+    precomputed_scores = {}  # could fetch from persuasive_score if desired
 
     # Closed-loop READ: pull precedent decisions from CG (proof the system
     # has a learning corpus that's been growing)

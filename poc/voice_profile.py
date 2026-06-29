@@ -9,7 +9,7 @@ markers, and topic anchors that our flat persona summary loses.
 
 This module extracts a structured voice profile from the customer's actual
 historical messages. Pre-computed once per session at session-init (parallel
-to fetch_libra_anchors); injected into customer_simulator's system prompt.
+to fetch_insurance_anchors); injected into customer_simulator's system prompt.
 
 Approach: combine cheap statistical features (sentence length, word frequency,
 common phrases) with one Haiku LLM call to characterize register, decisiveness

@@ -1,9 +1,9 @@
-"""Batch 9.0a — empirical loss-attribution analysis on Libra ClosedLost opps.
+"""Batch 9.0a — empirical loss-attribution analysis on Insurance ClosedLost opps.
 
 Goal: derive the loss-taxonomy from data, not from a priori category guesses.
 
 Pipeline:
-  1. Sample ~500 Libra ClosedLost opps with rich state (research_*_flash populated)
+  1. Sample ~500 Insurance ClosedLost opps with rich state (research_*_flash populated)
   2. Compute per-opp features: trajectory, conversation shape, last-agent-message,
      profile, outcome, lightweight rule-compliance signals
   3. Cluster (KMeans + agglomerative) to find natural groupings
@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import Any
 
 import pymysql
-import pandas as pd
+import mattresscommerces as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
@@ -67,13 +67,13 @@ def sample_opps(conn) -> list[dict]:
            p.primary_motivator, p.objection_pattern, p.decision_logic,
            p.trust_level, p.regulatory_focus, p.budget_sensitivity,
            p.purchase_urgency, p.primary_resistance,
-           (SELECT COUNT(*) FROM luna.research_message_strategy_flash
+           (SELECT COUNT(*) FROM research_message_strategy_flash
               WHERE opportunity_id = o.id) AS strategy_msg_count,
-           (SELECT COUNT(*) FROM luna.research_turn_state_flash
+           (SELECT COUNT(*) FROM research_turn_state_flash
               WHERE opportunity_id = o.id) AS turn_state_count
-    FROM luna.opportunity o
-    JOIN luna.research_profile_flash p ON p.opportunity_id = o.id
-    WHERE o.company = 'Libra'
+    FROM opportunity o
+    JOIN research_profile_flash p ON p.opportunity_id = o.id
+    WHERE o.company = 'Insurance'
       AND o.type = 'Insurance Renewal'
       AND o.status = 'ClosedLost'
       AND p.primary_motivator IS NOT NULL
@@ -96,7 +96,7 @@ def fetch_opp_data(conn, opp_id: str) -> dict:
                    authority_activated, social_proof_activated, reciprocity_activated,
                    commitment_activated, scarcity_activated, liking_activated,
                    resistance_hardening, message_id
-            FROM luna.research_turn_state_flash
+            FROM research_turn_state_flash
             WHERE opportunity_id = %s
             ORDER BY sequence_number ASC
         """, (opp_id,))
@@ -104,7 +104,7 @@ def fetch_opp_data(conn, opp_id: str) -> dict:
 
         cur.execute("""
             SELECT sequence_number, message_id, primary_strategy, secondary_strategy, tone
-            FROM luna.research_message_strategy_flash
+            FROM research_message_strategy_flash
             WHERE opportunity_id = %s
             ORDER BY sequence_number ASC
         """, (opp_id,))
@@ -114,17 +114,17 @@ def fetch_opp_data(conn, opp_id: str) -> dict:
             SELECT me.message_id, me.type AS direction, me.timestamp,
                    me.is_reminder, me.is_followup, me.automatic_response,
                    COALESCE(
-                     (SELECT m.text FROM luna.message m
+                     (SELECT m.text FROM message m
                       WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                         AND m.lang='en_US' LIMIT 1),
-                     (SELECT m.text FROM luna.message m
+                     (SELECT m.text FROM message m
                       WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                         AND m.lang='he' LIMIT 1),
-                     (SELECT m.text FROM luna.message m
+                     (SELECT m.text FROM message m
                       WHERE m.opportunity_id=me.opportunity_id AND m.message_id=me.message_id
                       LIMIT 1)
                    ) AS text
-            FROM luna.message_event me
+            FROM message_event me
             WHERE me.opportunity_id = %s
               AND (me.is_deleted IS NULL OR me.is_deleted = 0)
             ORDER BY me.timestamp ASC
@@ -141,7 +141,7 @@ B29_HINTS = [
     "אבדוק", "אני אבדוק", "אחזור", "תן לי לחשוב", "צריך לחשוב",
 ]
 
-PRICE_HINTS = ["price", "discount", "cheaper", "cost", "nis", "pay", "payment",
+PRICE_HINTS = ["price", "discount", "cheaper", "cost", "usd", "pay", "payment",
                "מחיר", "הנחה", "שקל", "תשלום"]
 
 CLOSING_ASK_HINTS = [
@@ -264,7 +264,7 @@ AGENT_CC_PROMPT_PATTERNS = [
     r"\bcard last\b",
     r"\b4 digits of\b",
     r"\bcc last\b",
-    r"\bsame card as last year\b",                  # NEW (v3.1) — common Libra phrasing
+    r"\bsame card as last year\b",                  # NEW (v3.1) — common Insurance phrasing
     r"\bcard for verification\b",                   # NEW
     "כרטיס אשראי",
     "ארבע ספרות אחרונות",
@@ -576,7 +576,7 @@ def features_for_opp(opp: dict, data: dict) -> dict:
 
     # NEW v3 (2026-04-29): conversation_won_signal — derived from transcript content.
     # Replaces opportunity.status as the primary outcome label, since 96.6% of
-    # Libra ClosedLost transitions are written by Excel-driven Sync Routine
+    # Insurance ClosedLost transitions are written by Excel-driven Sync Routine
     # (arq_impl/sync_routine_task.py) and reflect policy-lifecycle state, not
     # conversation outcome.
 
@@ -683,7 +683,7 @@ def main():
     log.info("Opening prod connection")
     conn = open_prod_conn()
 
-    log.info("Sampling %d Libra ClosedLost opps", SAMPLE_SIZE)
+    log.info("Sampling %d Insurance ClosedLost opps", SAMPLE_SIZE)
     opps = sample_opps(conn)
     log.info("Sampled %d opps", len(opps))
 

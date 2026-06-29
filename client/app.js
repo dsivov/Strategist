@@ -1,4 +1,4 @@
-// Luna Sales Strategist POC — frontend controller
+// Sales Strategist Benchmark POC — frontend controller
 // (placeholder for v0 — fuller WS event handling lands when replayers are built)
 
 const $ = (sel) => document.querySelector(sel);
@@ -8,8 +8,11 @@ const state = {
   stressOnly: false,
   selected: null,
   speed: '5x',
-  engine: 'strategist',  // R-side engine: 'strategist' | 'planner'
-  tenantFilter: 'all',  // 'all' | 'Libra' | 'Heavys'
+  // Pluggable engines — loaded from /api/engines at boot; no hardcoded list.
+  engines: { left: 'baseline', right: 'strategist' },  // per-panel engine id
+  engineParams: { left: {}, right: {} },               // per-panel param values
+  engineSpecs: [],                                      // [{id,name,description,runnable,requires,params}]
+  tenantFilter: 'all',  // 'all' | 'Insurance' | 'Ecommerce'
   ws: null,
   sessionId: null,
   charts: { left: null, right: null },
@@ -25,6 +28,7 @@ const state = {
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 async function init() {
   await loadScenarios();
+  await initEngines();
   initSpeedControls();
   initTenantFilter();
   initModeTabs();
@@ -375,17 +379,106 @@ function initSpeedControls() {
 }
 
 function initButtons() {
-  document.querySelectorAll('.engine-btn').forEach((b) => {
-    b.addEventListener('click', () => {
-      state.engine = b.dataset.engine;
-      document.querySelectorAll('.engine-btn').forEach(
-        (x) => x.classList.toggle('active', x === b));
-    });
-  });
-
+  // Engine selectors are wired in initEngines() (dynamic, registry-driven).
   $('#runBtn').addEventListener('click', runScenario);
   $('#stopBtn').addEventListener('click', stopSession);
   $('#resetBtn').addEventListener('click', resetUI);
+}
+
+// ── Pluggable engines — populate L/R selectors from /api/engines ──────────────
+async function initEngines() {
+  let specs = [];
+  try {
+    const r = await fetch('/api/engines');
+    const data = await r.json();
+    specs = data.engines || [];
+  } catch (e) {
+    console.warn('failed to load /api/engines; engine selectors stay empty', e);
+  }
+  state.engineSpecs = specs;
+  if (!specs.length) return;
+  const byId = Object.fromEntries(specs.map((s) => [s.id, s]));
+  // Fall back gracefully if the configured default isn't registered.
+  if (!byId[state.engines.left]) state.engines.left = (byId.baseline ? 'baseline' : specs[0].id);
+  if (!byId[state.engines.right]) state.engines.right = (byId.strategist ? 'strategist' : specs[specs.length - 1].id);
+
+  ['left', 'right'].forEach((side) => {
+    const sel = document.getElementById(side === 'left' ? 'engineSelectLeft' : 'engineSelectRight');
+    if (!sel) return;
+    sel.innerHTML = '';
+    specs.forEach((s) => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      opt.title = (s.description || '') +
+        (s.requires && s.requires.length ? `\nRequires: ${s.requires.join(', ')}` : '');
+      sel.appendChild(opt);
+    });
+    sel.value = state.engines[side];
+    sel.addEventListener('change', () => {
+      state.engines[side] = sel.value;
+      state.engineParams[side] = {};
+      renderEngineParams(side);
+      updatePanelTitles();
+    });
+    renderEngineParams(side);
+  });
+  updatePanelTitles();
+}
+
+function renderEngineParams(side) {
+  const host = document.getElementById(side === 'left' ? 'engineParamsLeft' : 'engineParamsRight');
+  if (!host) return;
+  host.innerHTML = '';
+  const spec = state.engineSpecs.find((s) => s.id === state.engines[side]);
+  if (!spec || !spec.params || !spec.params.length) return;
+  spec.params.forEach((p) => {
+    if (state.engineParams[side][p.name] === undefined) {
+      state.engineParams[side][p.name] = p.default;
+    }
+    const wrap = document.createElement('label');
+    wrap.className = 'engine-param';
+    wrap.title = p.help || '';
+    if (p.type === 'bool') {
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!state.engineParams[side][p.name];
+      cb.addEventListener('change', () => { state.engineParams[side][p.name] = cb.checked; });
+      wrap.appendChild(cb);
+      wrap.appendChild(document.createTextNode(' ' + p.label));
+    } else if (p.type === 'enum') {
+      wrap.appendChild(document.createTextNode(p.label + ' '));
+      const psel = document.createElement('select');
+      (p.choices || []).forEach((c) => {
+        const o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        psel.appendChild(o);
+      });
+      psel.value = state.engineParams[side][p.name];
+      psel.addEventListener('change', () => { state.engineParams[side][p.name] = psel.value; });
+      wrap.appendChild(psel);
+    } else {
+      wrap.appendChild(document.createTextNode(p.label + ' '));
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = state.engineParams[side][p.name] ?? '';
+      inp.addEventListener('input', () => { state.engineParams[side][p.name] = inp.value; });
+      wrap.appendChild(inp);
+    }
+    host.appendChild(wrap);
+  });
+}
+
+function engineName(id) {
+  const s = state.engineSpecs.find((x) => x.id === id);
+  return s ? s.name : id;
+}
+
+function updatePanelTitles() {
+  const lt = document.getElementById('leftPanelTitle');
+  const rt = document.getElementById('rightPanelTitle');
+  if (lt) lt.textContent = engineName(state.engines.left);
+  if (rt) rt.textContent = engineName(state.engines.right);
 }
 
 let sessionTimerInterval = null;
@@ -437,7 +530,10 @@ async function runScenario() {
     body: JSON.stringify({
       hard_customer: hardCustomer,
       seed_end_override: seedEndOverride,  // 0 = auto (peak-engagement detector)
-      engine: state.engine,                // 'strategist' | 'planner'
+      engine: state.engines.right,         // R-side engine id (registry)
+      engine_left: state.engines.left,     // L-side engine id (registry)
+      engine_params: state.engineParams.right,
+      engine_params_left: state.engineParams.left,
     }),
   });
   const { session_id } = await r.json();
@@ -548,7 +644,7 @@ function resetWinProximity() {
     const el = $(sel);
     if (!el) return;
     el.classList.remove('won', 'partial', 'low');
-    el.innerHTML = `<div class="prox-side-label">${i === 0 ? 'Original Luna' : 'Supervised'}</div>`;
+    el.innerHTML = `<div class="prox-side-label">${i === 0 ? engineName(state.engines.left) : engineName(state.engines.right)}</div>`;
   });
   const deltaEl = $('#proximityDelta');
   if (deltaEl) {
@@ -681,7 +777,7 @@ function handleEvent(ev) {
         }
         $('#tierPrecedents').title = lines.join('\n');
       }
-      // Render the LUNA_INTEGRATION_GUIDE scenario chips and seed any already-fired
+      // Render the INTEGRATION scenario chips and seed any already-fired
       if (Array.isArray(ev.guide_scenarios)) {
         state.guideScenarios = ev.guide_scenarios;
         state.demonstratedScenarios = new Set(ev.scenarios_demonstrated_initial || []);
@@ -933,7 +1029,7 @@ function insertPhaseDivider(side) {
   label.className = 'divider-label';
   label.textContent = side === 'right'
     ? '— Supervisor takes over here —'
-    : '— Original Luna takes over here —';
+    : '— Original agent takes over here —';
   wrap.appendChild(label);
   chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
@@ -1001,8 +1097,8 @@ function addBubble(side, role, text, directive) {
     }
     tag2.appendChild(headerDiv);
 
-    // 7-bonus — Anchors hovercard chip (Libra: last-year price, market avg,
-    // max discount; Heavys: KG fields populated).
+    // 7-bonus — Anchors hovercard chip (Insurance: last-year price, market avg,
+    // max discount; Ecommerce: KG fields populated).
     const anchorsBrief = directive.anchors_brief;
     if (anchorsBrief && Object.keys(anchorsBrief).length > 0) {
       const aEl = document.createElement('div');
@@ -1016,8 +1112,8 @@ function addBubble(side, role, text, directive) {
         return `${k}: ${v}`;
       };
       const labelMap = {
-        last_year_price_nis: 'Last year', current_quoted_price_nis: 'Quote now',
-        market_avg_for_segment_nis: 'Market avg', max_discount_pct_internal: 'Max discount %',
+        last_year_price_usd: 'Last year', current_quoted_price_usd: 'Quote now',
+        market_avg_for_segment_usd: 'Market avg', max_discount_pct_internal: 'Max discount %',
         claimed_increase_pct: 'YoY claimed %', actual_market_yoy_change_pct: 'YoY actual %',
         loyalty_years: 'Loyalty (yrs)', synthetic: 'Synthetic',
         provenance: 'Source',
@@ -1178,7 +1274,7 @@ function showWonBadge() {
 // supervisor's structured directive next to the actual rendered text. Toggle
 // preference persists in localStorage. Updated on every right-panel agent
 // turn with the latest directive.
-const DS_KEY = 'luna_directive_sidebar_visible_v1';
+const DS_KEY = 'directive_sidebar_visible_v1';
 
 function isDirectiveSidebarVisible() {
   try { return localStorage.getItem(DS_KEY) === '1'; }
@@ -1456,7 +1552,7 @@ function bumpMoveHistogram(moveName) {
 
 // R20 — Lift counter persisted in localStorage. Tracks rolling supervisor
 // lift across this device's session history. Reset by clicking the chip.
-const LIFT_KEY = 'luna_lift_counter_v1';
+const LIFT_KEY = 'lift_counter_v1';
 
 function loadLiftCounter() {
   try {
@@ -1510,7 +1606,7 @@ function bumpLiftCounter(left_outcome, right_outcome) {
 // R15 — Rolling stats across last N sessions. Persists session records to
 // localStorage and renders a 4-card panel (win rate, persuasion delta, top
 // moves, end-reasons).
-const ROLLING_KEY = 'luna_rolling_sessions_v1';
+const ROLLING_KEY = 'rolling_sessions_v1';
 const ROLLING_CAP = 50;  // keep last 50 sessions
 
 function loadRolling() {

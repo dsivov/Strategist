@@ -1,22 +1,22 @@
-"""Luna actor wrapper — generates the next agent message.
+"""Agent actor wrapper — generates the next agent message.
 
 Same function signature for both POC panels:
   await generate(opp_meta, dialog_history, directive=None) -> str
 
-When `directive` is None: behaves as "Original Luna" (no supervisor).
-When `directive` is a Strategic Directive dict: behaves as supervisor-augmented Luna.
+When `directive` is None: behaves as "Original agent" (no supervisor).
+When `directive` is a Strategic Directive dict: behaves as supervisor-augmented Agent.
 
-Implementation: Gemini 2.5 Pro — the SAME model Luna prod uses for
+Implementation: Gemini 2.5 Pro — the SAME model the production system uses for
 `prompt_build_answer` (per `ai_prompt.llm_provider='gemini'` mapped to
 `_PRO_MODELS=['gemini-2.5-pro', 'gemini-3.1-pro-preview']` in
-`luna/new_core/gemini_chat.py`).
+`agent/new_core/gemini_chat.py`).
 
-Why Gemini, not Sonnet: Luna's production actor is more grounded — less likely
+Why Gemini, not Sonnet: the system's production actor is more grounded — less likely
 to invent specific prices/discounts that aren't in business rules. Matching the
-production model means the POC's left-panel "Original Luna" behaves like the
+production model means the POC's left-panel "Original agent" behaves like the
 real product.
 
-Full Luna prompt-chain (prompt_context → prompt_manager → prompt_build_answer)
+Full Agent prompt-chain (prompt_context → prompt_manager → prompt_build_answer)
 collapsed into single Gemini call for POC simplicity (documented in POC.md §7).
 """
 from __future__ import annotations
@@ -31,9 +31,11 @@ import anthropic
 from google import genai
 from google.genai import types as genai_types
 
+from domain import active_domain
+
 log = logging.getLogger(__name__)
 
-# Same model Luna prod uses for prompt_build_answer
+# Same model the production system uses for prompt_build_answer
 ACTOR_MODEL = "gemini-2.5-pro"
 # Anthropic fallback — used when Gemini returns 503 UNAVAILABLE or empty after
 # the 16384-budget retry. 2026-05-06 added because Gemini 2.5 Pro had a
@@ -48,8 +50,8 @@ _client = genai.Client(api_key=GEMINI_API_KEY)
 _anthropic = anthropic.AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 
-# Luna-style actor system prompt — adapted from ai_assistant/assistant.py
-ACTOR_SYSTEM_BASE = """You are Luna, an AI agent for {tenant}. You are messaging a real
+# Agent-style actor system prompt — adapted from ai_assistant/assistant.py
+ACTOR_SYSTEM_BASE = """You are the sales agent, an AI agent for {tenant}. You are messaging a real
 customer over WhatsApp. Your job is to convert the customer to a sale (renewal,
 purchase, or whichever conversion makes sense for this tenant).
 
@@ -73,14 +75,14 @@ purchase, or whichever conversion makes sense for this tenant).
   Lists, multi-paragraph offers, and stacked value props are FORBIDDEN.
 
 # Real won-conversation style examples (match this length and rhythm)
-- "Together it's 4,816 NIS."  (4 words)
+- "Together it's 4,816 USD."  (4 words)
 - "It's regular, the call center's phone."  (6 words)
 - "An attempt of theft is not hit and run, but let's try help with the price."  (16 words)
 - "Okay, I'll check this. If I match the price, can we move forward and renew?"  (15 words)
 - "Hi, how are you? Can I renew the insurance? Happy to help 🙏"  (12 words)
 NEVER write a 4-paragraph reply. NEVER recite multiple facts in one message.
 Acknowledge briefly + ask ONE thing OR offer ONE thing. That's the pattern.
-- Don't be obviously AI. Sign as a normal agent (e.g., "Nofar from Libra" if a name fits).
+- Don't be obviously AI. Sign as a normal agent (e.g., "Nofar from Insurance" if a name fits).
 - IF the customer has clearly disengaged or said goodbye, your reply should be
   a brief warm closing only ("All the best, take care!") — do NOT keep pitching.
 
@@ -151,50 +153,25 @@ def _format_must_say(items: list) -> str:
 def _trim_business_rules(rules: str, max_chars: int = 6000) -> str:
     """Pull the most relevant subset of business rules for the actor.
     For POC: take first N chars (which contain the highest-priority rules in
-    Luna's actual file ordering)."""
+    the system's actual file ordering)."""
     if not rules:
         return "(no business rules loaded)"
     return rules[:max_chars] + ("\n…[truncated]" if len(rules) > max_chars else "")
 
 
 def _domain_desc(tenant: str) -> str:
-    return {
-        "Libra": "B2C auto insurance renewal in Israel; conversion = customer agrees to renew + provides CC last-4 digits",
-        "Heavys": "B2C e-commerce (premium headphones); conversion = customer completes the order via the cart link",
-        "HoneyBook": "B2B SaaS subscription (creative-business platform); conversion = trial-to-paid plan",
-        "Cleandot": "B2C e-commerce (cleaning products); conversion = customer completes the order",
-        "Panda": "B2C e-commerce (mattresses); conversion = customer completes the order",
-    }.get(tenant, "B2C messaging")
+    # Domain-specific business/conversion text now comes from the active domain
+    # pack (poc/domain.py) instead of being inlined here. Output is unchanged
+    # for the sales reference domain (pinned by the characterization tests).
+    return active_domain().describe_tenant(tenant)
 
 
 def _opp_type_behavioral_note(opp_type: str) -> str:
     """T-82 — opp-type-aware behavioral guidance for the agent. Mirrors the
-    coherence-rules added to the customer simulator on 2026-05-01 so BOTH
-    sides of the negotiation share the same framing of the opportunity
-    state. Empirically the agent's text was inferring opp_type from dialog
-    only; explicit declaration grounds it more reliably."""
-    t = (opp_type or "").lower()
-    if "renewal" in t or "renew" in t:
-        return ("\n  → Customer is an EXISTING customer at renewal. They have a "
-                "prior relationship, prior premium, and likely competitor quotes. "
-                "Match their reference frame; don't pitch as if this is a cold sale.")
-    if any(k in t for k in ("abandoned cart", "cart abandon", "abandon cart")):
-        return ("\n  → Customer added a product to cart and walked away. They had "
-                "buy intent. Address what changed since cart-add (price hesitation, "
-                "second thoughts, distraction); don't re-pitch the product from scratch.")
-    if "upsell" in t or "cross" in t or "expansion" in t:
-        return ("\n  → Customer already has a base product; this is an upgrade "
-                "conversation. Anchor on their current setup; surface incremental value.")
-    if "trial" in t:
-        return ("\n  → Customer is mid-trial → paid conversion. Lean on their "
-                "actual experience with the trial; don't over-explain features.")
-    if "purchasing assistance" in t or "search_catalog" in t or "browse" in t:
-        return ("\n  → Customer reached out for help selecting. Probe intent "
-                "(buy-ready vs browsing) before pushing a specific product.")
-    if "review" in t:
-        return ("\n  → Post-purchase review request, not a sales conversation. "
-                "Don't pitch; gather feedback.")
-    return ""
+    coherence-rules in the customer simulator so BOTH sides of the negotiation
+    share the same framing of the opportunity state. The per-opp-type text is
+    supplied by the active domain pack."""
+    return active_domain().opp_type_note(opp_type)
 
 
 # 2026-05-05 — Post-generation length enforcement. Gemini 2.5 Pro requires
@@ -247,7 +224,7 @@ def _is_preamble(sentence: str) -> bool:
 # budget is tight, substance-bearing sentences are preserved before
 # abstract meta-questions.
 _SUBSTANCE_PATTERNS = [
-    r"\b\d{2,5}\s*(?:NIS|nis|₪|shekels?|USD|dollars?|\$)\b",  # price
+    r"\b\d{2,5}\s*(?:USD|usd|$|dollars?|USD|dollars?|\$)\b",  # price
     r"\$\s?\d{1,4}\b",                                         # dollar amount
     r"\b\d{1,3}\s*%",                                          # percentage
     r"\bcode\s*[:]?\s*[A-Z][A-Z0-9]{3,}\b",                    # promo code
@@ -272,7 +249,7 @@ def _enforce_length(text: str) -> tuple[str, bool]:
     """Truncate text to ≤LENGTH_CAP_WORDS preserving GRAMMATICAL boundaries
     AND, when possible, the LAST sentence (typically the close question or
     CTA — the substance most worth keeping). Returns (text, was_truncated).
-    Real won-conversation Libra agents: median=12, p90=37 words; cap at 35.
+    Real won-conversation Insurance agents: median=12, p90=37 words; cap at 35.
 
     Strategy:
       1) If full text fits, no change.
@@ -385,25 +362,10 @@ def build_actor_system(opp_meta: dict, business_rules: str) -> str:
 
 
 def _build_anchor_section(anchors: dict) -> str:
-    lines = ["", "# Customer's economic reference frame (use this — don't fabricate market claims)"]
-    if anchors.get("last_year_price_nis"):
-        lines.append(f"- Last year's premium: {anchors['last_year_price_nis']} NIS")
-    if anchors.get("current_quoted_price_nis"):
-        lines.append(f"- Current quoted price: {anchors['current_quoted_price_nis']} NIS")
-    if anchors.get("actual_market_yoy_change_pct") is not None:
-        lines.append(f"- ACTUAL market YoY change in our prod data: {anchors['actual_market_yoy_change_pct']:+.1f}% (NOT a 48% hike — do not fabricate)")
-    if anchors.get("market_avg_for_segment_nis"):
-        lines.append(f"- Market avg for this customer's vehicle segment: {anchors['market_avg_for_segment_nis']} NIS")
-    if anchors.get("max_discount_pct_internal") is not None:
-        lines.append(f"- Max internal discretionary discount: {anchors['max_discount_pct_internal']}%")
-    if anchors.get("loyalty_years"):
-        lines.append(f"- Customer loyalty: {anchors['loyalty_years']} years")
-    lines.append("")
-    lines.append("# Anti-staircase rule")
-    lines.append("- Once you have stated a price within 5% of market_avg or below a competitor offer the customer mentioned, HOLD that price. Do not drop again — multiple price drops damage trust.")
-    lines.append("- If customer continues to push, address objections via coverage value, deductibles, or relationship — not further discounts.")
-    lines.append("")
-    return "\n".join(lines)
+    # The economic-reference-frame block is domain-specific (currency, pricing
+    # vocabulary, anti-staircase rule) and is rendered by the active domain
+    # pack. Sales-domain output is unchanged (pinned by characterization tests).
+    return active_domain().render_anchor_section(anchors or {})
 
 
 def build_directive_section(directive: dict) -> str:
@@ -447,7 +409,7 @@ async def generate(opp_meta: dict, dialog_history: list[dict],
                    system_suffix: str | None = None,
                    cohort_precedent_block: str | None = None,
                    ) -> tuple[str, dict]:
-    """Generate the next agent message via Gemini 2.5 Pro (Luna prod actor).
+    """Generate the next agent message via Gemini 2.5 Pro (the production system actor).
 
     Returns:
       (text, meta) where meta = {input_tokens, output_tokens, latency_ms,
@@ -460,7 +422,7 @@ async def generate(opp_meta: dict, dialog_history: list[dict],
 
     # R33 (2026-05-06) — Manager-escalation framing.
     # ORIGINAL wiring went through chain_executor.build_context_blocks, but that
-    # path only fires on Mode 1b (fresh LLM directive). Most Libra c5 turns hit
+    # path only fires on Mode 1b (fresh LLM directive). Most Insurance c5 turns hit
     # Mode 1a (cached directives) where the chain skips the LLM call, so R33
     # never activated. Re-wired here at the actor LLM call so it fires on every
     # turn that reaches the actor — gated on `directive is not None` to keep
@@ -471,17 +433,17 @@ async def generate(opp_meta: dict, dialog_history: list[dict],
             from staircase_gate import (
                 should_inject_escalation_framing,
                 render_escalation_framing_block,
-                extract_libra_offered_prices,
+                extract_insurance_offered_prices,
             )
             # Synthesize panel_concessions from dialog_history's agent-side
             # prices. The chain_runner's tracked panel_concessions isn't
-            # threaded down to luna_actor — and we don't need it perfectly
+            # threaded down to actor — and we don't need it perfectly
             # accurate, just enough to detect "has the agent quoted before?"
             shadow_concessions = []
             for m in (dialog_history or []):
                 if m.get("role") != "agent":
                     continue
-                for p in extract_libra_offered_prices(m.get("text") or ""):
+                for p in extract_insurance_offered_prices(m.get("text") or ""):
                     shadow_concessions.append({"type": "price", "amount": p})
             esc_active, esc_meta = should_inject_escalation_framing(
                 dialog=dialog_history,
@@ -701,7 +663,7 @@ if __name__ == "__main__":
 
     async def smoke():
         opp_meta = {
-            "company": "Libra",
+            "company": "Insurance",
             "primary_motivator": "Price/savings",
             "decision_logic": "Analytical",
             "trust_level": "Skeptical",
@@ -709,7 +671,7 @@ if __name__ == "__main__":
             "objection_pattern": "Comparing competitor prices",
         }
         dialog = [
-            {"role": "agent", "text": "Hey, this is Nofar from Libra. Your auto insurance renewal: comprehensive 2,818 NIS + mandatory 1,420 NIS.",
+            {"role": "agent", "text": "Hey, this is Nofar from Insurance. Your auto insurance renewal: comprehensive 2,818 USD + mandatory 1,420 USD.",
              "sequence_number": 0},
             {"role": "customer", "text": "Other insurer offered me 3,500 total, comprehensive only.",
              "sequence_number": 1},

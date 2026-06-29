@@ -1,4 +1,4 @@
-"""POC sandbox replication of production Luna's prompt-chain runner.
+"""POC sandbox replication of production the system's prompt-chain runner.
 
 T-85 (Phase A of the playbook-compilation integration proposal,
 2026-05-02-PROPOSAL-supervisor-via-playbook-compilation.md).
@@ -57,13 +57,13 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class ChainStage:
-    """Mirrors a row from luna.ai_agent_prompt joined with luna.ai_prompt."""
+    """Mirrors a row from ai_agent_prompt joined with ai_prompt."""
     chain_type: str         # 'preprocessing' | 'processing' | 'postprocessing'
     execution_order: int
     prompt_name: str
     prompt_id: int | None   # T-86 fix: tenant-specific prompt_id from join.
                               # Multiple tenants have rows with the same
-                              # prompt_name in luna.ai_prompt, so resolving
+                              # prompt_name in ai_prompt, so resolving
                               # by name picks the wrong one. The agent_prompt
                               # join carries the correct prompt_id.
     llm_provider: str       # 'gemini' | 'gemini_light' | 'gemini-flash' | etc.
@@ -135,7 +135,7 @@ def fetch_chain_definition(company: str, opp_type: str,
             # Find the matching agent
             cur.execute("""
                 SELECT a.agent_id, a.agent_name
-                FROM luna.ai_agent a
+                FROM ai_agent a
                 WHERE a.is_enabled = 1
                   AND a.is_followup = %s
                   AND a.is_template_rephrase = %s
@@ -162,8 +162,8 @@ def fetch_chain_definition(company: str, opp_type: str,
                        aap.exit_fn, aap.transform_fn, aap.response_format,
                        aap.prompt_role, aap.flash_on_stages,
                        aap.prompt_id, p.prompt_name, p.llm_provider
-                FROM luna.ai_agent_prompt aap
-                JOIN luna.ai_prompt p ON aap.prompt_id = p.prompt_id
+                FROM ai_agent_prompt aap
+                JOIN ai_prompt p ON aap.prompt_id = p.prompt_id
                 WHERE aap.agent_id = %s
                   AND aap.execution_excluded = 0
                 ORDER BY
@@ -209,9 +209,9 @@ def splice_supervisor_stages(stages: list[ChainStage]) -> list[ChainStage]:
     """T-85: insert our supervisor stages into the chain at agreed positions,
     with fallback positioning for agents that don't have the preferred anchor
     stages. Different production agents have different stage compositions:
-    - LibraCarRenewalAssistantV3 has prompt_price_tracker, prompt_validate_gate
-    - HeavysDemoAssistant has neither (simpler 6-stage chain)
-    - HoneybookAssistant variants have yet another composition
+    - InsuranceCarRenewalAssistantV3 has prompt_price_tracker, prompt_validate_gate
+    - EcommerceDemoAssistant has neither (simpler 6-stage chain)
+    - SaaSAssistant variants have yet another composition
 
     Splice rules (in order; first match wins per supervisor stage):
       anchor_load: after prompt_price_tracker, else end of preprocessing

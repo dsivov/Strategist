@@ -43,6 +43,7 @@ from customer_simulator import (
     detect_agent_refusal,
     detect_agent_graceful_close,
 )
+from domain import active_domain
 
 # canonical scenario set
 _DATA = Path(os.environ.get("POC_DATA_ROOT",
@@ -63,16 +64,26 @@ _DEFERRAL_RE = re.compile(
 
 # ── Loading scenarios ──────────────────────────────────────────────────────
 
-def load_scenarios(path: str | Path | None = None) -> list[dict]:
-    """Load the bundled 112-scenario benchmark set (or any compatible file).
+def load_scenarios(path: str | Path | None = None,
+                   source: Any = None) -> list[dict]:
+    """Load the benchmark scenario set.
+
+    Resolution order:
+      - explicit `source` (any ScenarioSource) → source.load_scenarios()
+      - explicit `path` → read that JSON file directly (legacy behavior)
+      - otherwise → the active scenario source (bundled JSON by default; swap
+        it with `poc.set_scenario_source(...)`)
 
     Returns a list of dicts; see README §"Scenario schema" for the shape.
     """
-    p = Path(path) if path else _DEFAULT_SCENARIOS
-    raw = json.loads(p.read_text())
-    return raw if isinstance(raw, list) else (
-        raw.get("scenarios") or raw.get("rows") or []
-    )
+    if source is not None:
+        return source.load_scenarios()
+    if path is not None:
+        raw = json.loads(Path(path).read_text())
+        return raw if isinstance(raw, list) else (
+            raw.get("scenarios") or raw.get("rows") or [])
+    from scenario_source import get_scenario_source  # flat: single shared instance
+    return get_scenario_source().load_scenarios()
 
 
 # ── Benchmark ──────────────────────────────────────────────────────────────
@@ -90,6 +101,31 @@ class Benchmark:
         self.results_dir = Path(results_dir)
         self.max_turns   = max_turns
         self.results_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── registry-driven runner ──────────────────────────────────────────
+
+    async def run_engine(
+        self,
+        engine_id: str,
+        scenarios: list[dict] | None = None,
+        on_scenario_done: Any = None,
+        arm_name: str | None = None,
+        **engine_params,
+    ) -> list[dict]:
+        """Run a registered engine by id — the pluggable entry point.
+
+        Resolves `engine_id` through `poc.registry`, instantiates it with the
+        given params (validated against the engine's ParamSpecs / defaults),
+        and runs it. `arm_name` defaults to `engine_id` so results land under
+        `{results_dir}/{engine_id}/`.
+
+            results = await bench.run_engine("planner", planner_envelope="auto")
+        """
+        from registry import create  # flat import: single shared registry instance
+        engine = create(engine_id, **engine_params)
+        return await self.run_arm(arm_name or engine_id, engine,
+                                  scenarios=scenarios,
+                                  on_scenario_done=on_scenario_done)
 
     # ── per-arm runner ──────────────────────────────────────────────────
 
@@ -250,13 +286,17 @@ class Benchmark:
 
     @staticmethod
     def _check_customer_outcome(cust_text: str) -> str | None:
+        # Win/decline criteria are domain-specific and come from the active
+        # domain pack (poc/domain.py). The sales pack delegates to the same
+        # calibrated detectors, so behavior is unchanged for the reference set.
         if not cust_text:
             return None
         if _DEFERRAL_RE.search(cust_text):
             return None
-        if detect_close_signal(cust_text) or _EXPLICIT_PAYMENT_REGEX.search(cust_text):
+        dom = active_domain()
+        if dom.detect_close(cust_text) or _EXPLICIT_PAYMENT_REGEX.search(cust_text):
             return "won"
-        if detect_decline(cust_text):
+        if dom.detect_decline(cust_text):
             return "lost"
         return None
 

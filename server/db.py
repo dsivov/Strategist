@@ -1,6 +1,6 @@
 """JSON-backed db shim for the standalone POC server.
 
-The upstream `db.py` (in `poc/db.py`) talks to Luna production MySQL. This
+The upstream `db.py` (in `poc/db.py`) talks to the production system MySQL. This
 shim provides the SAME public API but serves data from the bundled
 `data/benchmark/v1_scenarios.json` file, so the server can run without
 prod credentials.
@@ -17,7 +17,7 @@ Public API mirrored 1:1:
   fetch_turn_states(conn, opp_id) -> list[dict]
   fetch_persuasive_scores(conn, opp_id) -> dict[str, dict]
   fetch_business_rules(conn, company) -> str
-  fetch_libra_anchors(conn, opp_id, opp_meta=None) -> dict
+  fetch_insurance_anchors(conn, opp_id, opp_meta=None) -> dict
   find_failure_mode_turn_index(messages) -> int | None
   find_supervisor_intervention_index(messages, turn_states, persuasive) -> int | None
 """
@@ -44,7 +44,7 @@ if os.environ.get("POC_USE_MYSQL") == "1":
         fetch_turn_states,
         fetch_persuasive_scores,
         fetch_business_rules,
-        fetch_libra_anchors,
+        fetch_insurance_anchors,
         find_failure_mode_turn_index,
         find_supervisor_intervention_index,
     )
@@ -149,7 +149,7 @@ else:
         a prod-connected deployment."""
         return ""
 
-    def fetch_libra_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict:
+    def fetch_insurance_anchors(conn, opp_id: str, opp_meta: dict | None = None) -> dict:
         """The anchor pack is embedded in v1_scenarios.json. If opp_meta was
         passed we use what's already there; otherwise look it up."""
         if opp_meta and (opp_meta.get("anchors") or opp_meta.get("_anchors")):

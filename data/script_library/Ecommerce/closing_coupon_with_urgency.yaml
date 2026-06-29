@@ -9,7 +9,7 @@ description: |
   acknowledged the engineering claim). Time to deliver the discount code WITH
   context, urgency, and a direct link.
 
-  Empirical Heavys c3 winning patterns at this stage are short, energetic,
+  Empirical Ecommerce c3 winning patterns at this stage are short, energetic,
   with a specific code + dollar amount + tight time window + direct link.
 
   Anti-pattern (empirically -0.75 lift, n=7): delivering a discount code with
@@ -17,7 +17,7 @@ description: |
   the customer perceives this as boilerplate and disengages.
 
 applies_when:
-  tenant: Heavys
+  tenant: Ecommerce
   conversation:
     commitment_level_min: 3
     customer_signals: [stated_use_case, accepts_proxy, ready_for_coupon]
@@ -105,7 +105,7 @@ metadata:
   last_modified: 2026-05-11
   version: 1.0
   empirical_basis: |
-    Mined from 233 Heavys c3 won-deal conversations. Winning patterns:
+    Mined from 233 Ecommerce c3 won-deal conversations. Winning patterns:
       - Reciprocity "code + $X off + valid for {N hours} + link + 'what do you say?'"
         (n=4, Δcommit=+1.00)
       - Reciprocity "code + $X off + use-case anchor + link"
