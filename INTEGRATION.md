@@ -1,6 +1,6 @@
-# Integration guide — plugging the PI stack into the POC benchmark
+# Integration guide — plugging the example stack into the POC benchmark
 
-A step-by-step walkthrough for the PI team. Goes from a green smoke test to
+A step-by-step walkthrough for the example integration team. Goes from a green smoke test to
 a 112-scenario paired benchmark against the Baseline arm. Estimated time to
 first real result: 1–2 hours of focused work.
 
@@ -28,20 +28,20 @@ in `.env` (some modules read env at import time) or a Python version below
 
 ---
 
-## Step 1 — Write the PI adapter
+## Step 1 — Write the example adapter
 
-Copy `examples/pi_engine_template.py` to `pi_adapter.py` (or wherever you
+Copy `examples/example_engine_template.py` to `example_adapter.py` (or wherever you
 keep your code) and fill in `produce()`:
 
 ```python
-class PIEngine:
+class ExampleEngine:
     def __init__(self, **config):
         # Stash whatever connection info / clients / models you need.
         self.config = config
 
     async def produce(self, opp_meta, dialog_history, business_rules=""):
         # ── call your stack however you do today ─────────
-        result = await self.pi.predict_and_render(
+        result = await self.engine.predict_and_render(
             opp_meta, dialog_history, business_rules,
         )
         return result.text, {
@@ -82,7 +82,7 @@ markers, anything.
 
 **`dialog_history` (list[dict])** — `[{"role": "agent"|"customer", "text": str}]`,
 ordered chronologically. The most recent customer message is the one your
-engine should respond to. (When PI doesn't have a customer message to respond
+engine should respond to. (When the example engine doesn't have a customer message to respond
 to — first turn, or two agent turns in a row — you can still emit; the
 benchmark treats whatever you produce as the agent's move.)
 
@@ -105,19 +105,19 @@ the standalone package doesn't wire up). Treat as optional context.
 
 ---
 
-## Step 2 — Run a 3-scenario smoke against the PI adapter
+## Step 2 — Run a 3-scenario smoke against the example adapter
 
 ```python
 import asyncio
 from poc import Benchmark, load_scenarios
-from pi_adapter import PIEngine
+from example_adapter import ExampleEngine
 
 async def smoke():
     scenarios = load_scenarios()[:3]            # 3 scenarios, ~5 min
-    bench = Benchmark(scenarios, results_dir="./pi_smoke")
+    bench = Benchmark(scenarios, results_dir="./example_smoke")
     results = await bench.run_arm(
-        "pi",
-        PIEngine(api_url="http://localhost:8080"),
+        "example",
+        ExampleEngine(api_url="http://localhost:8080"),
         on_scenario_done=lambda r: print(
             f"  {r['scenario_id']:18} -> {r['outcome']:4} "
             f"({r['end_reason']}, {r['n_live_turns']}t, {r['elapsed_s']}s)"
@@ -129,7 +129,7 @@ asyncio.run(smoke())
 ```
 
 Expect: 3 scenarios complete without errors, output JSONs land in
-`./pi_smoke/pi/`. If any turn throws, the error is captured in
+`./example_smoke/example/`. If any turn throws, the error is captured in
 `agent_meta.error` for that turn rather than crashing the run — check the
 output JSONs for the trace.
 
@@ -140,16 +140,16 @@ output JSONs for the trace.
 ```python
 from poc import Benchmark, BaselineEngine, load_scenarios
 from poc.benchmark import paired_summary
-from pi_adapter import PIEngine
+from example_adapter import ExampleEngine
 
 async def run_full():
     scenarios = load_scenarios()                # all 112
     bench = Benchmark(scenarios, results_dir="./results")
 
     baseline = await bench.run_arm("baseline", BaselineEngine())
-    pi_arm   = await bench.run_arm("pi",       PIEngine(...))
+    example_arm   = await bench.run_arm("example",       ExampleEngine(...))
 
-    summary = paired_summary({"baseline": baseline, "pi": pi_arm})
+    summary = paired_summary({"baseline": baseline, "example": example_arm})
     print(summary)
 
 asyncio.run(run_full())
@@ -158,8 +158,8 @@ asyncio.run(run_full())
 The runs are resumable — re-running skips already-complete `(arm, scenario)`
 JSONs. Crash recovery is just "re-run the script."
 
-Estimated wall time: ~2.5 h Baseline + however long PI takes per turn × 112
-scenarios × ~6 turns avg. PI at 35 ms/turn ≈ negligible.
+Estimated wall time: ~2.5 h Baseline + however long the example engine takes per turn × 112
+scenarios × ~6 turns avg. the example engine at 35 ms/turn ≈ negligible.
 
 ---
 
@@ -173,7 +173,7 @@ planner = await bench.run_arm("planner_gates", PlannerEngine())
 summary = paired_summary({
     "baseline":      baseline,
     "planner_gates": planner,
-    "pi":            pi_arm,
+    "example":            example_arm,
 })
 ```
 
@@ -192,11 +192,11 @@ things to slice:
 import json, glob
 from collections import Counter
 
-results = [json.loads(open(f).read()) for f in glob.glob("results/pi/*.json")]
+results = [json.loads(open(f).read()) for f in glob.glob("results/example/*.json")]
 
 # Win rate
 won = sum(r["outcome"] == "won" for r in results)
-print(f"PI win rate: {won}/{len(results)} = {won/len(results):.0%}")
+print(f"Example win rate: {won}/{len(results)} = {won/len(results):.0%}")
 
 # End-reason distribution
 print(Counter(r["end_reason"] for r in results))
@@ -228,15 +228,15 @@ print(f"avg hint_confidence — lost: {avg_meta(lost_rows, 'hint_confidence'):.2
 
 ## Common integration gotchas
 
-**1. PI thinks it should produce a strategy but the dialog ended already.**
+**1. the example engine thinks it should produce a strategy but the dialog ended already.**
 The benchmark stops a scenario when the customer's reply signals close or
 explicit decline (see `benchmark._check_customer_outcome`). Your engine
 doesn't need to detect "we're done" — just produce normally; the runner
 handles termination.
 
-**2. PI wants per-customer history across scenarios.**
+**2. the example engine wants per-customer history across scenarios.**
 Each scenario is an independent customer; no cross-scenario memory in the
-benchmark. If you want to test PI's per-customer novelty filter, you'd need
+benchmark. If you want to test the example engine's per-customer novelty filter, you'd need
 to wrap the benchmark in a multi-conversation driver — out of scope here.
 
 **3. Latency budget for the simulator.**
@@ -258,21 +258,21 @@ want fully deterministic runs, set your LLM temperature to 0.
 
 ## Step 5 — (optional) Register the engine so it shows up everywhere
 
-The adapter above runs headlessly via `Benchmark(...).run_arm("pi", PIEngine())`.
-To also drive it by id (`run_engine("pi")`) and have it appear in the live
+The adapter above runs headlessly via `Benchmark(...).run_arm("example", ExampleEngine())`.
+To also drive it by id (`run_engine("example")`) and have it appear in the live
 dual-panel UI's engine selectors automatically, register an `EngineSpec`:
 
 ```python
 from poc import register_engine, EngineSpec, ParamSpec
-from pi_adapter import PIEngine
+from example_adapter import ExampleEngine
 
 register_engine(EngineSpec(
-    id="pi",
-    name="PI stack",
-    description="Persuasion Intelligence engine via the PI adapter.",
+    id="example",
+    name="Example stack",
+    description="Example engine via the example adapter.",
     runnable=True,
     params=(ParamSpec(name="api_url", label="API URL", type="string"),),
-    factory=lambda api_url=None: PIEngine(api_url=api_url),
+    factory=lambda api_url=None: ExampleEngine(api_url=api_url),
 ))
 ```
 
@@ -289,14 +289,14 @@ metadata.
 ## When you're done
 
 Send back:
-- The full per-scenario JSONs (or a tarball of `results/pi/`)
-- Your `pi_adapter.py` (so we can re-run on our side if needed)
+- The full per-scenario JSONs (or a tarball of `results/example/`)
+- Your `example_adapter.py` (so we can re-run on our side if needed)
 - A one-pager: what surprised you, what failed, which scenarios look most
   diagnostic
 
 We'll diff against our Baseline + Planner+Gates results from the same
 scenarios and write up the head-to-head against the cross-team comparison
-in `research-notes/2026-05-05-comparison-with-pi-team.md`.
+in `research-notes/2026-05-05-comparison-with-example-team.md`.
 
 ---
 
@@ -306,16 +306,16 @@ These are the merge-design questions that affect the benchmark's
 interpretation but aren't blockers for running it:
 
 1. **Confidence-gate threshold.** The merge architecture escalates to our
-   Tier 2 when PI's `hint_confidence < 0.6`. The benchmark records
+   Tier 2 when the example engine's `hint_confidence < 0.6`. The benchmark records
    `hint_confidence` in `meta` but doesn't act on it — you can test the
    escalation logic in a separate arm if useful.
-2. **Schema alignment** between PI's `(strategy, tone, observed_lift)` and
+2. **Schema alignment** between the example engine's `(strategy, tone, observed_lift)` and
    our concrete-move parameter blobs. Doesn't affect the per-turn run; it
    affects how we build the merged Tier-1+Tier-2 arm later.
 3. **Post-render gate parity.** If you want the same anti-staircase /
    premature-close guard the Planner arm has, you can wrap your reply in a
    call to `poc.post_render_gates.apply(...)` before returning. Optional.
-4. **Quality gate for training-data sharing.** If we want PI's training set
+4. **Quality gate for training-data sharing.** If we want the example engine's training set
    to absorb our directives later, we need a measured pass-rate criterion.
    The benchmark gives us the per-turn agreement / disagreement data needed
    to specify it.

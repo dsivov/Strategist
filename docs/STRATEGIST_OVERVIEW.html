@@ -419,7 +419,7 @@ b.hl{color:#cfe0ff}
   <h3>Connect it — three steps</h3>
   <div class="grid g3">
     <div class="card"><h3 style="margin-top:0;color:#9cc0ff">1 · Implement</h3>
-      <p class="small">Write a class with <span class="mono">produce()</span>. Wrap an HTTP service, a local model, gRPC — whatever your stack is. See <span class="mono">examples/pi_engine_template.py</span>.</p></div>
+      <p class="small">Write a class with <span class="mono">produce()</span>. Wrap an HTTP service, a local model, gRPC — whatever your stack is. See <span class="mono">examples/example_engine_template.py</span>.</p></div>
     <div class="card"><h3 style="margin-top:0;color:#9cc0ff">2 · Register</h3>
       <p class="small">Declare an <span class="mono">EngineSpec</span> (id, name, params, factory) — in-tree via <span class="mono">register_engine()</span>, or out-of-tree via a <span class="mono">strategist.engines</span> entry point.</p></div>
     <div class="card"><h3 style="margin-top:0;color:#9cc0ff">3 · Run / compare</h3>
@@ -992,7 +992,7 @@ client/ <span class="note"># static UI</span><br>
 examples/<br>
 &nbsp;├─ <span class="new">external_engine_plugin/</span> <span class="note"># ★ installable entry-point plugin (echo)</span><br>
 &nbsp;├─ <span class="new">custom_domain_pack.py</span> · <span class="new">run_pluggable_benchmark.py</span> <span class="note"># ★</span><br>
-&nbsp;└─ <span class="d">pi_engine_template.py</span> · <span class="d">run_benchmark.py</span><br>
+&nbsp;└─ <span class="d">example_engine_template.py</span> · <span class="d">run_benchmark.py</span><br>
 tests/ <span class="note"># 32 tests, no LLM calls</span><br>
 &nbsp;└─ <span class="new">test_characterization · test_registry · test_domain · test_scenario_source</span> <span class="note"># ★</span>
   </div>

@@ -2,7 +2,7 @@
 
 Public API:
     from poc import (
-        Engine,            # the protocol PI implements
+        Engine,            # the protocol the example engine implements
         BaselineEngine,    # single-call LLM (the "what you'd ship if you didn't think" arm)
         PlannerEngine,     # PCA-derived state-graph planner + post-render gates
         StrategistEngine,  # mining + retrieval + multi-stage supervisor (requires Agent KG access)
@@ -11,7 +11,7 @@ Public API:
         CustomerSimulator, # v2 reference-aware simulator
     )
 
-See README.md for installation, integration, and the example PI adapter.
+See README.md for installation, integration, and the example adapter.
 """
 from __future__ import annotations
 import os

@@ -4,7 +4,7 @@ Runs Baseline vs an alternative arm across N scenarios, writes per-scenario
 JSON to ./results/, prints a paired summary at the end.
 
 Defaults to the bundled Planner+gates as the "other" arm so you can run this
-out of the box. Replace `OTHER_ARM` with your PI engine for the head-to-head.
+out of the box. Replace `OTHER_ARM` with your example engine for the head-to-head.
 
 Usage:
     cd POC
@@ -28,7 +28,7 @@ from poc.benchmark import paired_summary
 
 # ── Configure the two arms ────────────────────────────────────────────────
 BASELINE_ARM = "baseline"
-OTHER_ARM    = "planner_gates"   # change to "pi" + PIEngine() for the real run
+OTHER_ARM    = "planner_gates"   # change to "example" + ExampleEngine() for the real run
 
 N_SCENARIOS  = int(os.environ.get("BENCHMARK_N", "10"))
 

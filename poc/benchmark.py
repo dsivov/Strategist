@@ -4,7 +4,7 @@ Public API:
     scenarios = load_scenarios()                  # the 112 bundled scenarios
     bench     = Benchmark(scenarios, max_turns=12)
     results   = await bench.run_arm("baseline", BaselineEngine())
-    results   = await bench.run_arm("pi",        PIEngine())
+    results   = await bench.run_arm("example",        ExampleEngine())
 
 Then aggregate paired (same scenario_id across arms) and analyze however you
 like. The bundled `examples/run_benchmark.py` shows a full 2-arm paired run.
@@ -139,7 +139,7 @@ class Benchmark:
         """Run `engine` on every scenario; return per-scenario result dicts.
 
         Args:
-          arm_name:         label written to results (e.g. "baseline", "pi").
+          arm_name:         label written to results (e.g. "baseline", "example").
           engine:           any object implementing the Engine protocol.
           scenarios:        subset to run (defaults to self.scenarios).
           on_scenario_done: optional callback(result_dict) for live progress.

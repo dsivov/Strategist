@@ -6,7 +6,7 @@ reference-aware customer simulator. Designed to be plugged into your own
 engine via a single Python `Engine` protocol and run head-to-head against the
 reference arms on a 112-scenario diversity-stratified benchmark.
 
-> Built for the **Persuasion Intelligence (PI) team** so PI can be benchmarked
+> Built for the **Example team** so the example engine can be benchmarked
 > against the Strategist/Planner work and the merged-system architecture can
 > be validated empirically.
 
@@ -66,7 +66,7 @@ by side.
 ```
 POC/
 ├── README.md                      ← this file
-├── INTEGRATION.md                 ← step-by-step PI adapter guide
+├── INTEGRATION.md                 ← step-by-step example adapter guide
 ├── requirements.txt
 ├── .env.example
 │
@@ -133,7 +133,7 @@ POC/
 │       └── Ecommerce/                (5 playbooks)
 │
 ├── examples/
-│   ├── pi_engine_template.py      ← starter shim for the PI adapter
+│   ├── example_engine_template.py      ← starter shim for the example adapter
 │   ├── run_benchmark.py           ← full 2-arm paired driver
 │   ├── run_pluggable_benchmark.py ← registry-driven A/B (run engines by id)
 │   ├── custom_domain_pack.py      ← add a new domain without core edits
@@ -192,7 +192,7 @@ but is fully functional only against the full precedent corpus + live KG.
 
 ---
 
-## The Engine protocol — what PI implements
+## The Engine protocol — what the example engine implements
 
 The benchmark calls one async method per agent turn. That's it.
 
@@ -201,8 +201,8 @@ from poc import Engine          # the Protocol
 from poc import BaselineEngine  # reference impl
 from poc import PlannerEngine   # reference impl
 
-class PIEngine:
-    """Your shim around the PI stack."""
+class ExampleEngine:
+    """Your shim around the example stack."""
 
     async def produce(
         self,
@@ -211,8 +211,8 @@ class PIEngine:
         business_rules:  str = "",
     ) -> tuple[str, dict]:
         # ── call your stack however you do today ─────────
-        result = await self.pi.predict(opp_meta, dialog_history)
-        text   = self.pi.render(result)
+        result = await self.engine.predict(opp_meta, dialog_history)
+        text   = self.engine.render(result)
         return text, {
             "strategy":        result.strategy,
             "tone":            result.tone,
@@ -228,10 +228,10 @@ from poc import Benchmark, load_scenarios
 
 scenarios = load_scenarios()                                 # 112 scenarios
 bench     = Benchmark(scenarios, results_dir="./results")
-results   = await bench.run_arm("pi", PIEngine())            # per-scenario JSONs
+results   = await bench.run_arm("example", ExampleEngine())            # per-scenario JSONs
 ```
 
-See `examples/pi_engine_template.py` for a starter shim (HTTP and in-process
+See `examples/example_engine_template.py` for a starter shim (HTTP and in-process
 patterns shown). See `INTEGRATION.md` for the full integration walkthrough.
 
 ---
@@ -300,7 +300,7 @@ and the UI. A complete worked example is in
 it with `pip install -e examples/external_engine_plugin` and the `echo` engine
 shows up everywhere.
 
-Your engine implements the same one-method `Engine` protocol the PI adapter uses
+Your engine implements the same one-method `Engine` protocol the example adapter uses
 (`async produce(opp_meta, dialog_history, business_rules) -> (text, meta)`), so
 the integration contract is unchanged — see [INTEGRATION.md](INTEGRATION.md).
 
@@ -446,7 +446,7 @@ To run a true three-arm comparison including the Strategist:
    the benchmark's per-turn shape into a `ChainContext`. **This is not
    trivial; budget ~1 day of integration work.**
 
-For most PI benchmark use cases (PI vs Baseline, PI vs Planner+Gates), the
+For most example benchmark use cases (Example vs Baseline, Example vs Planner+Gates), the
 self-contained two arms are sufficient. The Strategist source is included
 for architectural review.
 
@@ -458,7 +458,7 @@ Per scenario per arm, a JSON written to `{results_dir}/{arm_name}/{scenario_id}.
 
 ```json
 {
-  "arm":          "pi",
+  "arm":          "example",
   "scenario_id":  "L_Pr_An_Sk_04",
   "opp_id":       "00733e8d-...",
   "tenant":       "Insurance",
@@ -498,15 +498,15 @@ from poc.benchmark import paired_summary
 
 summary = paired_summary({
     "baseline": baseline_results,
-    "pi":       pi_results,
+    "example":       example_results,
 })
 # {
 #   "n_scenarios": 112,
 #   "arms": {
 #     "baseline": {"n": 112, "won": 56, "win_rate": 0.500},
-#     "pi":       {"n": 112, "won": 71, "win_rate": 0.634},
+#     "example":       {"n": 112, "won": 71, "win_rate": 0.634},
 #   },
-#   "pairwise": {"baseline_better": 4, "pi_better": 19, "ties": 89}
+#   "pairwise": {"baseline_better": 4, "example_better": 19, "ties": 89}
 # }
 ```
 
@@ -568,10 +568,10 @@ extend as needed.
 
 ## Companion documents
 
-- `INTEGRATION.md` — step-by-step guide to writing your PI adapter
+- `INTEGRATION.md` — step-by-step guide to writing your example adapter
 - `../research-blog.html` — the full research diary
 - `../papers-we-used.html` — plain-language reading list of the underlying papers
-- `../research-notes/2026-05-05-comparison-with-pi-team.md` — the cross-team
+- `../research-notes/2026-05-05-comparison-with-example-team.md` — the cross-team
   architecture comparison this package was built to support empirically
 
 ---

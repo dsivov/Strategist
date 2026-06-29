@@ -1,9 +1,9 @@
-"""Template: adapt the PI stack to the POC Engine protocol.
+"""Template: adapt the example stack to the POC Engine protocol.
 
-This is the file the PI team fills in. It's a thin shim that:
+This is the file the example integration team fills in. It's a thin shim that:
   - takes the (opp_meta, dialog_history, business_rules) input the benchmark
     sends each turn,
-  - calls into the PI runtime however that's set up at your end,
+  - calls into the example runtime however that's set up at your end,
   - returns (customer_facing_text, telemetry_dict).
 
 The benchmark records `meta` verbatim; nothing in there is interpreted. Put
@@ -12,19 +12,19 @@ training-data flags, anything that helps the post-run analysis.
 
 Usage (see examples/run_benchmark.py for the full driver):
 
-    from pi_engine_template import PIEngine
+    from example_engine_template import ExampleEngine
 
-    engine = PIEngine(api_url="http://pi-internal:8080", api_key=...)
-    results = await Benchmark(scenarios).run_arm("pi", engine)
+    engine = ExampleEngine(api_url="http://example-internal:8080", api_key=...)
+    results = await Benchmark(scenarios).run_arm("example", engine)
 """
 from __future__ import annotations
 
 from typing import Any
 
 
-class PIEngine:
+class ExampleEngine:
     """Reference adapter. Replace the body of produce() with your call into
-    the PI stack (HTTP, local Python, gRPC — whatever you ship)."""
+    the example stack (HTTP, local Python, gRPC — whatever you ship)."""
 
     def __init__(self, **config):
         # Stash whatever connection info / clients / models you need.
@@ -66,9 +66,9 @@ class PIEngine:
                       strategy, tone, hint_confidence, model_version,
                       escalated, gates_fired, gates_regens, ...
         """
-        # ── REPLACE THIS BLOCK WITH YOUR CALL INTO THE PI STACK ─────────
+        # ── REPLACE THIS BLOCK WITH YOUR CALL INTO THE the example engine STACK ─────────
         #
-        # Example 1 — HTTP call to a PI service:
+        # Example 1 — HTTP call to a example service:
         #
         #   import httpx
         #   async with httpx.AsyncClient(timeout=10) as http:
@@ -86,7 +86,7 @@ class PIEngine:
         #
         # Example 2 — direct Python call:
         #
-        #   result = await self.pi_client.predict_and_render(
+        #   result = await self.example_client.predict_and_render(
         #       opp_meta, dialog_history, business_rules,
         #   )
         #   return result.text, {
@@ -98,6 +98,6 @@ class PIEngine:
         #
         # ────────────────────────────────────────────────────────────────
         raise NotImplementedError(
-            "Replace this with your PI runtime call. See the comment block "
+            "Replace this with your example runtime call. See the comment block "
             "above for two reference patterns (HTTP or in-process)."
         )

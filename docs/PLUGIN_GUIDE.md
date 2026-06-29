@@ -42,7 +42,7 @@ Rules of thumb:
   simulator as the agent's message.
 - **`meta` is free-form** and recorded verbatim — put strategy/tone/confidence/
   gates-fired/anything useful for post-run analysis.
-- See `examples/pi_engine_template.py` for an HTTP-backed adapter pattern.
+- See `examples/example_engine_template.py` for an HTTP-backed adapter pattern.
 
 ---
 

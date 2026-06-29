@@ -1,11 +1,11 @@
 """Engine protocol + the three reference engines.
 
-The PI team implements this Protocol to plug their stack into the benchmark.
+The example integration team implements this Protocol to plug their stack into the benchmark.
 A single async method, simple in / simple out:
 
     text, meta = await engine.produce(opp_meta, dialog, business_rules)
 
-`meta` is a free-form dict — PI can include strategy / tone / hint_confidence /
+`meta` is a free-form dict — the example engine can include strategy / tone / hint_confidence /
 their own telemetry. The benchmark records it verbatim but doesn't interpret it.
 
 Provided implementations:
@@ -168,9 +168,9 @@ class StrategistEngine:
     websocket replayer in our own POC server — it's not a single-shot async
     function the benchmark can call without that scaffolding.
 
-    For benchmark runs against an engine the PI team controls, use:
+    For benchmark runs against an engine the example integration team controls, use:
       - BaselineEngine + PlannerEngine (both fully self-contained), and
-      - their own PI engine via the Engine protocol.
+      - their own example engine via the Engine protocol.
 
     Treat this class as a placeholder. Instantiating it raises with a pointer
     to the README's "Running the Strategist arm" section, which documents the
