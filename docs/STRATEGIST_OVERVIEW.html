@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Strategist — Pluggable Sales-Conversation Benchmark · Field Guide</title>
+<title>Persuasion Agent Benchmark · Field Guide</title>
 <style>
 :root{
   --bg:#0f1117; --bg2:#161922; --panel:#1b1f2a; --panel2:#222736;
@@ -108,6 +108,7 @@ tbody tr:hover{background:rgba(255,255,255,.02)}
 .pill.a{background:rgba(91,141,239,.14);color:#9cc0ff;border-color:rgba(91,141,239,.4)}
 .pill.b{background:rgba(25,184,154,.14);color:#7fe3cf;border-color:rgba(25,184,154,.4)}
 .pill.c{background:rgba(240,167,60,.14);color:#ffce86;border-color:rgba(240,167,60,.4)}
+.pill.d{background:rgba(169,116,240,.14);color:#cfaef7;border-color:rgba(169,116,240,.4)}
 
 /* at-a-glance kvs */
 dl.kvs{display:grid;grid-template-columns:120px 1fr;gap:6px 14px;margin:0}
@@ -176,12 +177,12 @@ b.hl{color:#cfe0ff}
 <header class="hero">
   <div class="hero-inner">
     <div class="eyebrow">Field Guide · Post-Refactor Overview</div>
-    <h1>Strategist — a pluggable sales-conversation AI benchmark</h1>
-    <p class="lede">A self-contained harness for A/B-testing sales-conversation engines against a 112-scenario,
-      diversity-stratified benchmark and a reference-aware customer simulator. The refactor turns it from a
-      hardcoded two-engine demo into a <b class="hl">platform</b>: register a Strategy/Supervisor algorithm once and it
-      appears in the headless runner, the REST API, and the live dual-panel UI — with the sales domain and the data
-      source now swappable behind clean interfaces.</p>
+    <h1>Persuasion Agent Benchmark — a pluggable platform for goal-oriented conversation agents</h1>
+    <p class="lede">A self-contained harness for A/B-testing goal-oriented conversation engines against a 112-scenario,
+      diversity-stratified benchmark and a reference-aware customer simulator. Once a hardcoded two-engine demo, it is
+      now a <b class="hl">platform</b>: register an engine once and it
+      appears in the headless runner, the REST API, and the live dual-panel UI — with the domain framing, the data
+      source, and the benchmark packs all swappable behind clean interfaces.</p>
     <div class="hero-tags">
       <span class="tag"><b>112</b> scenarios</span>
       <span class="tag"><b>3</b> built-in engines + plugins</span>
@@ -198,7 +199,7 @@ b.hl{color:#cfe0ff}
   <div class="tl-title">Contents</div>
   <ol>
     <li><a href="#summary">Executive summary</a></li>
-    <li><a href="#seams">The three pluggable seams</a></li>
+    <li><a href="#seams">The four pluggable seams</a></li>
     <li><a href="#architecture">End-to-end architecture</a></li>
     <li><a href="#registry">Engines &amp; the connect API</a></li>
     <li><a href="#abtest">Any-vs-any A/B in the UI</a></li>
@@ -250,13 +251,14 @@ b.hl{color:#cfe0ff}
 
 <!-- 2 ─────────────────────────────────────────── -->
 <section id="seams">
-  <h2><span class="sec-num">02</span> The three pluggable seams</h2>
-  <p class="sec-sub">The platform is organized around three small interfaces. Each has one job, one default
+  <h2><span class="sec-num">02</span> The four pluggable seams</h2>
+  <p class="sec-sub">The platform is organized around four small interfaces. Each has one job, one default
   implementation, several consumers that read from it, and an extension path that needs no core edits.</p>
 
   <p>Everything that varies between experiments lives behind one of these seams: <b>which algorithm</b> produces the
   agent's turns (the engine registry), <b>what domain</b> defines the framing and the win/lost criteria (domain packs),
-  and <b>where the data</b> comes from (scenario sources). The benchmark runner, the REST API, and the live UI are all
+  <b>where the data</b> comes from (scenario sources), and <b>which goal-oriented task</b> is being tested (benchmark
+  packs). The benchmark runner, the REST API, and the live UI are all
   consumers — they never hardcode the options, they read them from the seam.</p>
 
   <div class="tablewrap">
@@ -267,7 +269,7 @@ b.hl{color:#cfe0ff}
           <td><span class="pill a">Engine registry</span></td>
           <td class="mono">poc/registry.py</td>
           <td>One declaration of an engine (id, name, params, factory) is the single source of truth.</td>
-          <td>baseline, planner, strategist</td>
+          <td>baseline, planner, strategist · plugins: llamacpp, llamacpp-strategist, llamacpp-planner (local llama.cpp arms)</td>
           <td>Benchmark runner · <span class="mono">/api/engines</span> · UI selectors</td>
           <td><b>Yes</b> — <span class="mono">strategist.engines</span> entry point</td>
         </tr>
@@ -287,11 +289,19 @@ b.hl{color:#cfe0ff}
           <td><span class="mono">load_scenarios()</span> · server data layer</td>
           <td><b>Yes</b> — implement the protocol + <span class="mono">set_scenario_source</span></td>
         </tr>
+        <tr>
+          <td><span class="pill d">Benchmark pack</span></td>
+          <td class="mono">poc/benchmark_packs.py</td>
+          <td>A goal-oriented scenario bundle: manifest (goal, domain) + dataset slice or file.</td>
+          <td>insurance-renewal · ecommerce-cart</td>
+          <td><span class="mono">/api/benchmarks</span> · UI Benchmark selector · <span class="mono">load_pack_scenarios()</span></td>
+          <td><b>Yes</b> — copy <span class="mono">benchmarks/_template/</span>, drop a <span class="mono">pack.json</span></td>
+        </tr>
       </tbody>
     </table>
   </div>
 
-  <p class="small">A fourth capability rides on the registry: the dual-panel server selects an engine per panel, so
+  <p class="small">One more capability rides on the registry: the dual-panel server selects an engine per panel, so
   <b>any registered engine can face any other</b> (§5). The customer it negotiates against is the same on both sides
   (§6), keeping every comparison single-variable.</p>
 </section>
@@ -1023,7 +1033,7 @@ tests/ <span class="note"># 32 tests, no LLM calls</span><br>
 </div>
 
 <footer class="footer">
-  Strategist — pluggable sales-conversation benchmark · post-refactor field guide. Self-contained HTML, no external
+  Persuasion Agent Benchmark · field guide. Self-contained HTML, no external
   resources. Figures are hand-authored inline SVG; numbers are quoted from the repository source of truth.
 </footer>
 
