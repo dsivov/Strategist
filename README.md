@@ -187,17 +187,6 @@ per-turn persuasion/commitment tracking decides the scoreboard.
 
 ![A dual-panel live match — baseline loses to Planner+Gates on the same scenario](docs/assets/ui-dual-panel-match.png)
 
-### Why this server runs without a production database
-
-The upstream (vendor) server read opportunity rows, message histories, and
-turn-state labels out of a production MySQL. In this package, `server/db.py`
-is a **drop-in JSON-backed shim** that serves the same calls from the bundled
-`data/benchmark/v1_scenarios.json` (plus any scenario files your benchmark
-packs bring). Embedded historical transcripts replace `fetch_messages`; the
-attributes block replaces `fetch_opp_meta`; prod-only signal channels are
-stubbed. If you do have production credentials, set `POC_USE_MYSQL=1` and
-`server/db.py` proxies through to the MySQL-backed `poc/db.py`.
-
 ## Supporting data — what's bundled, what isn't
 
 | Data                            | Bundled?  | Size  | Used by              | Notes |
