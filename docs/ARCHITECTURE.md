@@ -3,13 +3,14 @@
 How the pluggable benchmark platform fits together, and why it's shaped this way.
 
 - [The single contract](#the-single-contract)
-- [Three pluggable seams](#three-pluggable-seams)
+- [Four pluggable seams](#four-pluggable-seams)
 - [The per-turn run loop](#the-per-turn-run-loop)
 - [Two run modes](#two-run-modes)
 - [The engine registry](#the-engine-registry)
 - [Live-replayer engine routing](#live-replayer-engine-routing)
 - [Domain packs](#domain-packs)
 - [Scenario sources](#scenario-sources)
+- [Benchmark packs](#benchmark-packs)
 - [Module-instance unification](#module-instance-unification)
 - [Behavior preservation](#behavior-preservation)
 
@@ -34,13 +35,14 @@ with a matching `produce` satisfies it — no base class required.
 
 ---
 
-## Three pluggable seams
+## Four pluggable seams
 
 | Seam | Module | Replaces (was inlined / hardcoded) | Default |
 |------|--------|------------------------------------|---------|
 | **Engine registry** | `poc/registry.py` | engine names hardcoded in 6 places | `baseline`, `planner`, `strategist` |
 | **Domain pack** | `poc/domain.py` | sales/insurance strings across the core | `SalesDomainPack` |
 | **Scenario source** | `poc/scenario_source.py` | hardcoded `v1_scenarios.json` path | `JsonScenarioSource` |
+| **Benchmark pack** | `poc/benchmark_packs.py` | one monolithic scenario list | `insurance-renewal`, `ecommerce-cart` |
 
 Each seam is read by the existing consumers, so extending the platform never
 requires editing the runner, the API handler, or the UI.
@@ -182,6 +184,31 @@ them on `POC_USE_MYSQL`).
 1. explicit `source=` → `source.load_scenarios()`
 2. explicit `path=` → read that JSON file (legacy behavior, unchanged)
 3. otherwise → the active source (`get_scenario_source()`, bundled JSON default)
+
+---
+
+## Benchmark packs
+
+A benchmark pack (`poc/benchmark_packs.py`) is a goal-oriented scenario bundle
+as **data**: a directory under `benchmarks/` with a `pack.json` manifest —
+id, display name, description, the win/lose `goal` in prose, the `domain`
+pack the scenarios are written for, and a `scenario_source` (a JSON file path
+relative to the pack dir plus an optional equality `filter`). Several packs
+may slice one shared dataset (the two bundled packs both slice
+`data/benchmark/v1_scenarios.json` by tenant), or a pack can bring its own
+file in the same schema.
+
+Consumers:
+
+- `GET /api/benchmarks` → the UI's **Benchmark selector**; `GET
+  /api/scenarios?pack=<id>` scopes the picker list.
+- `poc.load_pack_scenarios(id)` → headless runs over one pack.
+- The server's JSON db shim merges every pack's scenarios into its index, so
+  a pack that brings its own dataset also works in the live replayer.
+
+Directories starting with `_` are ignored — `benchmarks/_template/` is the
+copy-me starting point for a new pack (see the
+[plugin guide](PLUGIN_GUIDE.md#create-a-benchmark-pack)).
 
 ---
 

@@ -1,7 +1,8 @@
 # Plugin guide
 
-How to extend the platform: a new **engine**, a new **domain pack**, or a new
-**scenario source**. None of these require editing the core.
+How to extend the platform: a new **engine**, a new **domain pack**, a new
+**scenario source**, or a new **benchmark pack**. None of these require
+editing the core.
 
 - [Write an engine](#write-an-engine)
 - [Register an engine (in-tree)](#register-an-engine-in-tree)
@@ -9,6 +10,7 @@ How to extend the platform: a new **engine**, a new **domain pack**, or a new
 - [Engine parameters](#engine-parameters)
 - [Write a domain pack](#write-a-domain-pack)
 - [Write a scenario source](#write-a-scenario-source)
+- [Create a benchmark pack](#create-a-benchmark-pack)
 - [Checklist](#checklist)
 
 ---
@@ -232,6 +234,37 @@ documented in the [root README](../README.md#the-benchmark-dataset).
 
 ---
 
+## Create a benchmark pack
+
+A benchmark pack turns a goal-oriented conversation task into a benchmark
+that shows up everywhere — the headless runner, `GET /api/benchmarks`, and
+the UI's Benchmark selector — as pure data:
+
+```bash
+cp -r benchmarks/_template benchmarks/my-benchmark
+cd benchmarks/my-benchmark
+mv pack.json.example pack.json   # underscore-prefixed dirs are ignored
+```
+
+`pack.json` fields: `id`, `name`, `description`, `goal` (what "won" means, in
+prose), `domain` (the domain pack the scenarios are written for), and
+`scenario_source` — a JSON file `path` relative to the pack directory plus an
+optional equality `filter` over top-level scenario fields. Slice a shared
+dataset (the bundled packs filter `data/benchmark/v1_scenarios.json` by
+`tenant`) or bring your own file in the same schema.
+
+If the default `sales` framing doesn't fit your task, pair the pack with a
+[domain pack](#write-a-domain-pack) that defines the right anchor rendering
+and `detect_close` / `detect_decline` signals, and name it in the manifest's
+`domain` field.
+
+Run it headless via `poc.load_pack_scenarios("my-benchmark")`; the live
+server picks the pack up on restart. The full authoring walkthrough —
+including the minimal scenario schema and a sample dataset — is in
+[`benchmarks/_template/README.md`](../benchmarks/_template/README.md).
+
+---
+
 ## Checklist
 
 - [ ] `produce()` returns `(text, meta)` and is stateless across turns.
@@ -242,3 +275,5 @@ documented in the [root README](../README.md#the-benchmark-dataset).
 - [ ] Domain pack: `detect_close` / `detect_decline` defined; default
       (`sales`) restored after temporary swaps in tests.
 - [ ] New domain → paired with a matching scenario source.
+- [ ] Benchmark pack: `pack.json` valid (`poc.load_pack_scenarios(id)`
+      returns scenarios); `domain` field names a registered domain pack.

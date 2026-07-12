@@ -32,3 +32,13 @@ server-test.log
 data/random_match_cache.json
 data/cache/
 logs/
+
+# Internal pre-commit review report — not for the public repo
+docs/SETUP_REPORT.html
+
+# Local working dirs (screenshots scratch, separate integration effort)
+scrennshots/
+integrations/
+
+# Server session/trace logs
+test_logs/

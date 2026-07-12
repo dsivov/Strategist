@@ -6,6 +6,7 @@ The public Python surface (`poc.*`) and the server's HTTP/WebSocket endpoints.
 - [Python: engine registry](#python-engine-registry)
 - [Python: domain packs](#python-domain-packs)
 - [Python: scenario sources](#python-scenario-sources)
+- [Python: benchmark packs](#python-benchmark-packs)
 - [HTTP: REST endpoints](#http-rest-endpoints)
 - [HTTP: the run request](#http-the-run-request)
 - [WebSocket](#websocket)
@@ -121,6 +122,27 @@ from poc import (ScenarioSource, JsonScenarioSource,
 
 ---
 
+## Python: benchmark packs
+
+```python
+from poc import (all_benchmark_packs, get_benchmark_pack,
+                 has_benchmark_pack, load_pack_scenarios)
+```
+
+| Symbol | Signature |
+|--------|-----------|
+| `all_benchmark_packs` | `all_benchmark_packs() -> list[dict]` — every `benchmarks/*/pack.json` manifest, sorted by id |
+| `get_benchmark_pack` | `get_benchmark_pack(id) -> dict` — raises `KeyError` if unknown |
+| `has_benchmark_pack` | `has_benchmark_pack(id) -> bool` |
+| `load_pack_scenarios` | `load_pack_scenarios(id) -> list[dict]` — reads the pack's `scenario_source.path` (relative to the pack dir) and applies its equality `filter` |
+
+Packs are scanned from `benchmarks/` (`POC_BENCHMARKS_DIR` overrides);
+directories starting with `_` are ignored. Manifest fields: `id`, `name`,
+`description`, `goal`, `domain`, `scenario_source{type,path,filter}`. See
+[`benchmarks/_template/`](../benchmarks/_template/) for the authoring guide.
+
+---
+
 ## HTTP: REST endpoints
 
 Served by `server/main.py` (launch with `./bin/run-server.sh`, default
@@ -131,17 +153,14 @@ Served by `server/main.py` (launch with `./bin/run-server.sh`, default
 | GET | `/` | the single-page UI |
 | GET | `/logs` | trace-logs UI |
 | GET | **`/api/engines`** | registered engines (drives the UI selectors) |
-| GET | `/api/scenarios` | list curated scenarios |
-| GET | `/api/scenarios/{opp_id}` | scenario detail + transcript metadata |
-| GET | `/api/random_match/criteria_options` | dropdown options for random match |
-| POST | `/api/random_match` | find best clean-loss candidate by criteria |
-| POST | **`/api/run/{opp_id}`** | start a replay session (see below) |
+| GET | `/api/domains` | registered domain packs |
+| GET | **`/api/benchmarks`** | benchmark packs (drives the UI's Benchmark selector) |
+| GET | `/api/scenarios` | scenario picker list; `?pack=<id>` scopes to one pack (default: union of all packs) |
+| GET | `/api/scenarios/{opp_id}` | scenario detail + transcript metadata (seed transcript excluded — it streams over `/ws`) |
+| POST | **`/api/run/{opp_id}`** | start a session (see below) |
 | WS | `/ws/{session_id}` | stream session events |
 | GET | `/api/trace/list`, `/api/trace/{session_id}` | trace JSONs |
-| GET | `/api/cohort_weights`, `/api/cache_status` | research artifacts / cache state |
-| GET | `/api/precedents`, `/api/precedents/meta` | cohort precedent retrieval (prod) |
-| GET | `/api/historical_persuasion/{opp_id}` | real-conversation persuasion overlay (prod) |
-| GET | `/health` | DB health |
+| GET | `/health` | liveness + scenario-dataset count (+ DB ping in `POC_USE_MYSQL=1` mode) |
 
 **`GET /api/engines`** response:
 
@@ -170,12 +189,14 @@ dropped.
 
 ```json
 {
-  "engine":             "strategist",          // R-side engine id
+  "engine":             "planner",             // R-side engine id
   "engine_left":        "baseline",            // L-side engine id
   "engine_params":      { "...": "..." },       // R-side params (validated)
   "engine_params_left": { "...": "..." },       // L-side params (validated)
   "hard_customer":      false,                  // adversarial simulator overlay
-  "seed_end_override":  0,                       // 0 = auto peak-engagement detector
+  "seed_end_override":  2,                       // seed depth in messages; the UI
+                                                 // sends cold open = 1, warm start = 2;
+                                                 // 0 = auto peak-engagement detector
   "planner_envelope":   "off"                   // back-compat: maps to R-side planner param
 }
 ```
