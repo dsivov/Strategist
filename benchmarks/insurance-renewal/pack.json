@@ -1,0 +1,12 @@
+{
+  "id": "insurance-renewal",
+  "name": "Insurance Renewal",
+  "description": "Auto-insurance renewal negotiations: the agent opens with a renewal quote and must close against price objections, competitor comparisons, and drop-offs. 51 scenarios anchored in real historical conversations, stratified across 6 persona diversity cells.",
+  "goal": "The customer agrees to renew the policy (won). Explicit decline or drop-off is lost.",
+  "domain": "sales",
+  "scenario_source": {
+    "type": "json",
+    "path": "../../data/benchmark/v1_scenarios.json",
+    "filter": { "tenant": "Insurance" }
+  }
+}

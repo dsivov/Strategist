@@ -1,0 +1,90 @@
+[
+  {
+    "scenario_id": "MYB_Ex_01",
+    "opp_id": "00000000-0000-4000-8000-000000000001",
+    "tenant": "AcmeCo",
+    "diversity_bucket": "Price/savings|Analytical|Skeptical",
+    "real_outcome": "lost",
+    "is_sentinel": false,
+    "rng_seed": 10001,
+    "n_messages": 2,
+    "attributes": {
+      "opp_type": "My Conversation Type",
+      "primary_motivator": "Price/savings",
+      "decision_logic": "Analytical",
+      "trust_level": "Skeptical",
+      "communication_style": "Terse",
+      "objection_pattern": "Asks for a better offer",
+      "emotional_volatility": "Low",
+      "purchase_urgency": "Low",
+      "primary_resistance": "Price"
+    },
+    "anchors": {
+      "current_quoted_price_usd": 120,
+      "market_avg_for_segment_usd": 110,
+      "max_discount_pct_internal": 10
+    },
+    "anchor_real": false,
+    "seed_messages": [
+      {
+        "message_id": "m-0001",
+        "direction": "outbound",
+        "timestamp": "2026-01-01 09:00:00",
+        "text": "Hi Alex, this is Sam from AcmeCo — your plan renews next week at $120/mo. Want me to lock that in?",
+        "is_reminder": 1,
+        "is_followup": 0
+      },
+      {
+        "message_id": "m-0002",
+        "direction": "inbound",
+        "timestamp": "2026-01-01 09:05:00",
+        "text": "That seems expensive. What else can you do?",
+        "is_followup": 0
+      }
+    ]
+  },
+  {
+    "scenario_id": "MYB_Ex_02",
+    "opp_id": "00000000-0000-4000-8000-000000000002",
+    "tenant": "AcmeCo",
+    "diversity_bucket": "Convenience|Emotional|Trusting",
+    "real_outcome": "won",
+    "is_sentinel": true,
+    "rng_seed": 10002,
+    "n_messages": 2,
+    "attributes": {
+      "opp_type": "My Conversation Type",
+      "primary_motivator": "Convenience",
+      "decision_logic": "Emotional",
+      "trust_level": "Trusting",
+      "communication_style": "Conversational",
+      "objection_pattern": "None — easy case",
+      "emotional_volatility": "Low",
+      "purchase_urgency": "High",
+      "primary_resistance": "Time"
+    },
+    "anchors": {
+      "current_quoted_price_usd": 120,
+      "market_avg_for_segment_usd": 110,
+      "max_discount_pct_internal": 10
+    },
+    "anchor_real": false,
+    "seed_messages": [
+      {
+        "message_id": "m-0003",
+        "direction": "outbound",
+        "timestamp": "2026-01-02 10:00:00",
+        "text": "Hi Dana, Sam from AcmeCo here — quick heads-up that your plan renews next week at $120/mo. Shall I keep everything as is?",
+        "is_reminder": 1,
+        "is_followup": 0
+      },
+      {
+        "message_id": "m-0004",
+        "direction": "inbound",
+        "timestamp": "2026-01-02 10:20:00",
+        "text": "Oh right, thanks for the reminder! Probably yes, just confirm what I'm getting?",
+        "is_followup": 0
+      }
+    ]
+  }
+]

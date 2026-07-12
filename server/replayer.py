@@ -59,9 +59,27 @@ from customer_simulator import (
 )
 from persuasion_scorer import score_turn
 
-# v1 supervisor pieces
-from batch9_5_mode1a_v1 import load_classifier_v1, mode1a_directive_v1
-from batch9_0a_attribution import features_for_opp, fetch_opp_data
+# v1 supervisor pieces — strategist-native path only. batch9_5_mode1a_v1
+# extends a research module that is NOT bundled in the standalone package, so
+# the import is guarded: without it the classifier stays None and the mode-1a
+# tier is skipped (both call sites already handle that), while baseline /
+# planner / plugin runs are unaffected.
+try:
+    from batch9_5_mode1a_v1 import load_classifier_v1, mode1a_directive_v1
+except Exception as _mode1a_err:  # ModuleNotFoundError in the standalone package
+    load_classifier_v1 = None
+    mode1a_directive_v1 = None
+    logging.getLogger(__name__).info(
+        "mode-1a supervisor unavailable (%s); strategist mode-1a tier disabled",
+        _mode1a_err)
+try:
+    from batch9_0a_attribution import features_for_opp, fetch_opp_data
+except Exception as _attr_err:  # needs pymysql — vendor/prod path only
+    features_for_opp = None
+    fetch_opp_data = None
+    logging.getLogger(__name__).info(
+        "attribution features unavailable (%s); classifier feature "
+        "pre-compute disabled", _attr_err)
 
 # Full architecture: Mode 1a (compiled playbook), Mode 1b (live CG), Mode 2 (CGR3 multi-hop)
 from supervisor_full import (

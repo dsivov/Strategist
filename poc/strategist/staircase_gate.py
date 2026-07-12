@@ -600,9 +600,14 @@ def check_staircase(
         return False, meta
 
     # Load per-tenant config (cached). Falls back to hard-coded defaults
-    # for known tenants if YAML system is unreachable.
-    from staircase_config import get_config
-    cfg = get_config(tenant) or {}
+    # for known tenants if the YAML config system is unreachable — including
+    # when the staircase_config helper itself isn't bundled (it ships in the
+    # vendor tree only; the standalone package runs on the defaults below).
+    try:
+        from staircase_config import get_config
+        cfg = get_config(tenant) or {}
+    except Exception:
+        cfg = {}
     extractor_module = (cfg.get("extractor_module") or tenant.strip().lower())
     thresholds = cfg.get("thresholds") or {}
     whitelist = cfg.get("whitelist") or {}

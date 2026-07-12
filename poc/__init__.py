@@ -66,6 +66,12 @@ from scenario_source import (
     get_scenario_source,
     set_scenario_source,
 )
+from benchmark_packs import (
+    all_packs as all_benchmark_packs,
+    get_pack as get_benchmark_pack,
+    has_pack as has_benchmark_pack,
+    load_pack_scenarios,
+)
 
 __all__ = [
     "Engine",
@@ -96,6 +102,11 @@ __all__ = [
     "JsonScenarioSource",
     "get_scenario_source",
     "set_scenario_source",
+    # Benchmark packs (goal-oriented scenario bundles under benchmarks/)
+    "all_benchmark_packs",
+    "get_benchmark_pack",
+    "has_benchmark_pack",
+    "load_pack_scenarios",
 ]
 
 __version__ = "1.0.0"

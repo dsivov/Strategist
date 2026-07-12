@@ -1,0 +1,12 @@
+{
+  "id": "ecommerce-cart",
+  "name": "E-commerce Cart Recovery",
+  "description": "Cart-abandonment recovery: the agent re-engages a shopper who left items in the cart and must convert hesitation, shipping/price concerns, and distraction into a completed checkout. 61 scenarios anchored in real historical conversations, stratified across 9 persona diversity cells.",
+  "goal": "The customer completes the purchase (won). Explicit refusal or continued abandonment is lost.",
+  "domain": "sales",
+  "scenario_source": {
+    "type": "json",
+    "path": "../../data/benchmark/v1_scenarios.json",
+    "filter": { "tenant": "Ecommerce" }
+  }
+}

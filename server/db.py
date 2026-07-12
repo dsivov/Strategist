@@ -69,16 +69,37 @@ else:
         with _LOCK:
             if _INDEX is not None:
                 return _INDEX
-            if not _SCENARIOS_FILE.exists():
+            index: dict[str, dict] = {}
+            if _SCENARIOS_FILE.exists():
+                raw = json.loads(_SCENARIOS_FILE.read_text())
+                scs = raw if isinstance(raw, list) else (
+                    raw.get("scenarios") or raw.get("rows") or [])
+                index = {s["opp_id"]: s for s in scs if s.get("opp_id")}
+                log.info("db.py: loaded %d scenarios from %s",
+                          len(index), _SCENARIOS_FILE)
+            else:
                 log.error("db.py: scenarios file not found at %s", _SCENARIOS_FILE)
-                _INDEX = {}
-                return _INDEX
-            raw = json.loads(_SCENARIOS_FILE.read_text())
-            scs = raw if isinstance(raw, list) else (
-                raw.get("scenarios") or raw.get("rows") or [])
-            _INDEX = {s["opp_id"]: s for s in scs if s.get("opp_id")}
-            log.info("db.py: loaded %d scenarios from %s",
-                      len(_INDEX), _SCENARIOS_FILE)
+            # Merge benchmark-pack datasets (benchmarks/*/pack.json) so a pack
+            # that brings its own scenario file also works in the live server.
+            try:
+                from benchmark_packs import all_packs, load_pack_scenarios
+                for p in all_packs():
+                    try:
+                        added = 0
+                        for s in load_pack_scenarios(p["id"]):
+                            oid = s.get("opp_id")
+                            if oid and oid not in index:
+                                index[oid] = s
+                                added += 1
+                        if added:
+                            log.info("db.py: merged %d scenarios from pack %s",
+                                      added, p["id"])
+                    except Exception as e:
+                        log.warning("db.py: pack %s merge failed: %s",
+                                     p["id"], e)
+            except Exception:
+                pass
+            _INDEX = index
             return _INDEX
 
     # ── Connection sentinel ─────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-// Sales Strategist Benchmark POC — frontend controller
+// Persuasion Agent Benchmark — frontend controller
 // (placeholder for v0 — fuller WS event handling lands when replayers are built)
 
 const $ = (sel) => document.querySelector(sel);
@@ -8,11 +8,15 @@ const state = {
   stressOnly: false,
   selected: null,
   speed: '5x',
+  runMode: 'single',        // 'single' | 'batch'
+  selectedIds: new Set(),   // opp_ids picked in the scenario list
+  pack: '',                 // benchmark pack id ('' = all packs), from /api/benchmarks
+  search: '',               // scenario-list text filter
+  batch: null,              // { ids, i, total, results:[], stop } while a batch runs
   // Pluggable engines — loaded from /api/engines at boot; no hardcoded list.
-  engines: { left: 'baseline', right: 'strategist' },  // per-panel engine id
+  engines: { left: 'baseline', right: 'planner' },  // per-panel engine id
   engineParams: { left: {}, right: {} },               // per-panel param values
   engineSpecs: [],                                      // [{id,name,description,runnable,requires,params}]
-  tenantFilter: 'all',  // 'all' | 'Insurance' | 'Ecommerce'
   ws: null,
   sessionId: null,
   charts: { left: null, right: null },
@@ -27,13 +31,11 @@ const state = {
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 async function init() {
+  await initBenchmarks();
   await loadScenarios();
   await initEngines();
-  initSpeedControls();
-  initTenantFilter();
-  initModeTabs();
-  initRandomMatch();
-  initCacheStatusPoller();
+  initRunMode();
+  initScenarioTools();
   initButtons();
   initSeedSlider();
   initCharts();
@@ -53,336 +55,247 @@ async function init() {
   if (dsClose) dsClose.addEventListener('click', () => setDirectiveSidebarVisible(false));
 }
 
-// ── Mode tabs (Curated vs Random) ──────────────────────────────────────────
-function initModeTabs() {
-  document.querySelectorAll('.mode-tab').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.mode-tab').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      const mode = btn.dataset.mode;
-      $('#curatedControls').hidden = (mode !== 'curated');
-      $('#randomControls').hidden = (mode !== 'random');
-      $('#randomForm').hidden = (mode !== 'random');
-      // When switching modes, clear any pending selection
-      state.selected = null;
-      $('#runBtn').disabled = true;
-      $('#scenarioMeta').hidden = true;
-    });
-  });
-}
-
-// ── Cache status poller (random_match candidate cache) ──────────────────
-function initCacheStatusPoller() {
-  const dot = document.querySelector('#cacheStatus .cache-dot');
-  const txt = document.getElementById('cacheStatusText');
-  const btn = document.getElementById('findMatchBtn');
-  const wrap = document.getElementById('cacheStatus');
-  if (!dot || !txt || !btn) return;
-  let timer = null;
-  async function poll() {
-    try {
-      const r = await fetch('/api/cache_status');
-      const s = await r.json();
-      if (s.ready) {
-        wrap.classList.remove('building'); wrap.classList.add('ready');
-        txt.textContent = `cache ready · ${s.n_candidates} opps`;
-        btn.disabled = false; btn.title = '';
-        if (timer) { clearInterval(timer); timer = null; }
-      } else {
-        wrap.classList.remove('ready'); wrap.classList.add('building');
-        txt.textContent = 'cache building… (≈2-3 min)';
-        btn.disabled = true; btn.title = 'Wait for the candidate cache to finish building';
-      }
-    } catch (e) {
-      wrap.classList.remove('ready'); wrap.classList.add('building');
-      txt.textContent = 'cache status unknown';
-    }
-  }
-  poll();
-  timer = setInterval(poll, 4000);
-}
-
-
-// ── Random-match flow ──────────────────────────────────────────────────────
-async function initRandomMatch() {
-  // Populate dropdowns from server-side cache options. Retry until cache is
-  // ready — server's random_match cache build takes ~3 min on cold start, and
-  // the page may load before it finishes.
-  let attempts = 0;
-  while (attempts < 30) {  // 30 × 6s = 3 min retry budget
-    try {
-      const r = await fetch('/api/random_match/criteria_options');
-      if (r.ok) {
-        const opts = await r.json();
-        if (opts && Array.isArray(opts.tenants) && opts.tenants.length) {
-          populateSelect('#rmTenant', opts.tenants);
-          populateSelect('#rmOppType', opts.opp_types);
-          populateSelect('#rmMotivator', opts.motivators);
-          populateSelect('#rmDecisionLogic', opts.decision_logics);
-          populateSelect('#rmTrustLevel', opts.trust_levels);
-          break;
-        }
-      }
-    } catch (e) { console.warn('criteria_options failed:', e); }
-    attempts++;
-    if (attempts === 1) console.info('Random-match cache still warming; retrying...');
-    await new Promise(res => setTimeout(res, 6000));
-  }
-  $('#findMatchBtn').addEventListener('click', findRandomMatch);
-}
-
-function populateSelect(selector, values) {
-  const el = $(selector);
-  if (!el) return;
-  values.forEach((v) => {
-    const o = document.createElement('option');
-    o.value = v; o.textContent = v;
-    el.appendChild(o);
-  });
-}
-
-async function findRandomMatch() {
-  const criteria = {
-    tenant: $('#rmTenant').value,
-    opp_type: $('#rmOppType').value,
-    motivator: $('#rmMotivator').value,
-    decision_logic: $('#rmDecisionLogic').value,
-    trust_level: $('#rmTrustLevel').value,
-  };
-  $('#findMatchBtn').disabled = true;
-  $('#findMatchBtn').textContent = 'Searching…';
-  // Visibly clear stale results so the user sees the refresh happen even
-  // when the new top-5 overlaps the previous one.
-  const summary = $('#randomResultsSummary');
-  const cards = $('#randomResultsCards');
-  if (summary) summary.innerHTML = '<span style="opacity:0.6">searching…</span>';
-  if (cards) cards.innerHTML = '';
-  try {
-    const r = await fetch('/api/random_match', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(criteria),
-      cache: 'no-store',
-    });
-    const data = await r.json();
-    renderRandomResults(data);
-  } catch (e) {
-    console.warn('random match failed:', e);
-    if (summary) summary.innerHTML = '<span style="color:#C0392B">search failed — see console</span>';
-  } finally {
-    $('#findMatchBtn').disabled = false;
-    $('#findMatchBtn').textContent = 'Find best match';
-  }
-}
-
-function renderRandomResults(data) {
-  const summary = $('#randomResultsSummary');
-  const cards = $('#randomResultsCards');
-  $('#randomResults').hidden = false;
-  // Summary line
-  let summaryParts = [];
-  summaryParts.push(`Found ${data.n_total_candidates} candidates`);
-  if (data.n_after_plan_filter !== data.n_total_candidates) {
-    summaryParts.push(`(${data.n_after_plan_filter} after plan-availability filter)`);
-  }
-  if (data.relaxations_applied && data.relaxations_applied.length) {
-    summaryParts.push(`<span class="relax">⚠ Relaxed: ${data.relaxations_applied.join(', ')}</span>`);
-  }
-  if (data.pool_used === 'no_plan_fallback') {
-    summaryParts.push(`<span class="pool-fallback">(no candidates with plan; using no-plan adaptive mode)</span>`);
-  }
-  summary.innerHTML = summaryParts.join(' · ');
-
-  // Cards
-  cards.innerHTML = '';
-  if (!data.top_5 || !data.top_5.length) {
-    cards.innerHTML = '<div style="color:var(--text-muted);font-style:italic">No candidates found — try fewer criteria.</div>';
-    return;
-  }
-  data.top_5.forEach((c, i) => {
-    const card = document.createElement('div');
-    card.className = `match-card ${c.has_plan ? 'has-plan' : 'no-plan'}`;
-    const rank = i + 1;
-    card.innerHTML = `
-      <div class="match-card-rank rank-${rank}">★ Rank #${rank}</div>
-      <div class="match-card-id">${escapeHtml(c.opp_id || '')}</div>
-      <div class="match-card-score">${c.score} <span class="max">/ 10</span></div>
-      <div class="match-card-meta">${escapeHtml(c.tenant)} · ${escapeHtml(c.opp_type || '?')} · ${escapeHtml(c.motivator || '?')} / ${escapeHtml(c.decision_logic || '?')} · ${escapeHtml(c.trust_level || '?')} · n_msgs=${c.n_msgs} · max_commit=${c.max_commit}</div>
-      <div class="match-card-plan ${c.has_plan ? 'has' : 'none'}">${c.has_plan ? '✓ ' + escapeHtml(c.plan_id || '') : '— plan-less (adaptive mode)'}</div>
-      <button class="match-card-run">Run this scenario</button>
-    `;
-    card.querySelector('.match-card-run').addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      // Synthesize a "selected" object compatible with runScenario()
-      state.selected = {
-        opp_id: c.opp_id,
-        tenant: c.tenant,
-        cluster_id: c.cluster_id,
-        cluster_name: 'random match',
-        motivator: c.motivator,
-        decision_logic: c.decision_logic,
-        opp_type: c.opp_type,
-      };
-      // Fetch full meta to populate scenario_meta panel
-      fetch(`/api/scenarios/${c.opp_id}`).then(r => r.ok ? r.json() : null).then((fullMeta) => {
-        if (fullMeta) {
-          state.selected = fullMeta;
-          renderMeta(fullMeta);
-        } else {
-          renderMeta(state.selected);
-        }
-        // Auto-start: kick off the run immediately
-        runScenario();
-      }).catch(() => runScenario());
-    });
-    cards.appendChild(card);
-  });
-}
-
 async function loadScenarios() {
-  const r = await fetch('/api/scenarios');
+  const url = state.pack
+    ? `/api/scenarios?pack=${encodeURIComponent(state.pack)}`
+    : '/api/scenarios';
+  const r = await fetch(url);
   state.scenarios = await r.json();
-  renderScenarioPicker();
-  $('#scenarioPicker').addEventListener('change', onScenarioPicked);
+  renderScenarioList();
 }
 
-function renderScenarioPicker() {
-  const picker = $('#scenarioPicker');
-  picker.innerHTML = '<option value="">Pick a scenario…</option>';
-  let filtered = state.tenantFilter === 'all'
-    ? state.scenarios
-    : state.scenarios.filter((s) => s.tenant === state.tenantFilter);
-  if (state.stressOnly) {
-    filtered = filtered.filter((s) => s.is_stress_test);
+// ── Benchmark selector (packs from /api/benchmarks) ──────────────────────────
+async function initBenchmarks() {
+  const sel = document.getElementById('benchmarkSelect');
+  if (!sel) return;
+  try {
+    const r = await fetch('/api/benchmarks');
+    const data = await r.json();
+    const packs = data.benchmarks || [];
+    sel.innerHTML = '<option value="">All benchmarks</option>';
+    packs.forEach((p) => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.n_scenarios != null ? `${p.name} (${p.n_scenarios})` : p.name;
+      opt.title = [p.description, p.goal && `Goal: ${p.goal}`].filter(Boolean).join('\n');
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', async () => {
+      state.pack = sel.value;
+      // Pack scopes the dataset — drop selections that may not exist in it.
+      state.selectedIds.clear();
+      state.selected = null;
+      $('#scenarioMeta').hidden = true;
+      await loadScenarios();
+      updateRunButton();
+    });
+  } catch (e) {
+    console.warn('failed to load /api/benchmarks', e);
+    sel.innerHTML = '<option value="">All benchmarks</option>';
   }
-  filtered.forEach((s) => {
-    const opt = document.createElement('option');
-    opt.value = s.opp_id;
-    const idShort = (s.opp_id || '').slice(0, 8);
-    const star = s.is_gold ? '★ ' : '   ';
-    const stressFlame = s.is_stress_test ? '🔥' : '';
-    const narr = s.demo_narrative ? ` [${s.demo_narrative}]` : '';
-    opt.textContent = `${star}${stressFlame}${idShort} · ${s.tenant} c${s.cluster_id} ${s.cluster_name} · ${s.motivator}${narr}`;
-    picker.appendChild(opt);
-  });
-  picker.disabled = false;
-  // BUG FIX 2026-05-01: any time the picker re-renders we ALWAYS clear the
-  // selection state so the user must explicitly re-pick. Previously the
-  // selection was preserved if it matched the new filter, but the dropdown's
-  // visible value resets to "Pick a scenario..." — leading to user confusion
-  // (running Karl/dfb34792 while believing they had picked Adam/c04b15d0).
-  state.selected = null;
-  $('#runBtn').disabled = true;
-  $('#scenarioMeta').hidden = true;
-  picker.value = '';
 }
 
-function initTenantFilter() {
-  document.querySelectorAll('.tenant-btn').forEach((btn) => {
+// ── Run-model toggle (Single vs Batch) ───────────────────────────────────────
+function initRunMode() {
+  document.querySelectorAll('.runmode-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tenant-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('.runmode-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      state.tenantFilter = btn.dataset.tenant;
-      renderScenarioPicker();
+      state.runMode = btn.dataset.runmode;  // 'single' | 'batch'
+      // Single mode keeps at most one selection.
+      if (state.runMode === 'single' && state.selectedIds.size > 1) {
+        const keep = [...state.selectedIds][0];
+        state.selectedIds = new Set([keep]);
+      }
+      document.body.classList.toggle('mode-batch', state.runMode === 'batch');
+      renderScenarioList();
+      updateRunButton();
     });
   });
-  // Stress-only filter — when checked, also auto-enable hard-customer mode
-  // so the chosen stress scenario runs against the harder simulator.
-  const stressToggle = document.getElementById('stressOnlyToggle');
-  if (stressToggle) {
-    stressToggle.addEventListener('change', () => {
-      state.stressOnly = !!stressToggle.checked;
-      const hardToggle = document.getElementById('hardCustomerToggle');
-      if (hardToggle) hardToggle.checked = state.stressOnly;
-      renderScenarioPicker();
-    });
-  }
 }
 
-async function onScenarioPicked(e) {
-  const oppId = e.target.value;
-  if (!oppId) return;
-  const r = await fetch(`/api/scenarios/${oppId}`);
-  if (!r.ok) {
-    console.warn('Failed to load scenario detail');
+function initScenarioTools() {
+  const search = document.getElementById('scenarioSearch');
+  if (search) search.addEventListener('input', () => {
+    state.search = search.value.trim().toLowerCase();
+    renderScenarioList();
+  });
+  const randBtn = document.getElementById('selectRandomBtn');
+  if (randBtn) randBtn.addEventListener('click', selectRandomN);
+  const clearBtn = document.getElementById('clearSelBtn');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    state.selectedIds.clear();
+    state.selected = null;
+    renderScenarioList();
+    updateRunButton();
+  });
+}
+
+function filteredScenarios() {
+  let f = state.scenarios;
+  if (state.search) {
+    f = f.filter((s) => {
+      // Searches the benchmark record: id, persona bucket + attributes, tenant.
+      const hay = (`${s.scenario_id || ''} ${s.diversity_bucket || ''} ${s.cluster_name || ''} ` +
+                   `${s.motivator || ''} ${s.decision_logic || ''} ${s.opp_id || ''} ${s.tenant || ''} ` +
+                   `${JSON.stringify(s.attributes || {})}`).toLowerCase();
+      return hay.includes(state.search);
+    });
+  }
+  return f;
+}
+
+function scenarioLabel(s) {
+  const a = s.attributes || {};
+  const motivator = a.primary_motivator || s.motivator || '';
+  const logic = a.decision_logic || s.decision_logic || '';
+  const bucket = s.diversity_bucket || s.cluster_name || '';
+  const dims = [motivator, logic].filter(Boolean).join(' · ');
+  const title = s.scenario_id || (s.opp_id || '').slice(0, 8);
+  const sub = [s.tenant, dims || bucket].filter(Boolean).join(' · ');
+  return { title, sub };
+}
+
+function renderScenarioList() {
+  const list = document.getElementById('scenarioList');
+  if (!list) return;
+  const filtered = filteredScenarios();
+  if (!filtered.length) {
+    list.innerHTML = '<div class="scenario-list-empty">No scenarios match.</div>';
+    updateSelectedCount();
     return;
   }
-  state.selected = await r.json();
-  renderMeta(state.selected);
-  $('#runBtn').disabled = false;
+  const multi = state.runMode === 'batch';
+  list.innerHTML = '';
+  filtered.forEach((s) => {
+    const { title, sub } = scenarioLabel(s);
+    const row = document.createElement('label');
+    row.className = 'scenario-row';
+    const checked = state.selectedIds.has(s.opp_id);
+    if (checked) row.classList.add('selected');
+    row.innerHTML =
+      `<input type="${multi ? 'checkbox' : 'radio'}" name="scenarioSel" ${checked ? 'checked' : ''} />` +
+      `<span class="sc-title">${title}</span><span class="sc-sub">${sub}</span>`;
+    const input = row.querySelector('input');
+    input.addEventListener('change', () => onScenarioToggle(s, input.checked));
+    list.appendChild(row);
+  });
+  updateSelectedCount();
+}
+
+async function onScenarioToggle(s, checked) {
+  if (state.runMode === 'single') {
+    state.selectedIds = new Set(checked ? [s.opp_id] : []);
+  } else {
+    if (checked) state.selectedIds.add(s.opp_id);
+    else state.selectedIds.delete(s.opp_id);
+  }
+  // Load detail for the (last) selected scenario so meta + seed slider populate.
+  if (checked) {
+    await loadScenarioDetail(s.opp_id);
+  } else if (state.selectedIds.size === 0) {
+    state.selected = null;
+    $('#scenarioMeta').hidden = true;
+  }
+  renderScenarioList();
+  updateRunButton();
+}
+
+async function loadScenarioDetail(oppId) {
+  try {
+    const r = await fetch(`/api/scenarios/${oppId}`);
+    if (!r.ok) { console.warn('scenario detail failed', oppId); return null; }
+    state.selected = await r.json();
+    renderMeta(state.selected);
+    return state.selected;
+  } catch (e) { console.warn('scenario detail error', e); return null; }
+}
+
+function selectRandomN() {
+  const n = Math.max(1, Number(document.getElementById('randomNInput')?.value) || 5);
+  const pool = filteredScenarios().map((s) => s.opp_id);
+  // Fisher-Yates partial shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const pick = pool.slice(0, state.runMode === 'single' ? 1 : n);
+  state.selectedIds = new Set(pick);
+  if (pick.length) loadScenarioDetail(pick[0]);
+  renderScenarioList();
+  updateRunButton();
+}
+
+function updateSelectedCount() {
+  const el = document.getElementById('selectedCount');
+  if (el) el.textContent = `${state.selectedIds.size} selected`;
+}
+
+function updateRunButton() {
+  const btn = $('#runBtn');
+  if (!btn) return;
+  const n = state.selectedIds.size;
+  if (state.runMode === 'batch') {
+    btn.textContent = n > 1 ? `Run batch (${n})` : 'Run batch';
+    btn.disabled = n < 1 || (state.batch && !state.batch.stop);
+  } else {
+    btn.textContent = 'Run scenario';
+    btn.disabled = n !== 1;
+  }
 }
 
 function renderMeta(s) {
   $('#scenarioMeta').hidden = false;
   $('#metaOppId').textContent = s.opp_id || '—';
-  $('#metaTenant').textContent = s.tenant;
-  $('#metaCluster').textContent = `${s.cluster_id} — ${s.cluster_name}`;
+  $('#metaTenant').textContent = s.tenant || '—';
+  $('#metaCluster').textContent = s.diversity_bucket || '—';  // persona bucket (cohorts retired)
   const p = s.profile || {};
-  $('#metaProfile').textContent = `${p.motivator} · ${p.decision_logic} · ${p.trust_level || 'unknown trust'}`;
-  $('#metaOutcome').textContent = s.historical_outcome || '—';
-  $('#metaMsgs').textContent = `${s.n_msgs} (${s.n_inbound} customer / ${s.n_outbound} agent)`;
-
-  // Seed-turn slider — bound to historical message count (need ≥2 turns).
-  // Default position = auto-computed supervisor-intervention index returned
-  // by the server; user adjusts ± from there.
-  const slider = document.getElementById('seedTurnSlider');
-  const valueEl = document.getElementById('seedTurnValue');
-  if (slider && valueEl) {
-    const nMsgs = Number(s.n_msgs) || 0;
-    const autoIdx = Math.max(1, Number(s.auto_failure_idx) || 1);
-    // failure_idx must be ≥1 (need at least 2 msgs to seed) and ≤ n_msgs-1
-    const maxSeed = Math.max(1, nMsgs - 1);
-    const initial = Math.min(autoIdx, maxSeed);
-    slider.min = '1';
-    slider.max = String(maxSeed);
-    slider.value = String(initial);
-    slider.dataset.autoIdx = String(initial);  // remember auto for label
-    slider.disabled = maxSeed <= 1;
-    updateSeedSliderLabel(slider, valueEl);
+  const a = s.attributes || {};
+  const motivator = p.motivator || a.primary_motivator || '—';
+  const logic = p.decision_logic || a.decision_logic || '—';
+  const trust = p.trust_level || a.trust_level || 'unknown trust';
+  $('#metaProfile').textContent = `${motivator} · ${logic} · ${trust}`;
+  $('#metaOutcome').textContent = s.historical_outcome || s.real_outcome || '—';
+  if (s.n_msgs != null) {
+    $('#metaMsgs').textContent = `${s.n_msgs} (${s.n_inbound || 0} customer / ${s.n_outbound || 0} agent)`;
+  } else {
+    $('#metaMsgs').textContent = `${(s.seed_messages || []).length} seed`;
   }
+
 }
 
-function updateSeedSliderLabel(slider, valueEl) {
-  const v = Number(slider.value);
-  const autoIdx = Number(slider.dataset.autoIdx || 0);
-  const max = slider.max;
-  const wrap = slider.closest('.seed-slider');
-  if (v === autoIdx) {
-    valueEl.textContent = `auto: ${v}/${max}`;
-    if (wrap) wrap.classList.remove('overridden');
-  } else {
-    const delta = v - autoIdx;
-    const sign = delta > 0 ? '+' : '';
-    valueEl.textContent = `${v}/${max} (${sign}${delta})`;
-    if (wrap) wrap.classList.add('overridden');
-  }
+// Seed depth — Cold vs Warm only. The deep mid-transcript "warm K/N" seed was
+// a replay-era artifact (irrelevant to the generic persona benchmark), so
+// there is no numeric depth: Warm just preloads the scenario's opening
+// exchange; Cold has the agent open the conversation itself.
+function seedModeValue() {
+  return document.getElementById('seedMode')?.value || 'warm';
 }
 
 function initSeedSlider() {
-  const slider = document.getElementById('seedTurnSlider');
-  const valueEl = document.getElementById('seedTurnValue');
-  if (!slider || !valueEl) return;
-  slider.addEventListener('input', () => updateSeedSliderLabel(slider, valueEl));
+  // Cold/Warm select only — nothing to wire beyond the <select> itself.
 }
 
-function initSpeedControls() {
-  document.querySelectorAll('.speed-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.speed-btn').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.speed = btn.dataset.speed;
-      if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-        state.ws.send(JSON.stringify({ action: 'speed', speed: state.speed }));
-      }
-    });
-  });
+// Resolve the seed_end_override int sent to /api/run:
+//   cold → 1 (minimal; agent opens — backend needs ≥1 seed msg)
+//   warm → 2 (opening exchange: first agent outreach + customer's first line)
+function seedEndOverride() {
+  return seedModeValue() === 'cold' ? 1 : 2;
 }
 
 function initButtons() {
   // Engine selectors are wired in initEngines() (dynamic, registry-driven).
-  $('#runBtn').addEventListener('click', runScenario);
+  $('#runBtn').addEventListener('click', onRunClick);
   $('#stopBtn').addEventListener('click', stopSession);
   $('#resetBtn').addEventListener('click', resetUI);
+  const batchStop = document.getElementById('batchStopBtn');
+  if (batchStop) batchStop.addEventListener('click', () => { if (state.batch) state.batch.stop = true; });
+}
+
+// Run button dispatches on the current run model.
+function onRunClick() {
+  if (state.runMode === 'batch') return runBatch([...state.selectedIds]);
+  return runScenario();
 }
 
 // ── Pluggable engines — populate L/R selectors from /api/engines ──────────────
@@ -515,21 +428,14 @@ async function runScenario() {
   if (!state.selected) return;
   const oppId = state.selected.opp_id;
   const hardCustomer = !!document.getElementById('hardCustomerToggle')?.checked;
-  const seedSlider = document.getElementById('seedTurnSlider');
-  // Send 0 = auto when slider sits at its auto default; only send positive
-  // values when the researcher has actually moved it.
-  let seedEndOverride = 0;
-  if (seedSlider && !seedSlider.disabled) {
-    const v = Number(seedSlider.value) || 0;
-    const autoIdx = Number(seedSlider.dataset.autoIdx || 0);
-    seedEndOverride = v === autoIdx ? 0 : v;
-  }
+  // Seed depth → seed_end_override (cold=1, warm=K, 0=server per-scenario default)
+  const seedEndOverrideVal = seedEndOverride();
   const r = await fetch(`/api/run/${oppId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       hard_customer: hardCustomer,
-      seed_end_override: seedEndOverride,  // 0 = auto (peak-engagement detector)
+      seed_end_override: seedEndOverrideVal,
       engine: state.engines.right,         // R-side engine id (registry)
       engine_left: state.engines.left,     // L-side engine id (registry)
       engine_params: state.engineParams.right,
@@ -594,9 +500,7 @@ async function runScenario() {
     try { state.ws.close(); } catch (e) { /* ignore */ }
   }
   state.ws = new WebSocket(`ws://${location.host}/ws/${session_id}`);
-  state.ws.onopen = () => {
-    state.ws.send(JSON.stringify({ action: 'speed', speed: state.speed }));
-  };
+  // Speed control retired (replay-era pacing); server uses its default.
   state.ws.onmessage = (e) => {
     const ev = JSON.parse(e.data);
     // Ignore events from prior sessions whose WS happens to deliver after
@@ -609,9 +513,88 @@ async function runScenario() {
   state.ws.onclose = () => {
     console.log('WS closed');
     stopSessionTimer();
-    $('#runBtn').disabled = false;
     $('#stopBtn').disabled = true;
+    // If a batch is awaiting this run's completion but session_complete never
+    // arrived (error/abort), resolve so the batch can proceed.
+    if (state._completeResolve) { const f = state._completeResolve; state._completeResolve = null; f(null); }
+    else updateRunButton();
   };
+}
+
+// ── Batch A/B: run selected scenarios sequentially, aggregate paired summary ──
+function runScenarioAwait() {
+  return new Promise((resolve) => {
+    state._completeResolve = resolve;
+    runScenario();
+  });
+}
+
+async function runBatch(oppIds) {
+  if (!oppIds || !oppIds.length) return;
+  state.batch = { ids: oppIds, i: 0, total: oppIds.length, results: [], stop: false };
+  const summary = document.getElementById('batchSummary');
+  if (summary) summary.hidden = false;
+  document.getElementById('batchStopBtn')?.removeAttribute('hidden');
+  $('#runBtn').disabled = true;
+  const armL = engineName(state.engines.left), armR = engineName(state.engines.right);
+
+  for (let i = 0; i < oppIds.length; i++) {
+    if (state.batch.stop) break;
+    state.batch.i = i;
+    updateBatchProgress(`Running ${i + 1} / ${oppIds.length}…`);
+    const detail = await loadScenarioDetail(oppIds[i]);
+    if (!detail) { state.batch.results.push({ oppId: oppIds[i], left: null, right: null }); renderBatchSummary(); continue; }
+    const res = await runScenarioAwait();  // resolves on session_complete
+    state.batch.results.push({
+      oppId: oppIds[i],
+      scenario_id: detail.scenario_id || (detail.opp_id || '').slice(0, 8),
+      left: res ? res.left_outcome : null,
+      right: res ? res.right_outcome : null,
+    });
+    renderBatchSummary();
+  }
+
+  updateBatchProgress(state.batch.stop
+    ? `Stopped — ${state.batch.results.length} / ${oppIds.length} run.`
+    : `Done — ${oppIds.length} scenarios · L=${armL} vs R=${armR}.`);
+  document.getElementById('batchStopBtn')?.setAttribute('hidden', '');
+  state.batch.stop = true;  // mark finished so updateRunButton re-enables
+  updateRunButton();
+}
+
+function updateBatchProgress(txt) {
+  const el = document.getElementById('batchProgress');
+  if (el) el.textContent = txt;
+}
+
+function renderBatchSummary() {
+  const rows = (state.batch && state.batch.results) || [];
+  const armL = engineName(state.engines.left), armR = engineName(state.engines.right);
+  const isWon = (o) => o === 'won';
+  const lWins = rows.filter((r) => isWon(r.left)).length;
+  const rWins = rows.filter((r) => isWon(r.right)).length;
+  const n = rows.length;
+  const pct = (w) => n ? `${Math.round((w / n) * 100)}% (${w}/${n})` : '—';
+  const lBetter = rows.filter((r) => isWon(r.left) && !isWon(r.right)).length;
+  const rBetter = rows.filter((r) => isWon(r.right) && !isWon(r.left)).length;
+  const ties = rows.filter((r) => (r.left != null && r.right != null) && isWon(r.left) === isWon(r.right)).length;
+
+  const arms = document.getElementById('batchArmsTable');
+  if (arms) arms.innerHTML =
+    `<thead><tr><th>Arm</th><th>Win rate</th></tr></thead><tbody>` +
+    `<tr><td>L · ${armL}</td><td>${pct(lWins)}</td></tr>` +
+    `<tr><td>R · ${armR}</td><td>${pct(rWins)}</td></tr></tbody>`;
+  const pw = document.getElementById('batchPairwiseTable');
+  if (pw) pw.innerHTML =
+    `<thead><tr><th>Pairwise</th><th>n</th></tr></thead><tbody>` +
+    `<tr><td>L better</td><td>${lBetter}</td></tr>` +
+    `<tr><td>R better</td><td>${rBetter}</td></tr>` +
+    `<tr><td>Ties</td><td>${ties}</td></tr></tbody>`;
+  const detail = document.getElementById('batchDetail');
+  if (detail) detail.innerHTML = rows.map((r) => {
+    const tag = (o) => `<span class="bs-oc ${o === 'won' ? 'won' : (o == null ? 'na' : 'lost')}">${o || '—'}</span>`;
+    return `<div class="bs-row"><code>${r.scenario_id || ''}</code> L:${tag(r.left)} R:${tag(r.right)}</div>`;
+  }).join('');
 }
 
 function resetUI() {
@@ -737,9 +720,6 @@ function handleEvent(ev) {
   switch (ev.event) {
     case 'session_ready':
       console.log('Session', ev.session_id, 'opp', ev.opp_id);
-      // 2026-05-10 — Pull the real historical persuasion series for this opp
-      // and overlay it on the chart as the green 'Real (historical)' line.
-      loadHistoricalPersuasion(ev.opp_id);
       break;
     case 'session_started':
       // Mark both panels as "Seed phase" until seed_complete fires
@@ -880,7 +860,13 @@ function handleEvent(ev) {
     case 'session_complete':
       stopSessionTimer();
       $('#stopBtn').disabled = true;
-      $('#runBtn').disabled = false;
+      if (!state.batch || state.batch.stop) $('#runBtn').disabled = false;
+      // If a batch run is awaiting this scenario's outcome, hand it back.
+      if (state._completeResolve) {
+        const f = state._completeResolve; state._completeResolve = null;
+        f({ left_outcome: ev.left_outcome, right_outcome: ev.right_outcome,
+            left_reason: ev.left_reason, right_reason: ev.right_reason });
+      }
       // 6.1 — Failure-mode taxonomy badges. End-reason carries WHY the
       // session ended (commitment_5, agent_graceful_close, customer_dropped,
       // saturated, stalled_low_engagement, customer_polite_close, incomplete...)
@@ -1869,25 +1855,6 @@ function initCharts() {
           fill: false,
           spanGaps: true,
         },
-        // 2026-05-10 — Real (historical) salesman persuasion trajectory.
-        // Pulled once at session start from /api/historical_persuasion/{opp_id}
-        // (research_turn_state_flash). Lets the user compare our supervised
-        // agent against the actual won/lost-deal performance.
-        {
-          label: 'Real (historical)',
-          data: [],
-          borderColor: '#27AE60',
-          backgroundColor: '#27AE6022',
-          borderWidth: 2,
-          borderDash: [],
-          tension: 0.3,
-          pointStyle: 'cross',
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#27AE60',
-          fill: false,
-          spanGaps: true,
-        },
       ],
     },
     options: {
@@ -1943,25 +1910,6 @@ function pushScore(side, turn, score, commitment) {
   redrawCombined();
 }
 
-// 2026-05-10 — Fetch real-historical persuasion series for the loaded opp
-// and stash it; redraw will fold it onto the chart as the green 'Real' line.
-async function loadHistoricalPersuasion(oppId) {
-  if (!oppId) return;
-  try {
-    const resp = await fetch(`/api/historical_persuasion/${encodeURIComponent(oppId)}`);
-    if (!resp.ok) return;
-    const data = await resp.json();
-    state.historicalPersuasionByTurn = {};
-    for (const p of (data.points || [])) {
-      if (typeof p.turn !== 'number' || typeof p.persuasion !== 'number') continue;
-      state.historicalPersuasionByTurn[p.turn] = p.persuasion;
-    }
-    redrawCombined();
-  } catch (e) {
-    console.warn('historical_persuasion fetch failed:', e);
-  }
-}
-
 function redrawCombined() {
   if (!state.combinedChart) return;
   // Union of all turns seen, sorted ascending
@@ -1991,28 +1939,6 @@ function redrawCombined() {
     state.combinedChart.data.datasets[2].data = sortedC.map(t =>
       cbT[t] !== undefined ? cbT[t] : null);
   }
-  // 2026-05-10 — Real (historical) line (4th dataset). Includes its own turns
-  // in the X axis if they extend past what live panels have produced so far.
-  if (state.combinedChart.data.datasets[3]) {
-    const hbT = state.historicalPersuasionByTurn || {};
-    Object.keys(hbT).forEach(t => allTurns.add(parseInt(t)));
-    const sortedH = Array.from(allTurns).sort((a, b) => a - b);
-    state.combinedChart.data.labels = sortedH.map(t => `T${t}`);
-    state.combinedChart.data.datasets[3].data = sortedH.map(t =>
-      hbT[t] !== undefined ? hbT[t] : null);
-    // Re-extend earlier datasets to the now-larger X axis
-    state.combinedChart.data.datasets[0].data = sortedH.map(t =>
-      state.scoreByTurn.left[t] !== undefined ? state.scoreByTurn.left[t] : null);
-    state.combinedChart.data.datasets[1].data = sortedH.map(t => {
-      const v = state.scoreByTurn.right[t];
-      return v !== undefined ? Math.min(1, v + SUPERVISED_OFFSET) : null;
-    });
-    if (state.combinedChart.data.datasets[2]) {
-      const cbT = state.confByTurn || {};
-      state.combinedChart.data.datasets[2].data = sortedH.map(t =>
-        cbT[t] !== undefined ? cbT[t] : null);
-    }
-  }
   state.combinedChart.update();
 }
 
@@ -2020,13 +1946,11 @@ function resetCharts() {
   if (!state.combinedChart) return;
   state.scoreByTurn = { left: {}, right: {} };
   state.confByTurn = {};
-  state.historicalPersuasionByTurn = {};
   state.seedEndTurn = null;
   state.combinedChart.data.labels = [];
   state.combinedChart.data.datasets[0].data = [];
   state.combinedChart.data.datasets[1].data = [];
   if (state.combinedChart.data.datasets[2]) state.combinedChart.data.datasets[2].data = [];
-  if (state.combinedChart.data.datasets[3]) state.combinedChart.data.datasets[3].data = [];
   state.combinedChart.update();
 }
 

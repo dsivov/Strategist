@@ -1,9 +1,10 @@
-"""POC FastAPI server — Sales Strategist Benchmark demo.
+"""POC FastAPI server — Persuasion Agent Benchmark.
 
 Endpoints:
   GET  /                       → serves the single-page app
   GET  /api/engines            → list registered engines (drives the UI selectors)
-  GET  /api/scenarios          → list curated scenarios
+  GET  /api/domains            → list registered domain packs
+  GET  /api/scenarios          → list benchmark scenarios (v1 dataset)
   GET  /api/scenarios/{opp_id} → full scenario detail + transcript metadata
   POST /api/run/{opp_id}       → start a replay session
   WS   /ws/{session_id}        → stream events
@@ -34,10 +35,9 @@ try:
 except ImportError:
     pass
 
-from fastapi import Body, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-import httpx
 import uvicorn
 
 # ── POC package layout: server/ is the FastAPI app, poc/ holds the engines
@@ -81,27 +81,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger(__name__)
 
 POC_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCENARIOS_FILE = f"{POC_ROOT}/data/scenarios.json"
 CLIENT_DIR = f"{POC_ROOT}/client"
 
 # In-memory session store (single-user demo)
 SESSIONS: dict[str, dict] = {}
-
-
-CANDIDATE_CACHE: dict | None = None
-
-
-async def _build_cache_in_background():
-    global CANDIDATE_CACHE
-    try:
-        from random_match import load_or_build_candidate_cache
-        result = await asyncio.to_thread(load_or_build_candidate_cache)
-        CANDIDATE_CACHE = result
-        log.info("random_match cache: %d candidates loaded",
-                  len(CANDIDATE_CACHE) if CANDIDATE_CACHE else 0)
-    except Exception as e:
-        log.warning("random_match cache build failed: %s", e)
-        CANDIDATE_CACHE = {}
 
 
 async def _prewarm_ecommerce_anchors():
@@ -121,16 +104,14 @@ async def _prewarm_ecommerce_anchors():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("POC server starting on port 8443 — port binds NOW; "
-             "random_match cache + Ecommerce anchors warm in background")
-    cache_task = asyncio.create_task(_build_cache_in_background())
+             "Ecommerce anchors warm in background")
     ecommerce_task = asyncio.create_task(_prewarm_ecommerce_anchors())
     yield
-    cache_task.cancel()
     ecommerce_task.cancel()
     log.info("POC server shutting down")
 
 
-app = FastAPI(title="Sales Strategist Benchmark POC", lifespan=lifespan)
+app = FastAPI(title="Persuasion Agent Benchmark", lifespan=lifespan)
 
 
 _NO_CACHE_HEADERS = {
@@ -167,36 +148,108 @@ async def list_engines():
     return {"engines": [s.to_public() for s in all_specs()]}
 
 
+@app.get("/api/domains")
+async def list_domains():
+    """Available domain packs (persona framing + win/lose detection), from the
+    pluggable domain registry. The UI's domain selector is populated from this;
+    selecting one scopes the scenario dataset + sets outcome detection. Only
+    'sales' ships today — the list grows as domain packs are registered.
+    """
+    from domain import all_domains, active_domain
+    active = active_domain()
+    active_name = getattr(active, "name", None)
+    out = []
+    for d in all_domains():
+        name = getattr(d, "name", "generic")
+        out.append({
+            "id": name,
+            "name": getattr(d, "display_name", None) or name.replace("_", " ").title(),
+            "description": getattr(d, "description", "") or "",
+            "active": name == active_name,
+        })
+    return {"domains": out}
+
+
+V1_SCENARIOS_FILE = f"{POC_ROOT}/data/benchmark/v1_scenarios.json"
+
+# Fields safe + useful for the picker list. seed_messages (transcripts) are
+# deliberately excluded — heavy, and the list only needs persona metadata.
+_LIST_FIELDS = ("scenario_id", "opp_id", "tenant", "diversity_bucket",
+                "attributes", "real_outcome", "is_sentinel", "anchor_real")
+
+# mtime-cached benchmark dataset (a few MB — don't re-parse per request)
+_V1_CACHE: tuple[float, list] | None = None
+
+
+def _load_v1_scenarios() -> list[dict]:
+    global _V1_CACHE
+    mtime = os.path.getmtime(V1_SCENARIOS_FILE)
+    if _V1_CACHE is None or _V1_CACHE[0] != mtime:
+        with open(V1_SCENARIOS_FILE) as f:
+            _V1_CACHE = (mtime, json.load(f))
+    return _V1_CACHE[1]
+
+
+def _benchmark_scenarios(pack: str | None = None) -> list[dict]:
+    """Scenarios for one benchmark pack, or the union of all packs (deduped by
+    opp_id). Falls back to the bundled v1 dataset if no packs are installed."""
+    from benchmark_packs import all_packs, load_pack_scenarios
+    if pack:
+        return load_pack_scenarios(pack)        # KeyError → 404 at call site
+    seen: dict[str, dict] = {}
+    for p in all_packs():
+        try:
+            for s in load_pack_scenarios(p["id"]):
+                oid = s.get("opp_id")
+                if oid and oid not in seen:
+                    seen[oid] = s
+        except Exception as e:
+            log.warning("pack %s: scenario load failed: %s", p["id"], e)
+    return list(seen.values()) if seen else _load_v1_scenarios()
+
+
+@app.get("/api/benchmarks")
+async def list_benchmarks():
+    """Benchmark packs — goal-oriented scenario bundles under benchmarks/
+    (see benchmarks/_template/). Drives the UI's Benchmark selector; a new
+    pack directory appears here with no core edits."""
+    from benchmark_packs import all_packs, load_pack_scenarios
+    out = []
+    for p in all_packs():
+        try:
+            n = len(load_pack_scenarios(p["id"]))
+        except Exception as e:
+            log.warning("pack %s: scenario load failed: %s", p["id"], e)
+            n = None
+        out.append({"id": p["id"], "name": p["name"],
+                    "description": p.get("description", ""),
+                    "goal": p.get("goal", ""),
+                    "domain": p.get("domain", "sales"),
+                    "n_scenarios": n})
+    return {"benchmarks": out}
+
+
 @app.get("/api/scenarios")
-async def list_scenarios():
-    with open(SCENARIOS_FILE) as f:
-        scenarios = json.load(f)
-    # Strip win_rate (internal) from public response
-    public = [{k: v for k, v in s.items() if k != "v1_win_rate"} for s in scenarios]
-    return public
+async def list_scenarios(pack: str | None = None):
+    """Scenario picker list (persona metadata only — seed_messages excluded).
+    Optional ?pack=<id> scopes to one benchmark pack; default is the union of
+    all installed packs."""
+    try:
+        scenarios = _benchmark_scenarios(pack)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Unknown benchmark pack: {pack}")
+    return [{k: s[k] for k in _LIST_FIELDS if k in s} for s in scenarios]
 
 
 @app.get("/api/scenarios/{opp_id}")
 async def get_scenario(opp_id: str):
-    with open(SCENARIOS_FILE) as f:
-        scenarios = json.load(f)
-    s = next((s for s in scenarios if s["opp_id"] == opp_id), None)
+    """Full scenario detail: the benchmark record (minus seed_messages —
+    transcripts stream over /ws) + transcript metadata via the scenario-backed
+    DB shim (same dataset)."""
+    s = next((s for s in _benchmark_scenarios() if s["opp_id"] == opp_id), None)
     if s is None:
-        # Random-match path — opp not in scenarios.json; build minimal stub from cache
-        if CANDIDATE_CACHE and opp_id in CANDIDATE_CACHE:
-            cached = CANDIDATE_CACHE[opp_id]
-            s = {
-                "opp_id": opp_id,
-                "tenant": cached.get("tenant"),
-                "cluster_id": cached.get("cluster_id") or 0,
-                "cluster_name": "random match",
-                "motivator": cached.get("motivator"),
-                "decision_logic": cached.get("decision_logic"),
-                "expected_lift_label": "random match (no precomputed v1 data)",
-                "v1_win_rate": None,
-            }
-        else:
-            raise HTTPException(status_code=404, detail="Scenario not found")
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    s = {k: v for k, v in s.items() if k != "seed_messages"}
 
     # Enrich with transcript metadata (don't ship full transcript over /api — that's for /ws)
     conn = open_conn()
@@ -229,7 +282,7 @@ async def get_scenario(opp_id: str):
         "n_inbound": n_inbound,
         "n_outbound": n_outbound,
         "historical_max_commit": int(max_commit),
-        "historical_outcome": meta.get("status"),
+        "historical_outcome": s.get("real_outcome"),
         "failure_mode_turn_index": failure_idx,
         "auto_failure_idx": int(auto_failure_idx) if auto_failure_idx else 0,
         "profile": {
@@ -240,41 +293,6 @@ async def get_scenario(opp_id: str):
             "communication_style": meta.get("communication_style"),
         },
     }
-
-
-@app.get("/api/random_match/criteria_options")
-async def random_match_criteria_options():
-    """Return available values for each criteria axis, so the UI can populate
-    dropdowns from real cache data instead of hardcoding lists."""
-    if not CANDIDATE_CACHE:
-        return {"error": "candidate cache not built"}
-    tenants = sorted({c["tenant"] for c in CANDIDATE_CACHE.values() if c.get("tenant")})
-    opp_types = sorted({c["opp_type"] for c in CANDIDATE_CACHE.values() if c.get("opp_type")})
-    motivators = sorted({c["motivator"] for c in CANDIDATE_CACHE.values() if c.get("motivator")})
-    decision_logics = sorted({c["decision_logic"] for c in CANDIDATE_CACHE.values() if c.get("decision_logic")})
-    trust_levels = sorted({c["trust_level"] for c in CANDIDATE_CACHE.values() if c.get("trust_level")})
-    return {
-        "tenants": tenants,
-        "opp_types": opp_types,
-        "motivators": motivators,
-        "decision_logics": decision_logics,
-        "trust_levels": trust_levels,
-        "n_total_in_cache": len(CANDIDATE_CACHE),
-        "n_with_plan": sum(1 for c in CANDIDATE_CACHE.values() if c["has_plan"]),
-    }
-
-
-@app.post("/api/random_match")
-async def random_match_endpoint(criteria: dict):
-    """Find best clean-loss candidate matching audience-defined criteria.
-    Hierarchical relaxation on empty result; prefer-with-plan partition.
-    Body: {tenant, opp_type, motivator, decision_logic, trust_level} — any subset.
-    """
-    if not CANDIDATE_CACHE:
-        raise HTTPException(status_code=503, detail="candidate cache not built")
-    from random_match import find_best_match
-    return find_best_match(criteria or {}, CANDIDATE_CACHE,
-                            prefer_with_plan=True)
 
 
 @app.post("/api/run/{opp_id}")
@@ -414,14 +432,14 @@ async def websocket_session(ws: WebSocket, session_id: str):
             request_stop(session_id)
             return
 
-    # Pull scenario meta for the logger
+    # Pull scenario meta for the logger — benchmark record minus the heavy
+    # seed transcript (the replayer fetches messages itself via the db shim).
     scenario_meta = None
     try:
-        with open(SCENARIOS_FILE) as f:
-            for s in json.load(f):
-                if s["opp_id"] == opp_id:
-                    scenario_meta = s
-                    break
+        for s in _benchmark_scenarios():
+            if s["opp_id"] == opp_id:
+                scenario_meta = {k: v for k, v in s.items() if k != "seed_messages"}
+                break
     except Exception:
         pass
 
@@ -563,159 +581,28 @@ async def trace_get(session_id: str):
         return json.load(f)
 
 
-@app.get("/api/cohort_weights")
-async def cohort_weights():
-    """Return the auto-generated cohort_weights.yaml as JSON. Research artifact;
-    NOT consulted by the supervisor at runtime yet. Surfaced for the /logs UI
-    so reviewers can inspect what the per-cohort tactical priors look like.
-    Run `python3 server/build_cohort_weights.py` to regenerate."""
-    import os, re
-    weights_path = f"{POC_ROOT}/data/cohort_weights.yaml"
-    if not os.path.exists(weights_path):
-        return JSONResponse(
-            status_code=404,
-            content={"error": "cohort_weights.yaml not yet generated",
-                     "hint": "run: python3 server/build_cohort_weights.py"})
-    # Minimal YAML→dict parse (avoid PyYAML dep).
-    # The file is structured + flat enough for a hand-rolled parser.
-    txt = open(weights_path).read()
-    try:
-        import yaml
-        return yaml.safe_load(txt)
-    except ImportError:
-        # Fallback: return raw text for client-side display
-        return {"_raw_yaml": txt,
-                "_note": "PyYAML not installed; client should display raw text"}
-
-
-@app.get("/api/cache_status")
-async def cache_status():
-    """random_match cache build state. UI polls this to know when 'Find best
-    match' is usable. Cache builds at server startup (~2-3 min), so on a
-    fresh start the random tab shows a building indicator."""
-    if CANDIDATE_CACHE is None:
-        return {"ready": False, "n_candidates": 0, "state": "building"}
-    return {"ready": True, "n_candidates": len(CANDIDATE_CACHE), "state": "ready"}
-
-
-@app.get("/api/precedents")
-async def get_precedents(request: Request):
-    """Phase 2 — cohort-conditioned precedent retrieval (two-tier router).
-
-    Query params (all optional unless noted):
-      company                       Insurance | Ecommerce
-      outcome                       ClosedWon (default) | ClosedLost
-      decision_logic, primary_motivator, budget_sensitivity, communication_style,
-        regulatory_focus, trust_level, purchase_urgency, primary_resistance,
-        profile_tone, gender, age_range, engagement_level, responsiveness,
-        emotional_volatility, authority, social_proof_susceptibility,
-        tech_savviness, risk_tolerance, education_level, family_status,
-        sentiment_trend, time_pressure        (raw cohort dims — equality)
-      primary_strategy, secondary_strategy, strategy_tone   (strategy filters)
-      objection_category, sentiment                         (phase signals)
-      commitment_level_min, commitment_level_max            (range, integer)
-      min_persuasion_score, min_p_conv                      (float [0,1])
-      limit                                                 (default 20, max 100)
-
-    Response carries `tier` ∈ {sqlite, cg, sqlite+cg, empty, error} so callers
-    can attribute which retrieval substrate served (per substrate doc §3, §7).
-    """
-    from precedent_retrieval import fetch_precedents
-
-    raw_filters = dict(request.query_params)
-    async with httpx.AsyncClient() as http:
-        result = await fetch_precedents(raw_filters, http_client=http)
-
-    if result.get("tier") == "error":
-        return JSONResponse(status_code=400, content=result)
-    return result
-
-
-@app.get("/api/precedents/meta")
-async def precedents_meta():
-    """Substrate freshness + cache stats. Used by Phase 3 validation harness
-    and by the /logs UI to surface 'precedents.db built_at' for traceability."""
-    from precedent_retrieval import db_meta, cache_stats
-    return {
-        "db": db_meta(),
-        "cache": cache_stats(),
-    }
-
-
-@app.get("/api/historical_persuasion/{opp_id}")
-async def historical_persuasion(opp_id: str):
-    """Return per-turn persuasion_score from the REAL (historical) conversation
-    for this opp_id. Used by the UI to overlay a 'real salesman' line on the
-    persuasion-over-time chart so the user can compare our supervised agent
-    against actual historical performance.
-
-    Joins research_turn_state_flash (per-turn persuasion + commitment)
-    with message_event (sequence_number → timestamp + direction). Returns
-    points indexed by sequence_number. Read-only.
-    """
-    try:
-        conn = open_conn()
-        cur = conn.cursor()
-        # Pull turn-state per message_id; join with event direction so the UI
-        # can distinguish customer vs agent turns. Order by timestamp.
-        cur.execute(
-            """
-            SELECT ts.sequence_number   AS seq,
-                   ts.persuasion_score  AS persuasion,
-                   ts.commitment_level  AS commit,
-                   ts.p_conv            AS p_conv,
-                   me.type              AS direction,
-                   me.timestamp         AS ts_at
-            FROM research_turn_state_flash ts
-            JOIN message_event me
-              ON me.message_id     = ts.message_id
-             AND me.opportunity_id = ts.opportunity_id
-            WHERE ts.opportunity_id = %s
-            ORDER BY me.timestamp
-            """,
-            (opp_id,),
-        )
-        rows = cur.fetchall()
-        conn.close()
-        # De-dupe per seq (keep highest persuasion in case of duplicates from
-        # the LLM-inferred labeling re-running).
-        by_seq = {}
-        for r in rows:
-            seq = r.get("seq")
-            if seq is None:
-                continue
-            cur_seq = by_seq.get(seq)
-            if cur_seq is None or (r.get("persuasion") or 0) > (cur_seq.get("persuasion") or 0):
-                by_seq[seq] = r
-        points = []
-        for seq in sorted(by_seq.keys()):
-            r = by_seq[seq]
-            points.append({
-                "turn":       int(seq),
-                "persuasion": float(r["persuasion"]) if r.get("persuasion") is not None else None,
-                "commit":     int(r["commit"])      if r.get("commit")     is not None else None,
-                "p_conv":     float(r["p_conv"])    if r.get("p_conv")     is not None else None,
-                "role":       "agent" if r.get("direction") == "outbound" else "customer",
-            })
-        return {"opp_id": opp_id, "points": points, "n": len(points)}
-    except Exception as e:
-        log.warning("historical_persuasion(%s) failed: %s", opp_id, e)
-        return {"opp_id": opp_id, "points": [], "n": 0, "error": str(e)[:200]}
-
-
 @app.get("/health")
 async def health():
+    """Liveness + benchmark-dataset sanity. `db` only does a real ping in
+    MySQL passthrough mode (POC_USE_MYSQL=1); the default JSON shim serves
+    from the same dataset counted here."""
     try:
-        conn = open_conn()
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1 AS ok")
-            cur.fetchone()
-        conn.close()
-        db_ok = True
+        n_scenarios = len(_load_v1_scenarios())
     except Exception as e:
-        db_ok = False
-        log.warning("DB health failed: %s", e)
-    return {"status": "ok", "db": db_ok}
+        log.warning("health: benchmark dataset unavailable: %s", e)
+        n_scenarios = 0
+    db_ok = True
+    if os.environ.get("POC_USE_MYSQL") == "1":
+        try:
+            conn = open_conn()
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1 AS ok")
+                cur.fetchone()
+            conn.close()
+        except Exception as e:
+            db_ok = False
+            log.warning("DB health failed: %s", e)
+    return {"status": "ok", "scenarios": n_scenarios, "db": db_ok}
 
 
 if __name__ == "__main__":

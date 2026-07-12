@@ -1,0 +1,12 @@
+{
+  "id": "my-benchmark",
+  "name": "My Benchmark",
+  "description": "One paragraph: what situation the agent is dropped into, what it negotiates about, and what makes it hard.",
+  "goal": "What counts as won, in one sentence.",
+  "domain": "sales",
+  "scenario_source": {
+    "type": "json",
+    "path": "scenarios.json",
+    "filter": {}
+  }
+}

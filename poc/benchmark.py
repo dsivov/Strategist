@@ -56,8 +56,17 @@ _EXPLICIT_PAYMENT_REGEX = re.compile(
 _DEFERRAL_RE = re.compile(
     r"\b(get back to you|if i decide|i'?ll (review|think|consider|let you know|"
     r"check)|think (about|it over)|review (it|the)|before i (decide|confirm|"
-    r"commit)|not sure( yet)?|decide later|need to (think|check|discuss|talk)|"
-    r"maybe later|i'?ll see|circle back|hold off)\b",
+    r"commit|hear)|not sure( yet)?|decide later|need to (think|check|discuss|talk)|"
+    r"maybe later|i'?ll see|circle back|hold off|"
+    # 2026-07-05 — hedges/negations that co-occur with commit words in voice
+    # transcripts; keep them from false-winning ("not to lock it in right now").
+    r"not signing|not going to sign|won'?t sign|not ready|not proceeding|"
+    r"not to lock|want to compare|still need to compare|compare with|"
+    r"need to (compare|hear|see|speak)|on the phone before|"
+    # echo/quote guard: customer quoting the agent's pitch ("you keep saying
+    # 'let's lock in'…") is a rejection, not a commitment.
+    r"you (keep|kept) (saying|repeating|telling)|you'?re just saying|"
+    r"decided on|going with (klal|menora|phoenix|another|competitor))\b",
     re.IGNORECASE,
 )
 

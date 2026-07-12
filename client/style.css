@@ -1,4 +1,4 @@
-/* Sales Strategist Benchmark POC — dark theme, business-modern */
+/* Persuasion Agent Benchmark — dark theme, business-modern */
 :root {
   --bg: #0F1419;
   --surface: #1A2332;
@@ -67,7 +67,9 @@ header {
   flex-wrap: nowrap;
 }
 .hdr-picker {
-  flex: 1 1 auto;
+  /* Compact: just the Dataset label + domain select + run-mode toggle. The
+     scenario list now lives in the left sidebar (.scenario-sidebar). */
+  flex: 0 1 auto;
   min-width: 0;
 }
 .hdr-controls {
@@ -2229,3 +2231,81 @@ body.logs-page { height: 100vh; display: flex; flex-direction: column; overflow:
   .logs-main { grid-template-columns: 280px 1fr; }
   .logs-center { grid-template-rows: 260px 1fr; }
 }
+
+/* ── Generic benchmark UI (Persuasion Agent Benchmark refactor) ───────────── */
+.picker-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.picker-field { display: flex; align-items: center; gap: 6px; }
+.picker-field .label, .runmode-toggle .label { color: var(--text-dim); font-size: 11px; }
+
+.runmode-toggle { display: flex; align-items: center; gap: 4px; }
+.runmode-btn {
+  background: var(--surface); color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 3px 10px; font-size: 12px; cursor: pointer;
+}
+.runmode-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.scenario-picker-tools { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+.scenario-search { flex: 1 1 120px; min-width: 100px; }
+.random-n { width: 52px; }
+.selected-count { color: var(--accent-2, #F5A623); font-size: 12px; font-weight: 600; }
+button.ghost.sm { padding: 3px 8px; font-size: 12px; }
+
+/* ── Sidebar layout: scenario picker on the left, content on the right ── */
+main.app-body {
+  max-width: none; margin: 0; padding: 0;
+  display: flex; align-items: stretch; gap: 0;
+}
+.scenario-sidebar {
+  flex: 0 0 300px; width: 300px; box-sizing: border-box; align-self: stretch;
+  border-right: 1px solid var(--border); background: var(--surface);
+  padding: 12px; display: flex; flex-direction: column; gap: 10px;
+}
+.sidebar-title {
+  font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.app-content { flex: 1 1 auto; min-width: 0; padding: 20px 28px; }
+.scenario-sidebar .tenant-filter,
+.scenario-sidebar .scenario-picker-tools { flex-wrap: wrap; }
+
+.scenario-list {
+  max-height: 68vh; min-height: 160px; overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--bg);
+}
+.scenario-list-empty { padding: 14px; color: var(--text-muted); font-style: italic; font-size: 13px; }
+.scenario-row {
+  display: flex; align-items: baseline; gap: 8px; padding: 6px 10px;
+  border-bottom: 1px solid var(--border); cursor: pointer; font-size: 12px;
+}
+.scenario-row:last-child { border-bottom: none; }
+.scenario-row:hover { background: var(--surface); }
+.scenario-row.selected { background: var(--surface-elev); }
+.scenario-row input { flex: 0 0 auto; }
+.sc-title { font-weight: 600; color: var(--text); font-family: 'SF Mono', Monaco, Consolas, monospace; }
+.sc-sub { color: var(--text-dim); }
+
+.seed-depth { display: flex; align-items: center; gap: 6px; }
+.seed-depth .seed-slider-label { color: var(--text-dim); font-size: 11px; }
+.seed-depth #seedMode { padding: 2px 6px; }
+.seed-depth .seed-slider-value { color: var(--text-dim); font-size: 11px; min-width: 66px; }
+
+.batch-summary {
+  margin: 12px 0; padding: 14px 16px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+.bs-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.bs-title { font-weight: 600; font-size: 14px; }
+.bs-progress { color: var(--text-dim); font-size: 12px; }
+.bs-tables { display: flex; gap: 24px; flex-wrap: wrap; }
+.bs-table { border-collapse: collapse; font-size: 12px; }
+.bs-table th, .bs-table td { text-align: left; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--border); }
+.bs-table th { color: var(--text-dim); font-weight: 500; }
+.bs-detail { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.bs-row { font-size: 11px; color: var(--text-dim); }
+.bs-row code { color: var(--text); }
+.bs-oc { font-weight: 600; }
+.bs-oc.won { color: var(--green); }
+.bs-oc.lost { color: var(--red); }
+.bs-oc.na { color: var(--text-muted); }

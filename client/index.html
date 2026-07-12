@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sales Strategist Benchmark · POC</title>
-  <link rel="stylesheet" href="/static/style.css?v=20260513-split-header-7" />
+  <title>Persuasion Agent Benchmark</title>
+  <link rel="stylesheet" href="/static/style.css?v=20260712-packs-1" />
 </head>
 <body>
   <header>
     <div class="brand">
-      <span class="brand-mark">L</span>
+      <span class="brand-mark">P</span>
       <div>
-        <h1>Sales Strategist Benchmark</h1>
-        <p class="tagline">Live A/B: Original agent agent vs Supervisor-augmented sales agent</p>
+        <h1>Persuasion Agent Benchmark</h1>
+        <p class="tagline">Live A/B testing for goal-oriented conversation agents</p>
       </div>
       <!-- R24 — Toggle for the directive-diff sidebar -->
       <button class="ds-toggle" id="dsToggleBtn" title="Show / hide the live supervisor-directive sidebar">⇨ Directive</button>
@@ -29,54 +29,35 @@
         <div class="lift-pp" id="liftPP">+0pp</div>
       </div>
     </div>
-    <!-- Panel 1: Scenario / data picker — pick what to test -->
+    <!-- Panel 1: Scenario / data picker — benchmark pack → scenarios (single or batch) -->
     <div class="hdr-panel hdr-picker">
-      <div class="hdr-label">Scenario</div>
-      <div class="mode-tabs">
-        <button class="mode-tab active" data-mode="curated">Curated</button>
-        <button class="mode-tab" data-mode="random">Random</button>
-      </div>
-      <div id="curatedControls" class="mode-pane">
-        <div class="tenant-filter" id="tenantFilter">
-          <span class="label">Tenant</span>
-          <button data-tenant="all" class="tenant-btn active">All</button>
-          <button data-tenant="Insurance" class="tenant-btn">Insurance</button>
-          <button data-tenant="Ecommerce" class="tenant-btn">Ecommerce</button>
-        </div>
-        <label class="stress-only-toggle" title="Show only the curated stress-test cohort (hardest cases for supervisor)">
-          <input type="checkbox" id="stressOnlyToggle" />
-          <span>Stress-only</span>
+      <div class="hdr-label">Dataset</div>
+      <div class="picker-row">
+        <label class="picker-field">
+          <span class="label">Benchmark</span>
+          <select id="benchmarkSelect" title="Benchmark pack: a goal-oriented scenario bundle (see benchmarks/ — copy _template to add your own)"><option value="">All benchmarks</option></select>
         </label>
-        <select id="scenarioPicker" disabled>
-          <option>Loading scenarios…</option>
-        </select>
-      </div>
-      <div id="randomControls" class="mode-pane" hidden>
-        <button id="findMatchBtn" class="primary">Find best match</button>
-        <span id="cacheStatus" class="cache-status" title="Random-match candidate cache state">
-          <span class="cache-dot"></span>
-          <span id="cacheStatusText">checking…</span>
-        </span>
+        <div class="runmode-toggle" id="runModeToggle" title="Single = one scenario in the live dual-panel. Batch = run several scenarios and aggregate a paired A/B summary.">
+          <span class="label">Run</span>
+          <button class="runmode-btn active" data-runmode="single">Single</button>
+          <button class="runmode-btn" data-runmode="batch">Batch</button>
+        </div>
       </div>
     </div>
 
     <!-- Panel 2: Runtime controls — configure + run -->
     <div class="hdr-panel hdr-controls">
       <div class="hdr-label">Controls</div>
-      <div class="speed-controls">
-        <span class="label">Speed</span>
-        <button data-speed="1x" class="speed-btn">1×</button>
-        <button data-speed="5x" class="speed-btn active">5×</button>
-        <button data-speed="instant" class="speed-btn">⚡</button>
-      </div>
-      <label class="hard-customer-toggle" title="Make the customer simulator more skeptical and harder to close. Use to stress-test supervisor wins.">
+      <label class="hard-customer-toggle" title="Make the customer simulator more skeptical and harder to close.">
         <input type="checkbox" id="hardCustomerToggle" />
         <span>Hard customer</span>
       </label>
-      <div class="seed-slider" title="Override seed-end turn. Defaults to the auto-detected peak-engagement turn — move ± to test the supervisor against shallower / deeper seeds.">
-        <span class="seed-slider-label">Seed turn</span>
-        <input type="range" id="seedTurnSlider" min="0" max="0" value="0" step="1" disabled />
-        <span class="seed-slider-value" id="seedTurnValue">auto</span>
+      <div class="seed-depth" title="How the conversation starts. Cold open = the agent opens the conversation itself. Warm start = preload the scenario's opening exchange (first agent line + customer's first reply) as context.">
+        <span class="seed-slider-label">Seed</span>
+        <select id="seedMode" title="Cold open vs warm start">
+          <option value="warm">Warm start</option>
+          <option value="cold">Cold open</option>
+        </select>
       </div>
       <div class="engine-toggle" id="engineToggle" title="Pick an engine for each panel. Both run against the same customer simulator — the engine is the only variable. Engines are loaded dynamically from the pluggable registry (/api/engines).">
         <span class="engine-label">L</span>
@@ -98,35 +79,35 @@
     </div>
   </header>
 
-  <main>
-    <section class="random-form" id="randomForm" hidden>
-      <div class="random-form-title">Pick the customer profile axes — system finds the best clean-loss match in 392 candidates</div>
-      <div class="random-form-grid">
-        <label class="random-field">
-          <span>Tenant</span>
-          <select id="rmTenant"><option value="">any</option></select>
-        </label>
-        <label class="random-field">
-          <span>Opp type</span>
-          <select id="rmOppType"><option value="">any</option></select>
-        </label>
-        <label class="random-field">
-          <span>Motivator</span>
-          <select id="rmMotivator"><option value="">any</option></select>
-        </label>
-        <label class="random-field">
-          <span>Decision logic</span>
-          <select id="rmDecisionLogic"><option value="">any</option></select>
-        </label>
-        <label class="random-field">
-          <span>Trust level</span>
-          <select id="rmTrustLevel"><option value="">any</option></select>
-        </label>
+  <main class="app-body">
+    <!-- Left sidebar: scenario picker (search/select tools → list) -->
+    <aside class="scenario-sidebar">
+      <div class="sidebar-title">Scenarios</div>
+      <div class="scenario-picker-tools">
+        <input type="search" id="scenarioSearch" class="scenario-search" placeholder="filter…" />
+        <button id="selectRandomBtn" class="ghost sm" title="Select N random scenarios from the filtered list">Random</button>
+        <input type="number" id="randomNInput" class="random-n" min="1" max="50" value="5" title="How many random scenarios to select (batch mode)" />
+        <span class="selected-count" id="selectedCount">0 selected</span>
+        <button id="clearSelBtn" class="ghost sm">Clear</button>
       </div>
-      <div class="random-results" id="randomResults" hidden>
-        <div class="random-results-summary" id="randomResultsSummary"></div>
-        <div class="random-results-cards" id="randomResultsCards"></div>
+      <div class="scenario-list" id="scenarioList">
+        <div class="scenario-list-empty">Loading scenarios…</div>
       </div>
+    </aside>
+
+    <div class="app-content">
+    <!-- Batch A/B paired-summary — accumulates as batch scenarios complete -->
+    <section class="batch-summary" id="batchSummary" hidden>
+      <div class="bs-header">
+        <span class="bs-title">Batch A/B summary</span>
+        <span class="bs-progress" id="batchProgress">—</span>
+        <button class="bs-stop ghost sm" id="batchStopBtn" hidden>Stop batch</button>
+      </div>
+      <div class="bs-tables">
+        <table class="bs-table" id="batchArmsTable"></table>
+        <table class="bs-table" id="batchPairwiseTable"></table>
+      </div>
+      <div class="bs-detail" id="batchDetail"></div>
     </section>
 
     <!-- R15 — Rolling stats across last N sessions. Stores in localStorage so
@@ -208,7 +189,7 @@
         <span class="meta-value" id="metaTenant">—</span>
       </div>
       <div class="meta-item">
-        <span class="meta-label">Cluster</span>
+        <span class="meta-label">Bucket</span>
         <span class="meta-value" id="metaCluster">—</span>
       </div>
       <div class="meta-item">
@@ -263,7 +244,7 @@
         </div>
         <div class="plan-progress" id="planProgress" hidden>
           <div class="plan-header">
-            <span class="plan-label">Cluster Plan</span>
+            <span class="plan-label">Plan</span>
             <span class="plan-id" id="planId">—</span>
             <span class="plan-goal" id="planGoal"></span>
           </div>
@@ -293,6 +274,7 @@
         </div>
       </div>
     </section>
+    </div><!-- /.app-content -->
   </main>
 
   <footer>
@@ -312,6 +294,6 @@
   </aside>
 
   <script src="/static/chart.umd.min.js"></script>
-  <script src="/static/app.js?v=20260513-split-header"></script>
+  <script src="/static/app.js?v=20260712-packs-1"></script>
 </body>
 </html>
