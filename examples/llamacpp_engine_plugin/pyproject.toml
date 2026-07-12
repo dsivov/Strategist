@@ -1,0 +1,24 @@
+# Local-LLM engine plugin for the benchmark — llama.cpp server (OpenAI-compatible).
+#
+# Runs the sales agent on a LOCAL model (e.g. Gemma) served by `llama-server`,
+# so a panel needs no cloud LLM key at all. Install into the same environment
+# as the benchmark:
+#
+#     pip install -e examples/llamacpp_engine_plugin
+#
+# After install the `llamacpp` engine is discovered automatically — no core
+# edits — and appears in `poc.all_engine_specs()`, `GET /api/engines`, and the
+# dual-panel UI selectors. Hook: the `strategist.engines` entry-point group.
+[project]
+name = "strategist-llamacpp-engine"
+version = "0.1.0"
+description = "Local llama.cpp-served model as a benchmark engine (OpenAI-compatible API)."
+requires-python = ">=3.10"
+dependencies = ["httpx"]
+
+[project.entry-points."strategist.engines"]
+llamacpp = "strategist_llamacpp:get_engines"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
