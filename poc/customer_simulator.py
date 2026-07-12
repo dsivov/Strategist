@@ -358,6 +358,8 @@ AGENT_GRACEFUL_CLOSE_PATTERNS_EN = [
     r"\bbest wishes\b", r"\bhave a (?:great|wonderful|good) (?:day|year)\b",
     r"\bglad you found\b", r"\bcoverage that works for you\b",
     r"\bgood luck\b", r"\bwe[''']?re here\b.{0,30}\bif\b",
+    # 2026-07-12 — farewell phrasing observed in benchmark seed tails
+    r"\bhope everything works out\b",
 ]
 AGENT_GRACEFUL_CLOSE_PATTERNS_HE = [
     "כל טוב", "בהצלחה", "שתהיה לך שנה", "להתראות",
@@ -366,11 +368,26 @@ AGENT_GRACEFUL_CLOSE_PATTERNS_HE = [
 ]
 
 
+# Successful-close confirmation cues. A pleasantry ("have a great day") that
+# accompanies a DEAL CONFIRMATION is not a give-up retreat, so it must not trip
+# the graceful-close (=lost) gate. 2026-07-05: added after live A/B showed
+# "Great, we're all set … have a great day" being scored lost.
+AGENT_CLOSE_CONFIRM_CUES = re.compile(
+    r"\b(all set|we'?re set|locked in|lock it in|is confirmed|"
+    r"renewal is (set|confirmed|complete|done)|process(?:ing)? (?:the|your) payment|"
+    r"first payment|two payments|we'?ll (?:set|process|finali[sz]e|charge)|"
+    r"welcome aboard|you'?re all set)\b",
+    re.IGNORECASE,
+)
+
+
 def detect_agent_graceful_close(text: str) -> bool:
     """The agent has emitted a final warm closure (no pitch).
     Combined with low commitment history, this signals end of panel."""
     if not text:
         return False
+    if AGENT_CLOSE_CONFIRM_CUES.search(text):
+        return False  # a deal confirmation, not a give-up retreat
     low = text.lower()
     if any(re.search(p, low) for p in AGENT_GRACEFUL_CLOSE_PATTERNS_EN):
         return True
@@ -609,7 +626,10 @@ def detect_saturation(recent_customer_msgs: list[str],
 # Closing-WIN phrases — trigger "the customer effectively closed"
 WIN_PHRASES_EN = [
     r"\byes(?: please)?,?\s*renew\b", r"\blet'?s renew\b", r"\bgo ahead\b",
-    r"\b(?:i'?ll|we'?ll) take it\b", r"\b(?:i'?m|i am) in\b",
+    # 2026-07-12 — "I'm in" anchored to end-of-message: the unanchored form
+    # false-positived on "I'm in a meeting / a divorce / the market" (audit
+    # over the benchmark seeds found several would end live sessions as won).
+    r"\b(?:i'?ll|we'?ll) take it\b", r"\b(?:i'?m|i am) in[!.\s]*$",
     r"\bsounds good[,!.]\s*let",
     # Extended 2026-05-05 — close phrases the original regex missed
     # (e.g. "Perfect, let's do it. Renew for 2,600 and we're good.")
@@ -633,8 +653,26 @@ WIN_PHRASES_EN = [
     # it a G2-passing close-signal so G3-failure becomes irrelevant.
     r"\blast\s+(?:4|four)\s+(?:digits?|nums?)\s*(?:are\s+|is\s+|:\s*)?\d{4}\b",
     r"\bcc(?:[\s:#-]+\d){3,4}\b",                  # "CC: 1234 5678..."
+    # 2026-07-12 — e-commerce purchase confirmations the list missed.
+    # Benchmark cell H_Qu_Em_Tr: "Cool, just ordered!" and "I'll grab a pair"
+    # were real conversions scored lost via agent_graceful_close.
+    r"\bjust ordered\b",
+    r"\border (?:is )?placed\b",
+    r"\bplaced (?:the|my|an) order\b",
+    r"\b(?:i|we) (?:just )?(?:bought|purchased|ordered) (?:it|them|one|a pair)\b",
+    r"\b(?:i'?ll|we'?ll) (?:grab|take|order|buy) (?:a pair|one|it|them|those|these)\b",
     r"\bcredit\s+card\s+(?:is\s+|number\s+is\s+|:\s*)?\d{4}\b",
     r"\b(?:my )?card[\s:]+ending\s+(?:in\s+)?\d{4}\b",  # "card ending in 7834"
+    # 2026-07-05 — voice/persona-mode agreements the regex missed. Calibrated
+    # against live A/B transcripts: "Yes, proceed with the renewal", "Yes, lock
+    # it in", "let's close it now", "Yes, confirmed. Let's proceed", "let's
+    # finalize it". Negated/hedged variants ("not to lock it in", "not ready")
+    # are filtered upstream by the deferral guard in benchmark._check_customer_outcome.
+    r"\blet'?s\s+(?:proceed|finali[sz]e|close|lock|secure)\b",
+    r"\bproceed with (?:the|my|it|this|renewal|payment|order|coverage|mandatory|policy|comprehensive|two|three)\b",
+    r"\block\s+(?:it|them|this|that)\s+in\b",
+    r"\b(?:yes|yeah|yep|ok|okay|sure)[,!.\s]+(?:proceed|confirm|confirmed|lock|finali[sz]e)\b",
+    r"\byes,?\s+confirmed\b",
 ]
 WIN_PHRASES_HE = [
     "כן תחדש", "כן בבקשה", "סגור", "מאשר", "מאשרת",

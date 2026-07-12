@@ -45,7 +45,7 @@
         "message_id": "605b97b0-1435-439a-b023-a8fe9e6d62b9",
         "direction": "outbound",
         "timestamp": "2024-12-01 10:16:39.620482",
-        "text": "Hey there Lior, this is Sapir from Insurance :) The insurance for the Toyota car number 4833474 is ending at the end of the month. The price for the comprehensive insurance is 3,040 USD (including Librot discount) and the mandatory insurance is 1,714 USD. Renew?",
+        "text": "Hey there Lior, this is Sapir from Insurance :) The insurance for the Toyota car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 3,040 USD (including Librot discount) and the mandatory insurance is 1,714 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -205,7 +205,7 @@
         "message_id": "264377f7-0442-4c8e-91cc-518947d7c735",
         "direction": "outbound",
         "timestamp": "2025-11-02 12:35:21.500098",
-        "text": "Hey Ami, this is Nofar from Insurance :) The insurance for the Toyota, number 2534661, ends at the end of the month. The price for the third-party insurance is 1,294 USD (including the Librot discount) and the mandatory insurance is 2,494 USD. Renew?",
+        "text": "Hey Ami, this is Nofar from Insurance :) The insurance for the Toyota, number [PLATE], ends at the end of the month. The price for the third-party insurance is 1,294 USD (including the Librot discount) and the mandatory insurance is 2,494 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -615,7 +615,7 @@
         "message_id": "2a23540c-d070-4aac-b228-b4529b865717",
         "direction": "outbound",
         "timestamp": "2025-09-21 12:20:29.355797",
-        "text": "Hey Shira, this is Ilana from Insurance :) The insurance for the Hyundai, number 1451732, ends on 31/10/25. The price for the third-party insurance is 2,107 USD (including the Librot discount) and the mandatory insurance is 1,626 USD. Renew?",
+        "text": "Hey Shira, this is Ilana from Insurance :) The insurance for the Hyundai, number [PLATE], ends on 31/10/25. The price for the third-party insurance is 2,107 USD (including the Librot discount) and the mandatory insurance is 1,626 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -972,7 +972,7 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 59,
+    "seed_dialog_cut_idx": 58,
     "n_messages": 61,
     "seed_messages": [
       {
@@ -1480,7 +1480,7 @@
         "message_id": "11a2d282-f5b8-4221-81f8-8ff14efaa36b",
         "direction": "outbound",
         "timestamp": "2024-12-02 07:00:14.581712",
-        "text": "Hey there Dror, this is Shani from Insurance :) The insurance for the Hyundai car number 78046101 is ending at the end of the month. The price for the comprehensive insurance is 3,515 USD (including Librot discount) and the mandatory insurance is 1,245 USD. Renew?",
+        "text": "Hey there Dror, this is Shani from Insurance :) The insurance for the Hyundai car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 3,515 USD (including Librot discount) and the mandatory insurance is 1,245 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -1631,7 +1631,7 @@
         "message_id": "84009c06-7069-43cb-83fa-7bbf289e9132",
         "direction": "inbound",
         "timestamp": "2024-12-24 08:48:47.455733",
-        "text": "31759502",
+        "text": "[PLATE]",
         "is_followup": 0
       },
       {
@@ -1733,7 +1733,7 @@
         "message_id": "45a93ecd-da51-494e-940f-ce30a0ce8fc1",
         "direction": "outbound",
         "timestamp": "2024-12-24 15:02:12.285850",
-        "text": "shanis@lbr.co.il",
+        "text": "[EMAIL]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -1802,7 +1802,7 @@
         "message_id": "04d558a4-f038-4e1a-87dd-e1be6331871b",
         "direction": "outbound",
         "timestamp": "2025-09-03 11:37:23.735579",
-        "text": "Hey Galit, this is Ilana from Insurance :) The insurance for the Kia car number 5941579 is ending at the end of the month. The price for the comprehensive insurance is 2,198 USD (including the Librot discount) and the mandatory insurance is 1,345 USD. Renew?",
+        "text": "Hey Galit, this is Ilana from Insurance :) The insurance for the Kia car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 2,198 USD (including the Librot discount) and the mandatory insurance is 1,345 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -1893,7 +1893,7 @@
         "message_id": "e9d772d0-c1fb-47d5-beb1-8712bfaa8719",
         "direction": "inbound",
         "timestamp": "2025-09-14 07:37:15.340121",
-        "text": "0504744440",
+        "text": "[PHONE]",
         "is_followup": 0
       }
     ],
@@ -1947,7 +1947,7 @@
         "message_id": "3bf0cb3e-68d9-4e9a-8b56-d7906752b291",
         "direction": "outbound",
         "timestamp": "2025-01-08 11:04:32.757305",
-        "text": "Hey there Shlomi, this is Chen from Insurance :) The insurance for the Hyundai car number 5214037 is ending at the end of the month. The price for the comprehensive insurance is 2,828 USD (including Librot discount) and the mandatory insurance is 1,360 USD. Renew?",
+        "text": "Hey there Shlomi, this is Chen from Insurance :) The insurance for the Hyundai car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 2,828 USD (including Librot discount) and the mandatory insurance is 1,360 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -2143,7 +2143,7 @@
         "message_id": "a5493144-3551-4a7c-bb4e-40c6f443aa7e",
         "direction": "outbound",
         "timestamp": "2025-06-03 12:50:40.561813",
-        "text": "Hey Nofar, it's Yaniv from Insurance :) The insurance for the Hyundai, number 50346501, ends at the end of the month. The price for the comprehensive insurance is 4,518 USD (including the Librot discount) and the mandatory insurance is 1,599 USD. Renew?",
+        "text": "Hey Nofar, it's Yaniv from Insurance :) The insurance for the Hyundai, number [PLATE], ends at the end of the month. The price for the comprehensive insurance is 4,518 USD (including the Librot discount) and the mandatory insurance is 1,599 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -2358,14 +2358,14 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 15,
+    "seed_dialog_cut_idx": 13,
     "n_messages": 17,
     "seed_messages": [
       {
         "message_id": "3151482f-0c40-4735-8dbf-a358fb8d1da0",
         "direction": "outbound",
         "timestamp": "2026-03-02 07:37:10.110732",
-        "text": "Hey Nimrod, this is Yinon Peretz from Insurance :) The insurance for the Hyundai car number 7406278 is ending at the end of the month. The price for the Third Party Insurance is 1,375 USD (including the Librot discount) and the mandatory insurance is 1,777 USD. Renew?",
+        "text": "Hey Nimrod, this is Yinon Peretz from Insurance :) The insurance for the Hyundai car number [PLATE] is ending at the end of the month. The price for the Third Party Insurance is 1,375 USD (including the Librot discount) and the mandatory insurance is 1,777 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -2540,7 +2540,7 @@
         "message_id": "94a342f7-9f6a-4290-8b57-d29d648f9747",
         "direction": "outbound",
         "timestamp": "2026-02-02 08:00:34.129162",
-        "text": "Hey Bat, this is Shani from Insurance :) The insurance for the Skoda car number 4909453 is ending at the end of the month. The price for the comprehensive insurance is 2,352 USD (including the Librot discount) and the mandatory insurance is 1,281 USD. Renew?",
+        "text": "Hey Bat, this is Shani from Insurance :) The insurance for the Skoda car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 2,352 USD (including the Librot discount) and the mandatory insurance is 1,281 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -2738,7 +2738,7 @@
         "message_id": "c1aba13f-ff87-4cce-88cc-9184c362ee7e",
         "direction": "outbound",
         "timestamp": "2024-12-01 11:01:34.378769",
-        "text": "Hey there Tamar, this is Ilana from Insurance :) The insurance for the Nissan car number 1403033 is ending at the end of the month. The price for the comprehensive insurance is 3,509 USD (including Librot discount) and the mandatory insurance is 1,508 USD. Renew?",
+        "text": "Hey there Tamar, this is Ilana from Insurance :) The insurance for the Nissan car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 3,509 USD (including Librot discount) and the mandatory insurance is 1,508 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -2908,7 +2908,7 @@
         "message_id": "450f9ea8-3a6f-46ab-b305-68153f7d84c1",
         "direction": "outbound",
         "timestamp": "2025-11-23 10:14:51.537852",
-        "text": "Hey Ben, this is Yaniv from Insurance :) The insurance for the Nissan car number 4769069 ends at the end of the month. The price for the third-party insurance is 977 USD (including the Librot discount) and the mandatory insurance is 3,043 USD. Renew?",
+        "text": "Hey Ben, this is Yaniv from Insurance :) The insurance for the Nissan car number [PLATE] ends at the end of the month. The price for the third-party insurance is 977 USD (including the Librot discount) and the mandatory insurance is 3,043 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -3369,7 +3369,7 @@
         "message_id": "a45038f5-428c-4c6e-9581-d6268b958ead",
         "direction": "outbound",
         "timestamp": "2025-02-05 05:46:09.205167",
-        "text": "Hey there Israel, this is Sapir from Insurance :) Your insurance for the Toyota car number 2330661 is ending at the end of the month. The price for the third-party insurance is 1,442 USD (including the Librot discount) and the mandatory insurance is 2,961 USD. Renew?",
+        "text": "Hey there Israel, this is Sapir from Insurance :) Your insurance for the Toyota car number [PLATE] is ending at the end of the month. The price for the third-party insurance is 1,442 USD (including the Librot discount) and the mandatory insurance is 2,961 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -4436,7 +4436,7 @@
         "message_id": "bf0a8906-0ca8-438b-9afe-87123d353630",
         "direction": "outbound",
         "timestamp": "2025-11-23 11:40:34.234435",
-        "text": "Hey Shiran, it's Sapir from Insurance :) The insurance for the Toyota car number 45829801 is ending at the end of the month. The price for the comprehensive insurance is 2,073 USD (including the Librot discount) and the mandatory insurance is 1,458 USD. Renew?",
+        "text": "Hey Shiran, it's Sapir from Insurance :) The insurance for the Toyota car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 2,073 USD (including the Librot discount) and the mandatory insurance is 1,458 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -5088,7 +5088,7 @@
         "message_id": "60fb1c3a-46fb-402a-8fc8-a87c796d92a7",
         "direction": "outbound",
         "timestamp": "2024-10-08 11:39:25.214135",
-        "text": "Hey there Israela, this is Shani from Insurance :) Your insurance for the Subaru car number 1651130 is ending at the end of the month. The price for the comprehensive insurance is 2,926 USD (including Librot discount) and the mandatory insurance is 1,334 USD. Renew?",
+        "text": "Hey there Israela, this is Shani from Insurance :) Your insurance for the Subaru car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 2,926 USD (including Librot discount) and the mandatory insurance is 1,334 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -5365,7 +5365,7 @@
         "message_id": "36d024e4-3c5b-4134-bd00-0a9a591c2b46",
         "direction": "outbound",
         "timestamp": "2025-05-05 06:53:41.854101",
-        "text": "Hey Amos, this is Racheli from Insurance (:\\n\\nThe insurance for the Daihatsu car number 4350367 is ending at the end of the month.\\n\\nThe price for the third-party insurance is 1,358 USD (including the Librot discount) and the mandatory insurance is 1,588 USD.\\n\\nRenew?",
+        "text": "Hey Amos, this is Racheli from Insurance (:\\n\\nThe insurance for the Daihatsu car number [PLATE] is ending at the end of the month.\\n\\nThe price for the third-party insurance is 1,358 USD (including the Librot discount) and the mandatory insurance is 1,588 USD.\\n\\nRenew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -5561,7 +5561,7 @@
         "message_id": "312952cc-341e-4d81-8560-71791068887c",
         "direction": "outbound",
         "timestamp": "2024-12-03 13:50:27.016408",
-        "text": "Hey there Tamar, this is Sapir from Insurance :) The insurance for the Toyota car number 5220230 is ending at the end of the month. The price for the comprehensive insurance is 3,068 USD (including Librot discount) and the mandatory insurance is 1,714 USD. Renew?",
+        "text": "Hey there Tamar, this is Sapir from Insurance :) The insurance for the Toyota car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 3,068 USD (including Librot discount) and the mandatory insurance is 1,714 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -6024,7 +6024,7 @@
         "message_id": "153cc342-654f-4cfa-a74d-e98e89eb601b",
         "direction": "outbound",
         "timestamp": "2024-06-05 05:08:57.112884",
-        "text": "Hey Asaf, it's Sapir from Insurance (:\\n\\nThe insurance for the Suzuki car number 8867653 is ending at the end of the month. The price for the comprehensive insurance is 2,628 USD and the mandatory insurance is 1,202 USD.\\n\\nRenew?",
+        "text": "Hey Asaf, it's Sapir from Insurance (:\\n\\nThe insurance for the Suzuki car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 2,628 USD and the mandatory insurance is 1,202 USD.\\n\\nRenew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -6276,7 +6276,7 @@
         "message_id": "a771fd0c-eaba-478c-9679-3140ab93acb8",
         "direction": "outbound",
         "timestamp": "2024-11-04 09:58:22.811017",
-        "text": "Hey there Rinat, this is Shani from Insurance :) Your insurance for the Hyundai car number 17450301 is ending at the end of the month. The price for the third-party insurance is 2,011 USD (including Librot discount) and the mandatory insurance is 1,517 USD. Renew?",
+        "text": "Hey there Rinat, this is Shani from Insurance :) Your insurance for the Hyundai car number [PLATE] is ending at the end of the month. The price for the third-party insurance is 2,011 USD (including Librot discount) and the mandatory insurance is 1,517 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -6335,7 +6335,7 @@
         "message_id": "f78b01ac-dada-4d51-a676-e83474735337",
         "direction": "inbound",
         "timestamp": "2024-11-04 10:09:46.507068",
-        "text": "We switched. Call 0506666690, he will give you a new credit card.",
+        "text": "We switched. Call [PHONE], he will give you a new credit card.",
         "is_followup": 0
       }
     ],
@@ -6389,7 +6389,7 @@
         "message_id": "f8b6ea99-2647-4412-90e8-0f2081659331",
         "direction": "outbound",
         "timestamp": "2026-03-15 10:53:36.457472",
-        "text": "Hey דרור זה ינון פרץ from Insurance :) The insurance for the car פורד number 1437176 is ending at the end of the month. The price for the Third Party Insurance is 1183 USD (including the Librot discount) and the mandatory insurance is 1562 USD. Renew?",
+        "text": "Hey דרור זה ינון פרץ from Insurance :) The insurance for the car פורד number [PLATE] is ending at the end of the month. The price for the Third Party Insurance is 1183 USD (including the Librot discount) and the mandatory insurance is 1562 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -6489,7 +6489,7 @@
         "message_id": "5fbd3e7e-c4eb-46f2-aa11-7e93877caab5",
         "direction": "outbound",
         "timestamp": "2025-09-18 12:08:53.112328",
-        "text": "Hey Maayan, this is Yinon Peretz from Insurance :) The insurance for the Kia car number 6577138 ends on 31/10/25. The price for the third-party insurance is 1,607 USD (including the Librot discount) and the mandatory insurance is 1,193 USD. Renew?",
+        "text": "Hey Maayan, this is Yinon Peretz from Insurance :) The insurance for the Kia car number [PLATE] ends on 31/10/25. The price for the third-party insurance is 1,607 USD (including the Librot discount) and the mandatory insurance is 1,193 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -6612,14 +6612,14 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 5,
+    "seed_dialog_cut_idx": 4,
     "n_messages": 7,
     "seed_messages": [
       {
         "message_id": "3ef9ca78-adc8-4bd5-b8c7-87916d384041",
         "direction": "outbound",
         "timestamp": "2025-02-05 15:07:45.127340",
-        "text": "Hey there Shlomo, this is Yinon from Insurance :) The insurance for the Suzuki car number 9736737 is ending at the end of the month. The price for the comprehensive insurance is 2,588 USD (including Librot discount) and the mandatory insurance is 1,289 USD. Renew?",
+        "text": "Hey there Shlomo, this is Yinon from Insurance :) The insurance for the Suzuki car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 2,588 USD (including Librot discount) and the mandatory insurance is 1,289 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -6719,7 +6719,7 @@
         "message_id": "54d059d4-615e-4786-ab60-e30fe69e9497",
         "direction": "outbound",
         "timestamp": "2025-01-07 10:33:23.874787",
-        "text": "Hey there Mohammad, this is Sapir from Insurance :) The insurance for the Skoda car number 17249302 is ending at the end of the month. The price for the comprehensive insurance is 4,500 USD (including Librot discount) and the mandatory insurance is 1,599 USD. Renew?",
+        "text": "Hey there Mohammad, this is Sapir from Insurance :) The insurance for the Skoda car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 4,500 USD (including Librot discount) and the mandatory insurance is 1,599 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -6866,14 +6866,14 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 43,
+    "seed_dialog_cut_idx": 32,
     "n_messages": 45,
     "seed_messages": [
       {
         "message_id": "bf72a059-8c4b-4541-91cd-a4bfa1fbc9a3",
         "direction": "outbound",
         "timestamp": "2025-07-06 05:19:36.956558",
-        "text": "Hey Shiran, this is Shani from Insurance :) The insurance for the Kia, number 17337303, ends at the end of the month. The price for the comprehensive insurance is 6,561 USD (including the Librot discount) and the mandatory insurance is 1,417 USD. Renew?",
+        "text": "Hey Shiran, this is Shani from Insurance :) The insurance for the Kia, number [PLATE], ends at the end of the month. The price for the comprehensive insurance is 6,561 USD (including the Librot discount) and the mandatory insurance is 1,417 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -7257,7 +7257,7 @@
         "message_id": "33e8e99d-1be1-421e-b53c-509193a7d2a7",
         "direction": "outbound",
         "timestamp": "2026-02-02 09:09:17.206807",
-        "text": "Hey Shulamit, this is Chen from Insurance :) The insurance for the Toyota car number 1916652 ends at the end of the month. The price for the comprehensive insurance is 4,868 USD (including the Librot discount) and the mandatory insurance is 2,835 USD. Renew?",
+        "text": "Hey Shulamit, this is Chen from Insurance :) The insurance for the Toyota car number [PLATE] ends at the end of the month. The price for the comprehensive insurance is 4,868 USD (including the Librot discount) and the mandatory insurance is 2,835 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -7509,14 +7509,14 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 16,
+    "seed_dialog_cut_idx": 15,
     "n_messages": 18,
     "seed_messages": [
       {
         "message_id": "64c06b3c-a567-4b81-b3b2-2f495dded294",
         "direction": "outbound",
         "timestamp": "2024-06-16 05:43:28.539935",
-        "text": "Hey Zvi, it's Celia from Insurance (:\\n\\nThe insurance for the Mazda car number 7513868 is ending at the end of the month. \\n\\nThe price for the comprehensive insurance is 3,063 USD and the mandatory insurance is 1,549 USD. \\n\\nRenew?",
+        "text": "Hey Zvi, it's Celia from Insurance (:\\n\\nThe insurance for the Mazda car number [PLATE] is ending at the end of the month. \\n\\nThe price for the comprehensive insurance is 3,063 USD and the mandatory insurance is 1,549 USD. \\n\\nRenew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -7644,7 +7644,7 @@
         "message_id": "902797a2-b9f3-417b-9900-8827ab3ef57f",
         "direction": "inbound",
         "timestamp": "2024-06-24 08:19:01.564591",
-        "text": "0508587653",
+        "text": "[PHONE]",
         "is_followup": 0
       }
     ],
@@ -7698,7 +7698,7 @@
         "message_id": "40d6c79c-38cf-4b2b-8d6f-f1b10f4fb404",
         "direction": "outbound",
         "timestamp": "2025-03-17 10:22:55.376474",
-        "text": "Hey Shahar, this is Ilana from Insurance :) The insurance for the Hyundai car number 6246737 is ending at the end of the month. The price for the comprehensive insurance is 4,715 USD (including Librot discount) and the mandatory insurance is 1,450 USD. Renew?",
+        "text": "Hey Shahar, this is Ilana from Insurance :) The insurance for the Hyundai car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 4,715 USD (including Librot discount) and the mandatory insurance is 1,450 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -7905,7 +7905,7 @@
         "message_id": "276f87ef-1228-421b-a37b-6778afc69129",
         "direction": "outbound",
         "timestamp": "2025-09-11 08:36:13.696295",
-        "text": "Hey Ariel, this is Chen from Insurance :) The insurance for the Toyota car number 5096132 is ending at the end of the month. The price for the comprehensive insurance is 3,041 USD (including the Librot discount) and the mandatory insurance is 2,738 USD. Renew?",
+        "text": "Hey Ariel, this is Chen from Insurance :) The insurance for the Toyota car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 3,041 USD (including the Librot discount) and the mandatory insurance is 2,738 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -8119,7 +8119,7 @@
         "message_id": "60f9c717-9414-45ed-951f-a4dbafae15f2",
         "direction": "outbound",
         "timestamp": "2025-11-24 13:30:56.843475",
-        "text": "Hey Eyal, this is Chen from Insurance :) The insurance for the Hyundai vehicle number 8379213 ends on 31/12/25. The price for the third-party insurance is 1,486 USD (including the Librot discount) and the mandatory insurance is 1,576 USD. Renew?",
+        "text": "Hey Eyal, this is Chen from Insurance :) The insurance for the Hyundai vehicle number [PLATE] ends on 31/12/25. The price for the third-party insurance is 1,486 USD (including the Librot discount) and the mandatory insurance is 1,576 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -8226,7 +8226,7 @@
         "message_id": "892a1e0f-d41c-40ae-b7c9-6354d84243bc",
         "direction": "outbound",
         "timestamp": "2025-11-02 12:35:31.038872",
-        "text": "Hey Yuval, this is Nofar from Insurance :) The insurance for the Suzuki, number 9545612, is ending at the end of the month. The price for the comprehensive insurance is 3,170 USD (including the Librot discount) and the mandatory insurance is 2,151 USD. Renew?",
+        "text": "Hey Yuval, this is Nofar from Insurance :) The insurance for the Suzuki, number [PLATE], is ending at the end of the month. The price for the comprehensive insurance is 3,170 USD (including the Librot discount) and the mandatory insurance is 2,151 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -8461,7 +8461,7 @@
         "message_id": "d9346dcd-3bba-412f-ac02-a4fd7d9e76c8",
         "direction": "outbound",
         "timestamp": "2024-12-09 07:38:37.925968",
-        "text": "Hey there Chen, this is Chen from Insurance :) The insurance for the Mitsubishi car number 19243403 is ending at the end of the month. The price for the comprehensive insurance is 4,311 USD (including Librot discount) and the mandatory insurance is 1,539 USD. Renew?",
+        "text": "Hey there Chen, this is Chen from Insurance :) The insurance for the Mitsubishi car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 4,311 USD (including Librot discount) and the mandatory insurance is 1,539 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -8608,14 +8608,14 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 16,
+    "seed_dialog_cut_idx": 9,
     "n_messages": 18,
     "seed_messages": [
       {
         "message_id": "eb4a02f2-9d16-4b90-9444-3191269d9b45",
         "direction": "outbound",
         "timestamp": "2025-06-04 12:31:42.651277",
-        "text": "Hey Netanel, this is Yinon Peretz from Insurance :) Your insurance for the Toyota, number 8214766, is ending at the end of the month. The price for the third-party insurance is 1,618 USD (including the Librot discount) and the mandatory insurance is 2,262 USD. Renew?",
+        "text": "Hey Netanel, this is Yinon Peretz from Insurance :) Your insurance for the Toyota, number [PLATE], is ending at the end of the month. The price for the third-party insurance is 1,618 USD (including the Librot discount) and the mandatory insurance is 2,262 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -8797,7 +8797,7 @@
         "message_id": "8a73a705-9af9-495f-830a-8bc39bf25776",
         "direction": "outbound",
         "timestamp": "2025-10-03 05:05:00.938837",
-        "text": "Hey Maor, this is Yaniv from Insurance :) The insurance for the Peugeot, number 27842701, ends at the end of the month. The price for the comprehensive insurance is 2,555 USD (including the Librot discount) and the mandatory insurance is 1,308 USD. Renew?",
+        "text": "Hey Maor, this is Yaniv from Insurance :) The insurance for the Peugeot, number [PLATE], ends at the end of the month. The price for the comprehensive insurance is 2,555 USD (including the Librot discount) and the mandatory insurance is 1,308 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -8867,7 +8867,7 @@
         "message_id": "6fc002b9-cd00-47a7-82fd-e23a670823dd",
         "direction": "inbound",
         "timestamp": "2025-10-19 10:50:17.632218",
-        "text": "But regarding the insurance for the car 8817287, I need to upload a no-claims document. Where do I get it from?",
+        "text": "But regarding the insurance for the car [PLATE], I need to upload a no-claims document. Where do I get it from?",
         "is_followup": 0
       },
       {
@@ -8947,7 +8947,7 @@
         "message_id": "6dfca283-e9a5-46ee-9bcc-49fc7ac583f3",
         "direction": "inbound",
         "timestamp": "2025-10-19 12:07:09.783131",
-        "text": "Can you verify that I have indeed uploaded all the documents for this car 8817287?",
+        "text": "Can you verify that I have indeed uploaded all the documents for this car [PLATE]?",
         "is_followup": 0
       },
       {
@@ -9091,7 +9091,7 @@
         "message_id": "2ca2b365-ad9e-4aa1-becf-9fb26e93d8df",
         "direction": "outbound",
         "timestamp": "2025-10-31 06:51:09.746646",
-        "text": "27842701 ",
+        "text": "[PLATE]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -10027,7 +10027,7 @@
         "message_id": "978a424e-4a9f-4648-9de0-93f70709024a",
         "direction": "outbound",
         "timestamp": "2026-03-24 20:12:36.834563",
-        "text": "https://link.sellence.com/SSJvK9",
+        "text": "[LINK]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -10199,7 +10199,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 11,
+    "seed_dialog_cut_idx": 10,
     "n_messages": 13,
     "seed_messages": [
       {
@@ -10373,7 +10373,7 @@
         "message_id": "6b770b9e-eb85-4e30-9d25-83dca25d26f6",
         "direction": "outbound",
         "timestamp": "2025-09-26 21:07:03.832274",
-        "text": "Awesome, Jonathan! I just dropped your code below. It takes $80 off and works with approved payment plans at checkout: [https://link.sellence.com/APh69p]\n\nVIP80LTD 🔥(Valid 'til the end of my shift 8 p.m.)\n\nIf anything else comes up (fit, features, whatever) Just shoot me a text.😎",
+        "text": "Awesome, Jonathan! I just dropped your code below. It takes $80 off and works with approved payment plans at checkout: [[LINK]]\n\nVIP80LTD 🔥(Valid 'til the end of my shift 8 p.m.)\n\nIf anything else comes up (fit, features, whatever) Just shoot me a text.😎",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -10513,7 +10513,7 @@
         "message_id": "1aa25eeb-0e66-4352-9e04-0bf48739d264",
         "direction": "outbound",
         "timestamp": "2025-11-27 17:53:44.228499",
-        "text": "The Ecommerce are engineered for this genre, providing the high-quality sound you need. Acknowledging the budget constraint, you can use code **vip27sln** for 27% off, valid for 24 hours! Payment plans are also available. [https://link.sellence.com/fDCwOm]",
+        "text": "The Ecommerce are engineered for this genre, providing the high-quality sound you need. Acknowledging the budget constraint, you can use code **vip27sln** for 27% off, valid for 24 hours! Payment plans are also available. [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -10638,7 +10638,7 @@
         "message_id": "d2e61176-e188-4c63-af42-b4c66b4343ee",
         "direction": "outbound",
         "timestamp": "2026-03-19 16:38:55.387149",
-        "text": "Great. Clarity with solid bass and killer call quality is the goal for her. As promised, use code VIP12SLN for $22 off  valid for 24 hours. 🤘 Here's the link: [https://link.sellence.com/sDEUhb]",
+        "text": "Great. Clarity with solid bass and killer call quality is the goal for her. As promised, use code VIP12SLN for $22 off  valid for 24 hours. 🤘 Here's the link: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       }
@@ -10883,7 +10883,7 @@
         "message_id": "f6a40481-be42-4d8d-8f06-6d0993fd6bfe",
         "direction": "outbound",
         "timestamp": "2025-08-11 14:28:13.416588",
-        "text": "You're welcome😊, Rajveer! Rock on! Your $50 off code, **VIP50SLN**, can be used at checkout for orders over $200 and is valid for the next 24 hours. Here is the link: [https://link.sellence.com/TmepuB] What do you say?🤘",
+        "text": "You're welcome😊, Rajveer! Rock on! Your $50 off code, **VIP50SLN**, can be used at checkout for orders over $200 and is valid for the next 24 hours. Here is the link: [[LINK]] What do you say?🤘",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -11182,7 +11182,7 @@
         "message_id": "a764eb62-c062-486b-ac45-0b8268ec60b1",
         "direction": "outbound",
         "timestamp": "2026-03-06 22:38:24.521203",
-        "text": "https://link.sellence.com/YWBfqD",
+        "text": "[LINK]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -11323,7 +11323,7 @@
         "message_id": "1738de9f-a067-4ef0-9127-9bbd818343a8",
         "direction": "outbound",
         "timestamp": "2026-01-14 02:22:26.041096",
-        "text": "Got it, clear mid-range is key for classical. Ecommerce are engineered with 8 drivers to deliver that clarity, so you won't miss a thing. As promised, use code VIP10SLN for 10% off, valid for the next 24 hours! Here's the bundle: [https://link.sellence.com/lNpp5t]",
+        "text": "Got it, clear mid-range is key for classical. Ecommerce are engineered with 8 drivers to deliver that clarity, so you won't miss a thing. As promised, use code VIP10SLN for 10% off, valid for the next 24 hours! Here's the bundle: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -11483,7 +11483,7 @@
         "message_id": "1d074b47-a09a-4ac2-b32d-4462c1ac1653",
         "direction": "outbound",
         "timestamp": "2026-03-16 14:49:51.752337",
-        "text": "Happy to help, Emma! Use code VIP12SLN for $31 off your order, valid for 24 hours. And if you also grab the earbuds, you'll get an automatic 15% off them at checkout! 🤘 Here's the link: [https://link.sellence.com/OGG1bi]",
+        "text": "Happy to help, Emma! Use code VIP12SLN for $31 off your order, valid for 24 hours. And if you also grab the earbuds, you'll get an automatic 15% off them at checkout! 🤘 Here's the link: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -11520,7 +11520,7 @@
         "message_id": "bee3de88-bf94-4596-97d5-e7609e7de7ec",
         "direction": "outbound",
         "timestamp": "2026-03-16 15:04:09.318605",
-        "text": "That's awesome you listen to metal together! 🤘 We have a FAMILY GIFT PACK for two H1H sets that saves you 26%. You could even surprise her with the official Motionless In White shells. On top of that, use code SHINEDOWN for an extra $40 off for the next 24 hours! Here's the link: [https://link.sellence.com/Mv9mEe]",
+        "text": "That's awesome you listen to metal together! 🤘 We have a FAMILY GIFT PACK for two H1H sets that saves you 26%. You could even surprise her with the official Motionless In White shells. On top of that, use code SHINEDOWN for an extra $40 off for the next 24 hours! Here's the link: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -11632,7 +11632,7 @@
         "message_id": "e6ec6648-af99-419d-ba99-37798797c6fb",
         "direction": "outbound",
         "timestamp": "2026-03-25 13:23:02.726844",
-        "text": "She's going to notice the upgrade instantly. 🤘 Use code VIP12SLN for $31 off valid for 24 hours. And if you grab the H1H headphones for yourself, you'll get 20% off automatically at checkout. Here's the link for her earbuds: [https://link.sellence.com/NVfzna]",
+        "text": "She's going to notice the upgrade instantly. 🤘 Use code VIP12SLN for $31 off valid for 24 hours. And if you grab the H1H headphones for yourself, you'll get 20% off automatically at checkout. Here's the link for her earbuds: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -11662,7 +11662,7 @@
         "message_id": "a5a5937c-0abe-4d12-9d96-60cd7e4b8b16",
         "direction": "outbound",
         "timestamp": "2026-03-25 13:59:31.832958",
-        "text": "Yes, that's right! This discount stacks on top of the automatic bundle discount. Here's the link to the bundle with both: [https://link.sellence.com/FuVLhQ]",
+        "text": "Yes, that's right! This discount stacks on top of the automatic bundle discount. Here's the link to the bundle with both: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -11692,7 +11692,7 @@
         "message_id": "d8db8778-49ca-4975-a3f5-37cf5b7a77d6",
         "direction": "outbound",
         "timestamp": "2026-03-25 14:50:19.988052",
-        "text": "That's a cool project! 🤘 We don't share the exact specs for the magnets, but you can get our 'Die' It Yourself shells which are made for painting and customizing. Here's the link: [https://link.sellence.com/dmjD0Q]",
+        "text": "That's a cool project! 🤘 We don't share the exact specs for the magnets, but you can get our 'Die' It Yourself shells which are made for painting and customizing. Here's the link: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -11722,7 +11722,7 @@
         "message_id": "1363592c-a49e-4d50-a6e6-de722e44e5d5",
         "direction": "outbound",
         "timestamp": "2026-03-25 17:38:31.830767",
-        "text": "Sorry about that link trouble\n\n'Die' It Yourself Shells: https://link.sellence.com/dmjD0Q\n\nHeadphones + Earbuds Bundle: https://link.sellence.com/FuVLhQ",
+        "text": "Sorry about that link trouble\n\n'Die' It Yourself Shells: [LINK]\n\nHeadphones + Earbuds Bundle: [LINK]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -11770,7 +11770,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 14,
+    "seed_dialog_cut_idx": 13,
     "n_messages": 16,
     "seed_messages": [
       {
@@ -12003,7 +12003,7 @@
         "message_id": "7b96c151-5aed-459e-870e-64ed2e749857",
         "direction": "outbound",
         "timestamp": "2025-06-26 18:30:53.440048",
-        "text": "That's awesome to hear! Thanks for sharing that video, it’s great you’re so confident you’ll love them. 🤘 As promised, here's your code: use **VIP50SLN** for $50 off. It's valid for the next 24 hours! You can grab the Sylosis bundle here: [https://link.sellence.com/TFSoQs] Enjoy! 🔥",
+        "text": "That's awesome to hear! Thanks for sharing that video, it’s great you’re so confident you’ll love them. 🤘 As promised, here's your code: use **VIP50SLN** for $50 off. It's valid for the next 24 hours! You can grab the Sylosis bundle here: [[LINK]] Enjoy! 🔥",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -12048,7 +12048,7 @@
         "message_id": "49e066de-cf66-4738-9af0-5c7b16299eb7",
         "direction": "outbound",
         "timestamp": "2025-06-27 18:44:32.383753",
-        "text": "No problem at all, Charles. I understand. I've made sure the code is still good for you. You can use **VIP50SLN** for $50 off for the next 24 hours. Here is the link for when you are ready: https://link.sellence.com/TFSoQs",
+        "text": "No problem at all, Charles. I understand. I've made sure the code is still good for you. You can use **VIP50SLN** for $50 off for the next 24 hours. Here is the link for when you are ready: [LINK]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -12146,7 +12146,7 @@
         "message_id": "9281da48-33d1-439c-8243-0cc9e1a17f7e",
         "direction": "outbound",
         "timestamp": "2025-07-14 16:34:31.142825",
-        "text": "Awesome news, Charles! Let's get that discount activated for you. 🤘 Use code **VIP50SLN** for $50 off. It's valid for the next 10 hours! Here is the link for your bundle: [https://link.sellence.com/TFSoQs]",
+        "text": "Awesome news, Charles! Let's get that discount activated for you. 🤘 Use code **VIP50SLN** for $50 off. It's valid for the next 10 hours! Here is the link for your bundle: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -12271,7 +12271,7 @@
         "message_id": "b9c75831-214c-42ff-829d-554ff56a919d",
         "direction": "outbound",
         "timestamp": "2025-12-02 17:48:36.952367",
-        "text": "I get it, comfort and great EQ are a must. Our H1H are engineered for that with an over-ear design and 8 drivers. 🔥 As promised, use code vip27sln for 27% off. It's valid for 24 hours! Check them out: [https://link.sellence.com/Imsai4]",
+        "text": "I get it, comfort and great EQ are a must. Our H1H are engineered for that with an over-ear design and 8 drivers. 🔥 As promised, use code vip27sln for 27% off. It's valid for 24 hours! Check them out: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -12320,7 +12320,7 @@
         "message_id": "30436a0d-301c-4752-a544-bfc1c6b89657",
         "direction": "outbound",
         "timestamp": "2025-10-01 14:00:30.712424",
-        "text": "Hey 14786071041, Sarah from Ecommerce! \nSaw you checking out our Dream Theater X Ecommerce.  \nI might be able to get you an exclusive discount. Interested? \n\nReply STOP to opt out",
+        "text": "Hey [PHONE], Sarah from Ecommerce! \nSaw you checking out our Dream Theater X Ecommerce.  \nI might be able to get you an exclusive discount. Interested? \n\nReply STOP to opt out",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -12380,7 +12380,7 @@
         "message_id": "4ca1799b-0c78-40c0-a0de-1cc7b9467b8a",
         "direction": "outbound",
         "timestamp": "2025-10-01 15:47:44.028451",
-        "text": "Thanks for sharing your thoughts. Ecommerce are indeed designed to provide better clarity and comfort for longer sessions, featuring an 8-driver system and ergonomic design. As promised, use code **VIP50SLN** for 22% off your order. It's valid for the next 24 hours! Check out the Dream Theater bundle here: [https://link.sellence.com/9FtwzA]. What do you say? 🎶",
+        "text": "Thanks for sharing your thoughts. Ecommerce are indeed designed to provide better clarity and comfort for longer sessions, featuring an 8-driver system and ergonomic design. As promised, use code **VIP50SLN** for 22% off your order. It's valid for the next 24 hours! Check out the Dream Theater bundle here: [[LINK]]. What do you say? 🎶",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -12595,7 +12595,7 @@
         "message_id": "ade3101a-685a-4d44-9943-637ecfdd8df9",
         "direction": "outbound",
         "timestamp": "2025-06-20 23:01:50.594681",
-        "text": "Rock on, Erin! That $50 off code, VIP50SLN, is now active for the next 24 hours when you use it at checkout. Here's that link to the Gaming Bundle: [https://link.sellence.com/lExYvr]",
+        "text": "Rock on, Erin! That $50 off code, VIP50SLN, is now active for the next 24 hours when you use it at checkout. Here's that link to the Gaming Bundle: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -12710,7 +12710,7 @@
         "message_id": "6d9b3435-002d-4939-85b8-1362c9ebceda",
         "direction": "outbound",
         "timestamp": "2025-10-01 14:46:03.424501",
-        "text": "Got it — that’s exactly where JBLs can fall short. With 8 precision drivers, Ecommerce pull out the higher tones and subtle details so nothing gets lost, even if your ear misses certain ranges. Add HellBlocker™ ANC to block background noise and a 50-hour battery for nonstop sessions, and you’ll hear those higher pitches cut through clearly 🤘.\n\nI can also hook you up with code VIP50SLN for 22% off orders over $200 (limited spots). Here's the link: [https://link.sellence.com/ESVirp] What do you say?🔥",
+        "text": "Got it — that’s exactly where JBLs can fall short. With 8 precision drivers, Ecommerce pull out the higher tones and subtle details so nothing gets lost, even if your ear misses certain ranges. Add HellBlocker™ ANC to block background noise and a 50-hour battery for nonstop sessions, and you’ll hear those higher pitches cut through clearly 🤘.\n\nI can also hook you up with code VIP50SLN for 22% off orders over $200 (limited spots). Here's the link: [[LINK]] What do you say?🔥",
         "is_reminder": 0,
         "is_followup": 0
       }
@@ -12821,7 +12821,7 @@
         "message_id": "41e27691-043b-42cc-ac85-12a0b12b11a3",
         "direction": "outbound",
         "timestamp": "2026-01-21 17:57:05.521506",
-        "text": "Got it, that live metalcore concert feeling! 🤘 The Ecommerce deliver exactly that immersive power. As promised, use code VIP10SLN for 10% off, valid for the next 24 hours! 🔥 Check them out: [https://link.sellence.com/mFmbhH]",
+        "text": "Got it, that live metalcore concert feeling! 🤘 The Ecommerce deliver exactly that immersive power. As promised, use code VIP10SLN for 10% off, valid for the next 24 hours! 🔥 Check them out: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -12844,7 +12844,7 @@
         "message_id": "ed257a56-953d-4dad-b8fb-7f37517e2ea5",
         "direction": "outbound",
         "timestamp": "2026-01-21 17:59:18.022103",
-        "text": "That's awesome about the TikTok review! For collabs, please email our partnerships team at partnerships@ecommerce.com.\n\nAs for an alternative discount, you can use VIP3SLN for 3% off. This is also valid for the next 24 hours.",
+        "text": "That's awesome about the TikTok review! For collabs, please email our partnerships team at [EMAIL].\n\nAs for an alternative discount, you can use VIP3SLN for 3% off. This is also valid for the next 24 hours.",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -12860,7 +12860,7 @@
         "message_id": "5b91f1e3-4f58-4c6d-ab9c-42824881dfbb",
         "direction": "outbound",
         "timestamp": "2026-01-27 19:39:54.927226",
-        "text": "Thank you for reaching out, Santos. Please check your spam folders and the email you placed the order with. If you still cannot find information on your order, please contact support@ecommerce.com for an update on your order.\n\nI'll be here if you have any other questions or concerns.",
+        "text": "Thank you for reaching out, Santos. Please check your spam folders and the email you placed the order with. If you still cannot find information on your order, please contact [EMAIL] for an update on your order.\n\nI'll be here if you have any other questions or concerns.",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -12989,7 +12989,7 @@
         "message_id": "5adbc0cf-8ef6-4667-ada9-0bf3624ba798",
         "direction": "outbound",
         "timestamp": "2025-11-12 21:51:52.318378",
-        "text": "That's a serious metal pedigree! 🤘 You're right, death metal demands that strong, clear low-end without getting muddy. Ecommerce are engineered exactly for that. 🔥 \n\nUse code **SHELLFEST** to drop them to $161! \n[https://link.sellence.com/C2zfnQ] ",
+        "text": "That's a serious metal pedigree! 🤘 You're right, death metal demands that strong, clear low-end without getting muddy. Ecommerce are engineered exactly for that. 🔥 \n\nUse code **SHELLFEST** to drop them to $161! \n[[LINK]] ",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -13019,7 +13019,7 @@
         "message_id": "ea88bc41-c19d-45d5-8f60-de2b626c3436",
         "direction": "outbound",
         "timestamp": "2025-11-12 22:05:28.326094",
-        "text": "🤘 Those were the H1E earbuds. They were on preorder earlier last month...built from the same tech as our over-ears. They’ve officially launched now and are ready to ship. SHELLFEST still drops ‘em to $161 while they’re under the regular $199 🔥\n[https://link.sellence.com/C2zfnQ]",
+        "text": "🤘 Those were the H1E earbuds. They were on preorder earlier last month...built from the same tech as our over-ears. They’ve officially launched now and are ready to ship. SHELLFEST still drops ‘em to $161 while they’re under the regular $199 🔥\n[[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -13326,7 +13326,7 @@
         "message_id": "c5f51fee-ea34-4103-a599-dc08a2a06dde",
         "direction": "outbound",
         "timestamp": "2025-11-17 14:41:16.663922",
-        "text": "I get it, your music should sound epic. Ecommerce are engineered for a powerful, clear sound experience. As promised, use code VIP50SLN for $50 off headphones, valid for 24 hours! [https://link.sellence.com/wodmp4] What kind of music do you listen to most? 🎶",
+        "text": "I get it, your music should sound epic. Ecommerce are engineered for a powerful, clear sound experience. As promised, use code VIP50SLN for $50 off headphones, valid for 24 hours! [[LINK]] What kind of music do you listen to most? 🎶",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -13334,7 +13334,7 @@
         "message_id": "45a5f01c-caca-4c08-80b9-b6e8dc55d0aa",
         "direction": "outbound",
         "timestamp": "2025-11-17 22:24:21.875625",
-        "text": "Hey Sophia, I found a better discount for you. Use \"vip27sln\" for 27% off +FREE shipping! Valid 24 hrs! \nLock it in here: [https://link.sellence.com/wodmp4]",
+        "text": "Hey Sophia, I found a better discount for you. Use \"vip27sln\" for 27% off +FREE shipping! Valid 24 hrs! \nLock it in here: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -13732,7 +13732,7 @@
         "message_id": "acb59fca-bbb6-4e9c-a814-967075b8216b",
         "direction": "inbound",
         "timestamp": "2025-06-06 21:03:52.009975",
-        "text": "wantboost@gmail.com \n99643",
+        "text": "[EMAIL] \n99643",
         "is_followup": 0
       },
       {
@@ -13755,7 +13755,7 @@
         "message_id": "0e86f271-f65a-419d-87d1-d8b7cf8cf999",
         "direction": "inbound",
         "timestamp": "2025-06-06 21:08:34.085492",
-        "text": "4046632939",
+        "text": "[PHONE]",
         "is_followup": 0
       },
       {
@@ -14148,7 +14148,7 @@
         "message_id": "6438ae59-e404-4d9e-b391-66517159424c",
         "direction": "outbound",
         "timestamp": "2025-12-09 13:44:19.300809",
-        "text": "Here’s the link: [https://link.sellence.com/1gNzwb]. Apply code VIP52SLN at checkout for that final $50 reduction.",
+        "text": "Here’s the link: [[LINK]]. Apply code VIP52SLN at checkout for that final $50 reduction.",
         "is_reminder": 0,
         "is_followup": 0
       }
@@ -14189,7 +14189,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 10,
+    "seed_dialog_cut_idx": 8,
     "n_messages": 14,
     "seed_messages": [
       {
@@ -14284,7 +14284,7 @@
         "message_id": "ea4f3ebe-817f-4a32-81dc-e08bcbc9237b",
         "direction": "outbound",
         "timestamp": "2025-11-21 21:01:26.877046",
-        "text": "Got it, so you're looking for more 'oomph' on the go. Our H1H are engineered to deliver that powerful punch. Since you're interested, use code vip27sln for 27% off, valid for 24 hours. You can check them out here: [https://link.sellence.com/ZM7TpC] 🤘",
+        "text": "Got it, so you're looking for more 'oomph' on the go. Our H1H are engineered to deliver that powerful punch. Since you're interested, use code vip27sln for 27% off, valid for 24 hours. You can check them out here: [[LINK]] 🤘",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -14431,7 +14431,7 @@
         "message_id": "c81e68c3-e268-4f2d-bc30-71b58d71527f",
         "direction": "outbound",
         "timestamp": "2025-11-17 15:59:25.337984",
-        "text": "You're right, the SHRED code is a better deal for the bundle. Both codes are valid for the next 24 hours. Here’s the link: [https://link.sellence.com/uZebdd] 🤘",
+        "text": "You're right, the SHRED code is a better deal for the bundle. Both codes are valid for the next 24 hours. Here’s the link: [[LINK]] 🤘",
         "is_reminder": 0,
         "is_followup": 0
       }
@@ -14539,7 +14539,7 @@
         "message_id": "e6d6a62b-51ab-4c48-a626-208f9735af9e",
         "direction": "outbound",
         "timestamp": "2026-02-13 16:23:42.957313",
-        "text": "Got it. You need more volume and detail without sacrificing comfort. Our H1H are engineered for powerful, detailed sound and long listening sessions. As promised, use code SHRED50VIP for $40 off, valid for few hours! 🔥 [https://link.sellence.com/OhTLOC]",
+        "text": "Got it. You need more volume and detail without sacrificing comfort. Our H1H are engineered for powerful, detailed sound and long listening sessions. As promised, use code SHRED50VIP for $40 off, valid for few hours! 🔥 [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -14982,7 +14982,7 @@
         "message_id": "7383ebdf-192a-496f-8646-b0f71b96330f",
         "direction": "outbound",
         "timestamp": "2025-08-22 21:08:36.032908",
-        "text": "Awesome! Use code VIP52SLN to get that discount on your order over $200. It's valid for the next 24 hours. You can grab them here: [https://link.sellence.com/NPyIDr] Did you have any other questions or concerns about the H1Hs. I'm happy not help.",
+        "text": "Awesome! Use code VIP52SLN to get that discount on your order over $200. It's valid for the next 24 hours. You can grab them here: [[LINK]] Did you have any other questions or concerns about the H1Hs. I'm happy not help.",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -15187,7 +15187,7 @@
         "message_id": "d4aa67ab-f081-489c-81f1-924a04d4e9b1",
         "direction": "outbound",
         "timestamp": "2025-10-17 14:06:22.352951",
-        "text": "Yes, 😊! Please find the link here: https://link.sellence.com/duvFV4  Just heads-up the code has limited spots",
+        "text": "Yes, 😊! Please find the link here: [LINK]  Just heads-up the code has limited spots",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -15418,7 +15418,7 @@
         "message_id": "c4f44e92-04e8-49e7-92cc-c4c2c228980f",
         "direction": "outbound",
         "timestamp": "2025-09-15 14:16:16.176260",
-        "text": "Understood. For the total immersion you're seeking, the Gaming Bundle features 8 speakers and a zero-latency mic. As promised, use code VIP50SLN for 22% off your order over $200. It's good for the next 24 hours! You can grab it here: [https://link.sellence.com/ShkzF9] What do you say?🔥",
+        "text": "Understood. For the total immersion you're seeking, the Gaming Bundle features 8 speakers and a zero-latency mic. As promised, use code VIP50SLN for 22% off your order over $200. It's good for the next 24 hours! You can grab it here: [[LINK]] What do you say?🔥",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -15484,7 +15484,7 @@
         "message_id": "5f6477a4-76be-4cdb-890e-ca551e928145",
         "direction": "outbound",
         "timestamp": "2025-09-15 16:00:49.073312",
-        "text": "Sorry for the late reply, Matt!  For address changes, the best way is to reach out to our support team with your order number at support@ecommerce.com. They’ll be able to update the delivery details for you quickly. 🤘",
+        "text": "Sorry for the late reply, Matt!  For address changes, the best way is to reach out to our support team with your order number at [EMAIL]. They’ll be able to update the delivery details for you quickly. 🤘",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -15540,7 +15540,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 11,
+    "seed_dialog_cut_idx": 9,
     "n_messages": 13,
     "seed_messages": [
       {
@@ -15592,7 +15592,7 @@
         "message_id": "92fc2451-b4af-482a-99be-048a36e7e009",
         "direction": "outbound",
         "timestamp": "2025-10-01 14:19:30.499826",
-        "text": "Got it, the H1H is an awesome choice for music! 🤘 As promised, you can use code VIP50SLN for 22% off. It's valid for the next 10 hours! Here's the link: [https://link.sellence.com/wvtAJl] What do you say?🔥",
+        "text": "Got it, the H1H is an awesome choice for music! 🤘 As promised, you can use code VIP50SLN for 22% off. It's valid for the next 10 hours! Here's the link: [[LINK]] What do you say?🔥",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -15883,7 +15883,7 @@
         "message_id": "61b2105f-2b4a-407b-a846-6d7a97ea1627",
         "direction": "outbound",
         "timestamp": "2026-02-02 17:44:07.274090",
-        "text": "Rock on! 🤘 Here is a code for $40 off: SHREDVIP50. This is valid for few hours. Check them out here: [https://link.sellence.com/D7bR3S]",
+        "text": "Rock on! 🤘 Here is a code for $40 off: SHREDVIP50. This is valid for few hours. Check them out here: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       }
@@ -15998,7 +15998,7 @@
         "message_id": "9bcf4eed-a440-46a9-9b0b-695b1678dbab",
         "direction": "outbound",
         "timestamp": "2025-10-15 16:17:58.582837",
-        "text": "I hear that. For genres like metal and electronic, you're right, AirPods can leave you missing all the details. Ecommerce are engineered with 8 drivers to deliver a full, immersive soundstage.\n\nAs promised, use code ECOMMERCEONTOUR for $55 off it. It's valid for 24 hours! [https://link.sellence.com/BIo1VB]",
+        "text": "I hear that. For genres like metal and electronic, you're right, AirPods can leave you missing all the details. Ecommerce are engineered with 8 drivers to deliver a full, immersive soundstage.\n\nAs promised, use code ECOMMERCEONTOUR for $55 off it. It's valid for 24 hours! [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -16013,7 +16013,7 @@
         "message_id": "f62498ac-51cf-4978-bfd1-57b305563333",
         "direction": "outbound",
         "timestamp": "2025-10-15 16:31:07.696261",
-        "text": "Got it! no worries 🤘 If you just placed the order and need to fix the address, please reach out right away to support@ecommerce.com with your order number and correct shipping address.\n\nThey’ll get it updated for you before it ships out 🔥.",
+        "text": "Got it! no worries 🤘 If you just placed the order and need to fix the address, please reach out right away to [EMAIL] with your order number and correct shipping address.\n\nThey’ll get it updated for you before it ships out 🔥.",
         "is_reminder": 0,
         "is_followup": 0
       }
@@ -16177,7 +16177,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 12,
+    "seed_dialog_cut_idx": 9,
     "n_messages": 15,
     "seed_messages": [
       {
@@ -16229,7 +16229,7 @@
         "message_id": "ca500bd9-4259-4fac-9c91-07fd439a5fbc",
         "direction": "outbound",
         "timestamp": "2025-09-09 13:40:05.002267",
-        "text": "Got it! Ecommerce are tuned for the intensity and depth black metal deserves—8 drivers per side giving crushing bass, balanced mids, and crisp highs, so the blast beats, tremolo riffs, and vocals all come through with clarity and power. Add in HellBlocker™ ANC, plush comfort, and 50 hours of battery life, and she’ll finally have headphones built to handle black metal the way it should sound. 🔥\n\nAs promised, use code VIP50SLN for 22% off (very limited spots)! Here’s the link: [https://link.sellence.com/8EUfQl]. What do you say? 🎶",
+        "text": "Got it! Ecommerce are tuned for the intensity and depth black metal deserves—8 drivers per side giving crushing bass, balanced mids, and crisp highs, so the blast beats, tremolo riffs, and vocals all come through with clarity and power. Add in HellBlocker™ ANC, plush comfort, and 50 hours of battery life, and she’ll finally have headphones built to handle black metal the way it should sound. 🔥\n\nAs promised, use code VIP50SLN for 22% off (very limited spots)! Here’s the link: [[LINK]]. What do you say? 🎶",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -16419,7 +16419,7 @@
         "message_id": "8aeecfc7-9be7-4a04-b57a-1ac2ea8f0dc9",
         "direction": "outbound",
         "timestamp": "2025-08-06 13:02:51.547660",
-        "text": "Awesome Marcel! To get your $52 off, use code VIP52SLN at checkout. It's valid for the next 8 hours! Here's the link: [https://link.sellence.com/fO2JoZ] 🤘",
+        "text": "Awesome Marcel! To get your $52 off, use code VIP52SLN at checkout. It's valid for the next 8 hours! Here's the link: [[LINK]] 🤘",
         "is_reminder": 0,
         "is_followup": 0
       }
@@ -16496,7 +16496,7 @@
         "message_id": "fee6da99-b283-4b76-9afb-e5422f823945",
         "direction": "outbound",
         "timestamp": "2025-10-31 19:37:30.635473",
-        "text": "I can actually get you $50 off dropping two sets to $268 ($136 each). Use code VIP52SLN to grab that deal, Shannon! \n[https://link.sellence.com/C2zfnQ] \n\nQuestions? Text me before 8 p.m. EST 😎",
+        "text": "I can actually get you $50 off dropping two sets to $268 ($136 each). Use code VIP52SLN to grab that deal, Shannon! \n[[LINK]] \n\nQuestions? Text me before 8 p.m. EST 😎",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -16881,7 +16881,7 @@
         "message_id": "98ef5de1-c427-454e-9602-90879a2eee0d",
         "direction": "outbound",
         "timestamp": "2025-11-17 15:13:38.513759",
-        "text": "Rock On! You can use this discount code at checkout to get $50 off for the next 24 hours: VIP50SLN. Here's the link to the headphones: [https://link.sellence.com/ZkUbSZ]",
+        "text": "Rock On! You can use this discount code at checkout to get $50 off for the next 24 hours: VIP50SLN. Here's the link to the headphones: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -17011,7 +17011,7 @@
         "message_id": "bdce206c-0747-402d-9324-613f02756e8b",
         "direction": "outbound",
         "timestamp": "2025-04-25 14:45:49.339056",
-        "text": "Great, Bruno🎧! Happy to hear that helps. Use code **VIP50SLN** for $50 off (orders over $200), valid for the next 20 hours. Grab the Outline Shells bundle here: [https://link.sellence.com/11uYBq]🔥🤘",
+        "text": "Great, Bruno🎧! Happy to hear that helps. Use code **VIP50SLN** for $50 off (orders over $200), valid for the next 20 hours. Grab the Outline Shells bundle here: [[LINK]]🔥🤘",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -17398,7 +17398,7 @@
         "message_id": "c7d37e2e-4d60-4f5a-837a-75434ee3c857",
         "direction": "outbound",
         "timestamp": "2025-11-21 17:40:58.963367",
-        "text": "That's an awesome combo! 🔥 As promised, use code **vip27sln** for 27% off both. The code is valid for the next 24 hours. No need to wait for payday, we offer payment plans like Klarna!\n\nHeadphones: [https://link.sellence.com/PKHAeg]\nEarbuds: [https://link.sellence.com/apuySj]",
+        "text": "That's an awesome combo! 🔥 As promised, use code **vip27sln** for 27% off both. The code is valid for the next 24 hours. No need to wait for payday, we offer payment plans like Klarna!\n\nHeadphones: [[LINK]]\nEarbuds: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -17464,7 +17464,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 7,
+    "seed_dialog_cut_idx": 1,
     "n_messages": 9,
     "seed_messages": [
       {
@@ -17720,7 +17720,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 11,
+    "seed_dialog_cut_idx": 8,
     "n_messages": 13,
     "seed_messages": [
       {
@@ -17909,7 +17909,7 @@
         "message_id": "37ac6fb2-e64f-491a-b90f-1564c6fc29c5",
         "direction": "outbound",
         "timestamp": "2025-10-03 22:35:05.862465",
-        "text": "Nice, 90's hip hop is all about that bass and clarity. Our H1H are designed to deliver the powerful, distortion-free bass and excellent clarity you're after. As promised, here's that discount: use code VIP80LTD for $ 80 off your order. It's valid until 8. \n\nCheck them out here: [https://link.sellence.com/bfnitV]",
+        "text": "Nice, 90's hip hop is all about that bass and clarity. Our H1H are designed to deliver the powerful, distortion-free bass and excellent clarity you're after. As promised, here's that discount: use code VIP80LTD for $ 80 off your order. It's valid until 8. \n\nCheck them out here: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -18087,14 +18087,14 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 37,
+    "seed_dialog_cut_idx": 21,
     "n_messages": 39,
     "seed_messages": [
       {
         "message_id": "ac0a5515-efaf-485c-944e-4a48bd57b98f",
         "direction": "outbound",
         "timestamp": "2025-08-04 07:48:24.827340",
-        "text": "Hey Hadar, this is Chen from Insurance :) The insurance for the Kia, number 8932138, ends at the end of the month. The price for the comprehensive insurance is 4,039 USD (including the Librot discount) and the mandatory insurance is 1,622 USD. Renew?",
+        "text": "Hey Hadar, this is Chen from Insurance :) The insurance for the Kia, number [PLATE], ends at the end of the month. The price for the comprehensive insurance is 4,039 USD (including the Librot discount) and the mandatory insurance is 1,622 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -18147,7 +18147,7 @@
         "message_id": "5cbb2e63-c185-4748-9329-3608345e2604",
         "direction": "inbound",
         "timestamp": "2025-08-11 09:10:18.068672",
-        "text": "I want to renew the insurance for both cars together. Today, for my car (1415132), I pay 1437 for mandatory insurance and 2137 for comprehensive insurance. For my wife's car (8932138), it's 1575 for comprehensive insurance and 3700 for mandatory insurance. From a bit of research I did on the Kia, it's possible to secure comprehensive and mandatory insurance together for significantly less (there's an offer around 4850) and I didn't search too much. I honestly prefer to stay and not switch, but I'm asking for a fair offer for both cars.",
+        "text": "I want to renew the insurance for both cars together. Today, for my car ([PLATE]), I pay 1437 for mandatory insurance and 2137 for comprehensive insurance. For my wife's car ([PLATE]), it's 1575 for comprehensive insurance and 3700 for mandatory insurance. From a bit of research I did on the Kia, it's possible to secure comprehensive and mandatory insurance together for significantly less (there's an offer around 4850) and I didn't search too much. I honestly prefer to stay and not switch, but I'm asking for a fair offer for both cars.",
         "is_followup": 0
       },
       {
@@ -18309,7 +18309,7 @@
         "message_id": "3b6e045d-984d-4658-b19e-00e5d3ae6d98",
         "direction": "outbound",
         "timestamp": "2025-08-14 10:18:58.950663",
-        "text": "I renewed for you in 10 interest-free payments, the entire amount takes up the framework and the first payment will be deducted on your next billing date. The policy for the Kia - 8932138 is for a full year from 01/09/2025, the policy for the Hyundai - 1415132 is for a full year from 01/10/2025. Everything will arrive in your email in the next few minutes. The password to open the files is your mobile phone number 😊",
+        "text": "I renewed for you in 10 interest-free payments, the entire amount takes up the framework and the first payment will be deducted on your next billing date. The policy for the Kia - [PLATE] is for a full year from 01/09/2025, the policy for the Hyundai - [PLATE] is for a full year from 01/10/2025. Everything will arrive in your email in the next few minutes. The password to open the files is your mobile phone number 😊",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -18422,14 +18422,14 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 20,
+    "seed_dialog_cut_idx": 14,
     "n_messages": 22,
     "seed_messages": [
       {
         "message_id": "f329629d-2f82-44c6-a903-5446271a54b4",
         "direction": "outbound",
         "timestamp": "2025-09-02 11:17:04.070301",
-        "text": "Hey Yaniv, this is Chen from Insurance :) The insurance for the Honda, number 5863431, ends at the end of the month. The price for the comprehensive insurance is 3,270 USD (including the Librot discount) and the mandatory insurance is 1,472 USD. Renew?",
+        "text": "Hey Yaniv, this is Chen from Insurance :) The insurance for the Honda, number [PLATE], ends at the end of the month. The price for the comprehensive insurance is 3,270 USD (including the Librot discount) and the mandatory insurance is 1,472 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -18633,14 +18633,14 @@
       "provenance": "hardcoded_global_default"
     },
     "anchor_real": false,
-    "seed_dialog_cut_idx": 20,
+    "seed_dialog_cut_idx": 18,
     "n_messages": 22,
     "seed_messages": [
       {
         "message_id": "8344b584-0784-4428-8ae0-1e28474834de",
         "direction": "outbound",
         "timestamp": "2025-08-17 08:00:41.782314",
-        "text": "Hey Simi, this is Yinon Peretz from Insurance :)\\n\\nThe insurance for the Toyota car number 8809971 is ending at the end of the month.\\n\\nThe price for the third-party insurance is 1,707 USD (including the Librot discount) and the mandatory insurance is 1,628 USD.\\n\\nRenew?",
+        "text": "Hey Simi, this is Yinon Peretz from Insurance :)\\n\\nThe insurance for the Toyota car number [PLATE] is ending at the end of the month.\\n\\nThe price for the third-party insurance is 1,707 USD (including the Librot discount) and the mandatory insurance is 1,628 USD.\\n\\nRenew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -18852,7 +18852,7 @@
         "message_id": "e405bc44-7491-4c04-a661-62dde6f733a0",
         "direction": "outbound",
         "timestamp": "2025-11-25 09:09:59.645381",
-        "text": "Hey Nitzan, this is Nofar from Insurance :) The insurance for the Hyundai, number 88577701, ends at the end of the month. The price for the comprehensive insurance is 2,350 USD (including the Librot discount) and the mandatory insurance is 1,326 USD. Renew?",
+        "text": "Hey Nitzan, this is Nofar from Insurance :) The insurance for the Hyundai, number [PLATE], ends at the end of the month. The price for the comprehensive insurance is 2,350 USD (including the Librot discount) and the mandatory insurance is 1,326 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -18959,7 +18959,7 @@
         "message_id": "bcd824db-bfae-4ec3-a651-ba84c71a410b",
         "direction": "outbound",
         "timestamp": "2025-05-04 10:06:49.909263",
-        "text": "Hey Moshe, this is Yaniv K from Insurance :)\\n\\nThe insurance for the Cadillac with number 9000012 ends at the end of the month.\\n\\nThe price for the third-party insurance is 1,511 USD (including the Librot discount) and the mandatory insurance is 2,047 USD. Renew?",
+        "text": "Hey Moshe, this is Yaniv K from Insurance :)\\n\\nThe insurance for the Cadillac with number [PLATE] ends at the end of the month.\\n\\nThe price for the third-party insurance is 1,511 USD (including the Librot discount) and the mandatory insurance is 2,047 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -19232,7 +19232,7 @@
         "message_id": "fc41e38f-4d63-4c24-bd2a-5f84442f31de",
         "direction": "outbound",
         "timestamp": "2026-02-02 07:57:34.776673",
-        "text": "Hey Uri, this is Yaniv from Insurance :) The insurance for the Nissan car number 3421479 ends at the end of the month. The price for the comprehensive insurance is 1,951 USD (including the Librot discount) and the mandatory insurance is 2,145 USD. Renew?",
+        "text": "Hey Uri, this is Yaniv from Insurance :) The insurance for the Nissan car number [PLATE] ends at the end of the month. The price for the comprehensive insurance is 1,951 USD (including the Librot discount) and the mandatory insurance is 2,145 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -19739,7 +19739,7 @@
         "message_id": "98a67324-3aca-476c-922a-85fb4834af35",
         "direction": "outbound",
         "timestamp": "2025-10-28 18:02:02.325120",
-        "text": "Haha, my goal is ensuring you experience that amazing sound quality! but i really appreciate your review😊 Here is the link: [https://link.sellence.com/hSaO9D]",
+        "text": "Haha, my goal is ensuring you experience that amazing sound quality! but i really appreciate your review😊 Here is the link: [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -19865,7 +19865,7 @@
         "message_id": "a8be7405-2e32-4195-a28f-a9a69c8e683e",
         "direction": "outbound",
         "timestamp": "2026-01-16 20:56:56.273622",
-        "text": "I hear you. Our H1H are engineered for a huge upgrade in comfort, battery life, and powerful sound for bands like Metallica. 🤘 As promised, use code VIP10SLN for 10% off. This code is valid for the next 24 hours! [https://link.sellence.com/i6wwQe]",
+        "text": "I hear you. Our H1H are engineered for a huge upgrade in comfort, battery life, and powerful sound for bands like Metallica. 🤘 As promised, use code VIP10SLN for 10% off. This code is valid for the next 24 hours! [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -19923,7 +19923,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 24,
+    "seed_dialog_cut_idx": 21,
     "n_messages": 26,
     "seed_messages": [
       {
@@ -19961,7 +19961,7 @@
         "message_id": "4ae5b0a4-1566-4fca-8eee-b91a09b9dd5a",
         "direction": "outbound",
         "timestamp": "2025-11-24 15:21:07.375887",
-        "text": "Absolutely! It sounds like you're seeking the ideal balance: a competitive advantage and a fully immersive experience. 🤘 Our H1H are engineered with 8 drivers to deliver exactly that clarity and bass.\n\nHere's that killer deal: use code **vip27sln** for 27% off, valid for the next 24 hours!\n[https://link.sellence.com/0rBh6o]",
+        "text": "Absolutely! It sounds like you're seeking the ideal balance: a competitive advantage and a fully immersive experience. 🤘 Our H1H are engineered with 8 drivers to deliver exactly that clarity and bass.\n\nHere's that killer deal: use code **vip27sln** for 27% off, valid for the next 24 hours!\n[[LINK]]",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -20078,7 +20078,7 @@
         "message_id": "654a5f20-1142-4231-9626-7800b20a6f8b",
         "direction": "outbound",
         "timestamp": "2025-11-25 15:04:47.770462",
-        "text": "That's an awesome idea for a YouTube channel! 🤘 While I can't send review units, you can pitch our partnerships team at partnerships@ecommerce.com.\n\nI totally get wanting to test them out first. We have a 14-day return policy so you can try them risk-free with your own gear.",
+        "text": "That's an awesome idea for a YouTube channel! 🤘 While I can't send review units, you can pitch our partnerships team at [EMAIL].\n\nI totally get wanting to test them out first. We have a 14-day return policy so you can try them risk-free with your own gear.",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -20165,7 +20165,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 5,
+    "seed_dialog_cut_idx": 3,
     "n_messages": 7,
     "seed_messages": [
       {
@@ -20187,7 +20187,7 @@
         "message_id": "97ae3f9b-32d7-4f15-84d0-af6ba310af80",
         "direction": "outbound",
         "timestamp": "2025-06-17 15:36:44.906024",
-        "text": "You got it! I can do better than $30 off. Use code **VIP50SLN** for $50 off the bundle. The code expires tomorrow! 🤘 [https://link.sellence.com/5ndFVA]",
+        "text": "You got it! I can do better than $30 off. Use code **VIP50SLN** for $50 off the bundle. The code expires tomorrow! 🤘 [[LINK]]",
         "is_reminder": 0,
         "is_followup": 0,
         "automatic_response": 1
@@ -20260,7 +20260,7 @@
     },
     "anchors": {},
     "anchor_real": false,
-    "seed_dialog_cut_idx": 13,
+    "seed_dialog_cut_idx": 6,
     "n_messages": 15,
     "seed_messages": [
       {
@@ -20319,7 +20319,7 @@
         "message_id": "1b6ce74f-9392-40b7-8e10-ebe34de9fc29",
         "direction": "outbound",
         "timestamp": "2025-11-01 00:03:55.425685",
-        "text": "Rock On! IHere is the link: [https://link.sellence.com/LY89ph] Just heads-up the code has limited spots!",
+        "text": "Rock On! IHere is the link: [[LINK]] Just heads-up the code has limited spots!",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -20501,7 +20501,7 @@
         "message_id": "248cb946-2d55-4e16-84f8-72311373e29d",
         "direction": "outbound",
         "timestamp": "2025-09-29 20:26:18.196028",
-        "text": "Use code VIP80LTD for $80 off, but only until 8PM EST. 🔥 Here is the link: [https://link.sellence.com/I52I4i]\nIf anything comes up...shoot me a text before 8.😎",
+        "text": "Use code VIP80LTD for $80 off, but only until 8PM EST. 🔥 Here is the link: [[LINK]]\nIf anything comes up...shoot me a text before 8.😎",
         "is_reminder": 0,
         "is_followup": 0
       },
@@ -20643,7 +20643,7 @@
         "message_id": "0bb435e6-eae2-4173-97f5-d2e4a6c7ef2c",
         "direction": "outbound",
         "timestamp": "2024-12-01 11:03:03.126142",
-        "text": "Hey there Ilan, this is Chen from Insurance :) Your insurance for the Citroen car number 5976164 is ending at the end of the month. The price for the third-party insurance is 1,414 USD (including Librot discount) and the mandatory insurance is 1,570 USD. Renew?",
+        "text": "Hey there Ilan, this is Chen from Insurance :) Your insurance for the Citroen car number [PLATE] is ending at the end of the month. The price for the third-party insurance is 1,414 USD (including Librot discount) and the mandatory insurance is 1,570 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -20846,7 +20846,7 @@
         "message_id": "322bf420-f8da-4d0d-b647-736903888b16",
         "direction": "outbound",
         "timestamp": "2025-07-03 07:42:29.358787",
-        "text": "Hey Carmel, it's Yaniv from Insurance :) The insurance for the B.Y.D vehicle number 40253103 ends at the end of the month. The price for the comprehensive insurance is 5,654 USD (including the Librot discount) and the mandatory insurance is 1,841 USD. Renew?",
+        "text": "Hey Carmel, it's Yaniv from Insurance :) The insurance for the B.Y.D vehicle number [PLATE] ends at the end of the month. The price for the comprehensive insurance is 5,654 USD (including the Librot discount) and the mandatory insurance is 1,841 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -21139,7 +21139,7 @@
         "message_id": "78f3bcc2-0478-45e6-b73f-0e35850fcc08",
         "direction": "outbound",
         "timestamp": "2025-11-23 14:21:07.160073",
-        "text": "Hey Yaniv, this is Yaniv from Insurance :) The insurance for the Mitsubishi car number 85001001 is ending at the end of the month. The price for the comprehensive insurance is 3,478 USD (including the Librot discount) and the mandatory insurance is 1,583 USD. Renew?",
+        "text": "Hey Yaniv, this is Yaniv from Insurance :) The insurance for the Mitsubishi car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 3,478 USD (including the Librot discount) and the mandatory insurance is 1,583 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -21424,7 +21424,7 @@
         "message_id": "f93f5d87-3043-42c2-9b5b-fe7994dbaac8",
         "direction": "outbound",
         "timestamp": "2024-12-10 10:53:20.962341",
-        "text": "Hey there Orit, this is Shani from Insurance :) The insurance for the Suzuki car number 21384602 is ending at the end of the month. The price for the comprehensive insurance is 3,855 USD (including Librot discount) and the mandatory insurance is 1,354 USD. Secure this great deal?",
+        "text": "Hey there Orit, this is Shani from Insurance :) The insurance for the Suzuki car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 3,855 USD (including Librot discount) and the mandatory insurance is 1,354 USD. Secure this great deal?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -21521,7 +21521,7 @@
         "message_id": "ceafffed-8335-4102-82c9-e2e7230bb482",
         "direction": "outbound",
         "timestamp": "2025-01-07 10:41:01.491544",
-        "text": "Hey there Dorit, this is Yinon from Insurance :) Your insurance for the Kia car number 6302885 is ending at the end of the month. The price for the third-party insurance is 1,220 USD (including Librot discount) and the mandatory insurance is 1,165 USD. Renew?",
+        "text": "Hey there Dorit, this is Yinon from Insurance :) Your insurance for the Kia car number [PLATE] is ending at the end of the month. The price for the third-party insurance is 1,220 USD (including Librot discount) and the mandatory insurance is 1,165 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -21670,7 +21670,7 @@
         "message_id": "e2081085-d934-4ef0-a3b2-b7d636b50044",
         "direction": "outbound",
         "timestamp": "2025-06-18 09:24:21.878160",
-        "text": "Hey Tal, this is Chen from Insurance :) The insurance for the Skoda car number 25819601 is ending at the end of the month. The price for the comprehensive insurance is 4,195 USD (including Librot discount) and the mandatory insurance is 1,514 USD. Renew?",
+        "text": "Hey Tal, this is Chen from Insurance :) The insurance for the Skoda car number [PLATE] is ending at the end of the month. The price for the comprehensive insurance is 4,195 USD (including Librot discount) and the mandatory insurance is 1,514 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -21767,7 +21767,7 @@
         "message_id": "40823110-c8aa-4a30-bfed-950308dc4290",
         "direction": "outbound",
         "timestamp": "2024-08-06 07:35:32.032954",
-        "text": "Hey there! Gilad, this is Chen from Insurance, your car insurance for the Toyota with number 10959101 ends at the end of the month. You can easily renew it at the following link: https://www.lbr.co.il/Vehicles/insurtix/flows/car/renewals/DCF690A0-1E4A-EF11-98D4-005056B90058",
+        "text": "Hey there! Gilad, this is Chen from Insurance, your car insurance for the Toyota with number [PLATE] ends at the end of the month. You can easily renew it at the following link: https://www.lbr.co.il/Vehicles/insurtix/flows/car/renewals/DCF690A0-1E4A-EF11-98D4-005056B90058",
         "is_reminder": 1,
         "is_followup": 0
       },
@@ -21971,7 +21971,7 @@
         "message_id": "7289b899-af9a-4e6b-bd62-b1641a2d2ce6",
         "direction": "outbound",
         "timestamp": "2025-09-03 05:45:39.949814",
-        "text": "Hey Bateal, this is Shani from Insurance :) The insurance for the Suzuki car number 5903674 ends at the end of the month. The price for the third-party insurance is 1,400 USD (including the Librot discount) and the mandatory insurance is 1,910 USD. Renew?",
+        "text": "Hey Bateal, this is Shani from Insurance :) The insurance for the Suzuki car number [PLATE] ends at the end of the month. The price for the third-party insurance is 1,400 USD (including the Librot discount) and the mandatory insurance is 1,910 USD. Renew?",
         "is_reminder": 1,
         "is_followup": 0
       },
